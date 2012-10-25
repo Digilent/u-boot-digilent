@@ -1,5 +1,7 @@
 /*
  * (C) Copyright 2012 Xilinx
+ * Copyright (c) 2012 Digilent. All right reserved.
+ * 	Author: Tinghui WANG <steven.wang@digilentinc.com>
  *
  * Configuration for Zynq Evaluation and Development Board - ZedBoard
  * See zynq_common.h for Zynq common configs
@@ -45,10 +47,15 @@
 		"sf read 0x1000000 0x3c0000 0x40000;" \
 		"sf read 0x800000 0x400000 0x800000;" \
 		"go 0x8000\0" \
+	"sdboot_linaro=echo Copying Linux from SD to RAM...;" \
+		"mmcinfo;" \
+		"fatload mmc 0 0x8000 zImage;" \
+		"fatload mmc 0 0x1000000 devicetree_linaro.dtb;" \
+		"go 0x8000\0" \
 	"sdboot=echo Copying Linux from SD to RAM...;" \
 		"mmcinfo;" \
 		"fatload mmc 0 0x8000 zImage;" \
-		"fatload mmc 0 0x1000000 devicetree.dtb;" \
+		"fatload mmc 0 0x1000000 devicetree_ramdisk.dtb;" \
 		"fatload mmc 0 0x800000 ramdisk8M.image.gz;" \
 		"go 0x8000\0" \
 	"jtagboot=echo TFTPing Linux to RAM...;" \
