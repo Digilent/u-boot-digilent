@@ -55,7 +55,7 @@
 	"sdboot=echo Copying Linux from SD to RAM...;" \
 		"mmcinfo;" \
 		"fatload mmc 0 0x8000 zImage;" \
-		"fatload mmc 0 0x1000000 devicetree_ramdisk.dtb;" \
+		"fatload mmc 0 0x1000000 devicetree.dtb;" \
 		"fatload mmc 0 0x800000 ramdisk8M.image.gz;" \
 		"go 0x8000\0" \
 	"jtagboot=echo TFTPing Linux to RAM...;" \
