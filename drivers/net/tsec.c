@@ -44,8 +44,7 @@ static RTXBD rtx __attribute__ ((aligned(8)));
 #error "rtx must be 64-bit aligned"
 #endif
 
-static int tsec_send(struct eth_device *dev,
-	volatile void *packet, int length);
+static int tsec_send(struct eth_device *dev, void *packet, int length);
 
 /* Default initializations for TSEC controllers. */
 
@@ -377,7 +376,7 @@ static void startup_tsec(struct eth_device *dev)
  * do the same.	 Presumably, this would be zero if there were no
  * errors
  */
-static int tsec_send(struct eth_device *dev, volatile void *packet, int length)
+static int tsec_send(struct eth_device *dev, void *packet, int length)
 {
 	int i;
 	int result = 0;
@@ -481,6 +480,7 @@ static int tsec_init(struct eth_device *dev, bd_t * bd)
 	int i;
 	struct tsec_private *priv = (struct tsec_private *)dev->priv;
 	tsec_t *regs = priv->regs;
+	int ret;
 
 	/* Make sure the controller is stopped */
 	tsec_halt(dev);
@@ -512,7 +512,12 @@ static int tsec_init(struct eth_device *dev, bd_t * bd)
 	startup_tsec(dev);
 
 	/* Start up the PHY */
-	phy_startup(priv->phydev);
+	ret = phy_startup(priv->phydev);
+	if (ret) {
+		printf("Could not initialize PHY %s\n",
+		       priv->phydev->dev->name);
+		return ret;
+	}
 
 	adjust_link(priv, priv->phydev);
 

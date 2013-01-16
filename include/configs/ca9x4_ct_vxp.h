@@ -62,7 +62,6 @@
 #define CONFIG_CONS_INDEX		0
 
 #define CONFIG_BAUDRATE			38400
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 #define CONFIG_SYS_SERIAL0		0x10009000
 #define CONFIG_SYS_SERIAL1		0x1000A000
 
@@ -105,13 +104,6 @@
 #define CONFIG_SYS_LOAD_ADDR		0x60008000	/* load address */
 #define LINUX_BOOT_PARAM_ADDR		0x60000200
 #define CONFIG_BOOTDELAY		2
-
-/* Stack sizes are set up in start.S using the settings below */
-#define CONFIG_STACKSIZE		(128 * 1024)	/* regular stack */
-#ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ		(4 * 1024)	/* IRQ stack */
-#define CONFIG_STACKSIZE_FIQ		(4 * 1024)	/* FIQ stack */
-#endif
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		2

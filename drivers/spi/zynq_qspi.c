@@ -27,11 +27,11 @@
 #include <linux/xilinx_devices.h>
 #else
 
-#include "xbasic_types.h"
+//#include "xbasic_types.h"
 #include <common.h>
 #include <malloc.h>
 
-#include <linux/mtd/compat.h>
+//#include <linux/mtd/compat.h>
 #include <ubi_uboot.h>
 #include <spi.h>
 
@@ -43,6 +43,21 @@
 #undef DEBUG_REG
 
 #endif
+
+#define dmbp() __asm__ __volatile__ ("dmb" : : : "memory")
+
+static void XIo_Out32(u32 OutAddress, u32 Value)
+{
+    *(volatile u32 *) OutAddress = Value;
+    dmbp();
+}
+
+static u32 XIo_In32(u32 InAddress)
+{
+    volatile u32 temp = *(volatile u32 *)InAddress;
+    dmbp();
+    return temp;
+}
 
 /****** stubs to make this Linux driver build in this environment **/
 
@@ -196,7 +211,7 @@ typedef enum irqreturn irqreturn_t;
 #else
 static inline
 u32 xqspips_read(void *addr)
-{					
+{
 	u32 val;
 
 	val =  XIo_In32((unsigned)addr);
@@ -1384,7 +1399,8 @@ int xqspips_check_is_dual_flash(void __iomem *regs_base)
 {
 	int is_dual = -1, lower_mio = 0, upper_mio = 0, val;
 	u16 mask = 3, type = 2;
-	u32 mio_base, mio_pin_index;
+	u32 mio_pin_index;
+	void *mio_base;
 
 #ifdef CONFIG_EP107
 #ifdef CONFIG_XILINX_PSS_QSPI_USE_DUAL_FLASH

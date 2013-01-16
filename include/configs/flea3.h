@@ -31,7 +31,6 @@
  /* High Level Configuration Options */
 #define CONFIG_ARM1136	/* This is an arm1136 CPU core */
 #define CONFIG_MX35
-#define CONFIG_MX35_HCLK_FREQ	24000000
 
 #define CONFIG_SYS_DCACHE_OFF
 #define CONFIG_SYS_CACHELINE_SIZE	32
@@ -47,8 +46,6 @@
 
 /* Set TEXT at the beginning of the NOR flash */
 #define CONFIG_SYS_TEXT_BASE	0xA0000000
-
-#define CONFIG_SYS_64BIT_VSPRINTF
 
 /* This is required to setup the ESDC controller */
 #define CONFIG_BOARD_EARLY_INIT_F
@@ -68,7 +65,7 @@
  */
 #define CONFIG_HARD_I2C
 #define CONFIG_I2C_MXC
-#define CONFIG_SYS_I2C_MX35_PORT3
+#define CONFIG_SYS_I2C_BASE		I2C3_BASE_ADDR
 #define CONFIG_SYS_I2C_SPEED		100000
 #define CONFIG_SYS_I2C_SLAVE		0xfe
 #define CONFIG_MXC_SPI
@@ -84,7 +81,6 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX	1
 #define CONFIG_BAUDRATE		115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{9600, 19200, 38400, 57600, 115200}
 
 /*
  * Command definition
@@ -122,7 +118,6 @@
 #define CONFIG_FEC_MXC_PHYADDR	0x1
 
 #define CONFIG_MII
-#define CONFIG_DISCOVER_PHY
 
 #define CONFIG_ARP_TIMEOUT	200UL
 
@@ -133,7 +128,6 @@
 #define CONFIG_SYS_PROMPT	"flea3 U-Boot > "
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_HUSH_PARSER	/* Use the HUSH parser */
-#define	CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE	256	/* Console I/O Buffer Size */
@@ -150,14 +144,6 @@
 #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
 
 #define CONFIG_SYS_HZ				1000
-
-
-/*
- * Stack sizes
- *
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 * 1024)	/* regular stack */
 
 /*
  * Physical Memory Map
@@ -226,7 +212,6 @@
  * NAND FLASH driver setup
  */
 #define CONFIG_NAND_MXC
-#define CONFIG_NAND_MXC_V1_1
 #define CONFIG_MXC_NAND_REGS_BASE	(NFC_BASE_ADDR)
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		(NFC_BASE_ADDR)

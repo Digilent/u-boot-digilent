@@ -363,6 +363,9 @@ static int fm_eth_open(struct eth_device *dev, bd_t *bd)
 {
 	struct fm_eth *fm_eth;
 	struct fsl_enet_mac *mac;
+#ifdef CONFIG_PHYLIB
+	int ret;
+#endif
 
 	fm_eth = (struct fm_eth *)dev->priv;
 	mac = fm_eth->mac;
@@ -384,7 +387,11 @@ static int fm_eth_open(struct eth_device *dev, bd_t *bd)
 	fmc_tx_port_graceful_stop_disable(fm_eth);
 
 #ifdef CONFIG_PHYLIB
-	phy_startup(fm_eth->phydev);
+	ret = phy_startup(fm_eth->phydev);
+	if (ret) {
+		printf("%s: Could not initialize\n", fm_eth->phydev->dev->name);
+		return ret;
+	}
 #else
 	fm_eth->phydev->speed = SPEED_1000;
 	fm_eth->phydev->link = 1;
@@ -420,7 +427,7 @@ static void fm_eth_halt(struct eth_device *dev)
 	phy_shutdown(fm_eth->phydev);
 }
 
-static int fm_eth_send(struct eth_device *dev, volatile void *buf, int len)
+static int fm_eth_send(struct eth_device *dev, void *buf, int len)
 {
 	struct fm_eth *fm_eth;
 	struct fm_port_global_pram *pram;

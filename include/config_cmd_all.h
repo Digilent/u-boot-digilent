@@ -15,7 +15,6 @@
 
 #define CONFIG_CMD_AMBAPP	/* AMBA Plug & Play Bus print utility */
 #define CONFIG_CMD_ASKENV	/* ask for env variable		*/
-#define CONFIG_CMD_AT91_SPIMUX	/* AT91 MMC/SPI Mux Support     */
 #define CONFIG_CMD_BDI		/* bdinfo			*/
 #define CONFIG_CMD_BEDBUG	/* Include BedBug Debugger	*/
 #define CONFIG_CMD_BMP		/* BMP support			*/
@@ -56,7 +55,6 @@
 #define CONFIG_CMD_LOADS	/* loads			*/
 #define CONFIG_CMD_MEMORY	/* md mm nm mw cp cmp crc base loop mtest */
 #define CONFIG_CMD_MFSL		/* FSL support for Microblaze	*/
-#define CONFIG_CMD_MG_DISK	/* mGine m(g)flash IO node support */
 #define CONFIG_CMD_MII		/* MII support			*/
 #define CONFIG_CMD_MISC		/* Misc functions like sleep etc*/
 #define CONFIG_CMD_MMC		/* MMC support			*/
@@ -72,6 +70,7 @@
 #define CONFIG_CMD_REGINFO	/* Register dump		*/
 #define CONFIG_CMD_REISER	/* Reiserfs support		*/
 #define CONFIG_CMD_RARP		/* rarpboot support		*/
+#define CONFIG_CMD_ROMFS	/* ROMFS support		*/
 #define CONFIG_CMD_RUN		/* run command in env variable	*/
 #define CONFIG_CMD_SAVEENV	/* saveenv			*/
 #define CONFIG_CMD_SAVES	/* save S record dump		*/
@@ -89,5 +88,6 @@
 #define CONFIG_CMD_UNZIP	/* unzip from memory to memory	*/
 #define CONFIG_CMD_USB		/* USB Support			*/
 #define CONFIG_CMD_XIMG		/* Load part of Multi Image	*/
+#define CONFIG_CMD_ZFS		/* ZFS Support			*/
 
 #endif	/* _CONFIG_CMD_ALL_H */

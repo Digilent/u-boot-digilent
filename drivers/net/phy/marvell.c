@@ -284,6 +284,23 @@ static int m88e1111s_config(struct phy_device *phydev)
 	return 0;
 }
 
+/* Marvell 88E1116 */
+static int m88e1116_config(struct phy_device *phydev)
+{
+	/* Change Page Number */
+	phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE, 0x0002);
+	/* Delay RGMII TX and RX */
+	phy_write(phydev, MDIO_DEVAD_NONE, 21, 0x1070);
+	/* Change Page Number */
+	phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE, 0x0000);
+
+	genphy_config_aneg(phydev);
+
+	phy_reset(phydev);
+
+	return 0;
+}
+
 /* Marvell 88E1118 */
 static int m88e1118_config(struct phy_device *phydev)
 {
@@ -425,6 +442,16 @@ static struct phy_driver M88E1118_driver = {
 	.shutdown = &genphy_shutdown,
 };
 
+static struct phy_driver M88E1116R_driver = {
+	.name = "Marvell 88E1116R",
+	.uid = 0x1410e40,
+	.mask = 0xffffff0,
+	.features = PHY_GBIT_FEATURES,
+	.config = &m88e1116_config,
+	.startup = &m88e1118_startup,
+	.shutdown = &genphy_shutdown,
+};
+
 static struct phy_driver M88E1121R_driver = {
 	.name = "Marvell 88E1121R",
 	.uid = 0x1410cb0,
@@ -455,14 +482,26 @@ static struct phy_driver M88E1149S_driver = {
 	.shutdown = &genphy_shutdown,
 };
 
+static struct phy_driver M88E1518_driver = {
+	.name = "Marvell 88E1518",
+	.uid = 0x1410dd1,
+	.mask = 0xffffff0,
+	.features = PHY_GBIT_FEATURES,
+	.config = &m88e1111s_config,
+	.startup = &m88e1011s_startup,
+	.shutdown = &genphy_shutdown,
+};
+
 int phy_marvell_init(void)
 {
 	phy_register(&M88E1149S_driver);
 	phy_register(&M88E1145_driver);
 	phy_register(&M88E1121R_driver);
 	phy_register(&M88E1118_driver);
+	phy_register(&M88E1116R_driver);
 	phy_register(&M88E1111S_driver);
 	phy_register(&M88E1011S_driver);
+	phy_register(&M88E1518_driver);
 
 	return 0;
 }

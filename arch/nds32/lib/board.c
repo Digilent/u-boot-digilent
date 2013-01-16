@@ -103,6 +103,7 @@ static int nds32_pci_init(void)
 #endif /* CONFIG_CMD_PCI || CONFIG_PCI */
 
 #if defined(CONFIG_PMU) || defined(CONFIG_PCU)
+#ifndef CONFIG_SKIP_LOWLEVEL_INIT
 static int pmu_init(void)
 {
 #if defined(CONFIG_FTPMU010_POWER)
@@ -114,6 +115,7 @@ static int pmu_init(void)
 #endif
 	return 0;
 }
+#endif
 #endif
 
 /*
@@ -301,11 +303,8 @@ void board_init_f(ulong bootflag)
  */
 void board_init_r(gd_t *id, ulong dest_addr)
 {
-	char *s;
 	bd_t *bd;
 	ulong malloc_start;
-
-	extern void malloc_bin_reloc(void);
 
 	gd = id;
 	bd = gd->bd;
@@ -369,9 +368,6 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	nds32_pci_init();
 #endif
 
-	/* IP Address */
-	gd->bd->bi_ip_addr = getenv_IPaddr("ipaddr");
-
 	stdio_init();	/* get the devices list going. */
 
 	jumptable_init();
@@ -401,12 +397,6 @@ void board_init_r(gd_t *id, ulong dest_addr)
 
 	/* Initialize from environment */
 	load_addr = getenv_ulong("loadaddr", 16, load_addr);
-
-#if defined(CONFIG_CMD_NET)
-	s = getenv("bootfile");
-	if (s != NULL)
-		copy_filename(BootFile, s, sizeof(BootFile));
-#endif
 
 #ifdef BOARD_LATE_INIT
 	board_late_init();

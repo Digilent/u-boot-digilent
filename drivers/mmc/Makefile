@@ -25,6 +25,10 @@ include $(TOPDIR)/config.mk
 
 LIB	:= $(obj)libmmc.o
 
+ifdef CONFIG_SPL_BUILD
+COBJS-$(CONFIG_SPL_MMC_SUPPORT) += spl_mmc.o
+endif
+
 COBJS-$(CONFIG_BFIN_SDH) += bfin_sdh.o
 COBJS-$(CONFIG_DAVINCI_MMC) += davinci_mmc.o
 COBJS-$(CONFIG_FSL_ESDHC) += fsl_esdhc.o
@@ -39,10 +43,10 @@ COBJS-$(CONFIG_MXS_MMC) += mxsmmc.o
 COBJS-$(CONFIG_OMAP_HSMMC) += omap_hsmmc.o
 COBJS-$(CONFIG_PXA_MMC) += pxa_mmc.o
 COBJS-$(CONFIG_PXA_MMC_GENERIC) += pxa_mmc_gen.o
-COBJS-$(CONFIG_S5P_MMC) += s5p_mmc.o
 COBJS-$(CONFIG_SDHCI) += sdhci.o
+COBJS-$(CONFIG_S5P_SDHCI) += s5p_sdhci.o
 COBJS-$(CONFIG_SH_MMCIF) += sh_mmcif.o
-COBJS-$(CONFIG_TEGRA2_MMC) += tegra2_mmc.o
+COBJS-$(CONFIG_TEGRA_MMC) += tegra_mmc.o
 COBJS-$(CONFIG_ZYNQ_MMC) += zynq_mmc.o
 
 COBJS	:= $(COBJS-y)

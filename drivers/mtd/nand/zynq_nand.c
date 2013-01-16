@@ -16,18 +16,34 @@
 /*
  * This driver is based on plat_nand.c and mxc_nand.c drivers
  */
-#include "xbasic_types.h"
+//#include "xbasic_types.h"
 #include <common.h>
 #include <malloc.h>
 
 #include <asm/arch/nand.h>
 #include <asm/io.h>
-#include <linux/mtd/compat.h>
+//#include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/nand_ecc.h>
 #include "zynq_nand.h"
+
+#define dmbp() __asm__ __volatile__ ("dmb" : : : "memory")
+
+static void XIo_Out32(u32 OutAddress, u32 Value)
+{
+    *(volatile u32 *) OutAddress = Value;
+    dmbp();
+}
+
+static u32 XIo_In32(u32 InAddress)
+{
+    volatile u32 temp = *(volatile u32 *)InAddress;
+    dmbp();
+    return temp;
+}
+
 
 /********** stubs - Make Linux code compile in this environment **************/
 #define EIO              5
@@ -293,7 +309,7 @@ xnandps_calculate_hwecc(struct mtd_info *mtd, const u8 *data, u8 *ecc_code)
 	u32 ecc_value = 0;
 	u8 ecc_reg, ecc_byte;
 	u32 ecc_status;
-	
+
 	chip = (struct nand_chip *)mtd->priv;
 	xnand = (struct xnandps_info *)chip->priv;
 
@@ -1006,7 +1022,7 @@ int zynq_nand_init(struct nand_chip *nand_chip)
 	extern struct mtd_info nand_info[];
 	unsigned long ecc_page_size;
 	int err = 0;
-	u8 maf_id, dev_id;
+	u8 maf_id, dev_id, i;
 	u8 get_feature[4];
 	u8 set_feature[4] = {0x08, 0x00, 0x00, 0x00};
 	unsigned long ecc_cfg;
@@ -1077,7 +1093,12 @@ int zynq_nand_init(struct nand_chip *nand_chip)
 				(dev_id == 0xd3) || (dev_id == 0xc3))) {
 		nand_chip->cmdfunc(mtd, NAND_CMD_SET_FEATURES,
 						ONDIE_ECC_FEATURE_ADDR, -1);
-		nand_chip->write_buf(mtd, set_feature, 4);
+
+		for (i = 0; i < 4; i++)
+			writeb(set_feature[i], nand_chip->IO_ADDR_W);
+
+		/* wait for 1us after writing data with SET_FEATURES command */
+		ndelay(1000);
 
 		nand_chip->cmdfunc(mtd, NAND_CMD_GET_FEATURES,
 						ONDIE_ECC_FEATURE_ADDR, -1);

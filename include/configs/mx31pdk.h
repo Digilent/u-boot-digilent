@@ -35,8 +35,6 @@
 /* High Level Configuration Options */
 #define CONFIG_ARM1136			/* This is an arm1136 CPU core */
 #define CONFIG_MX31			/* in a mx31 */
-#define CONFIG_MX31_HCLK_FREQ	26000000
-#define CONFIG_MX31_CLK32	32768
 
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
@@ -85,7 +83,6 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX		1
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{9600, 19200, 38400, 57600, 115200}
 
 /***********************************************************
  * Command definition
@@ -99,6 +96,7 @@
 #define CONFIG_CMD_SPI
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_NAND
+#define CONFIG_CMD_BOOTZ
 
 /*
  * Disabled due to compilation errors in cmd_bootm.c (IMLS seems to require
@@ -149,13 +147,6 @@
 #define CONFIG_SYS_HZ			1000
 
 #define CONFIG_CMDLINE_EDITING
-
-/*-----------------------------------------------------------------------
- * Stack sizes
- *
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 * 1024) /* regular stack */
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map

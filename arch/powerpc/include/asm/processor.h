@@ -486,11 +486,13 @@
 #define SPRN_L2CFG0	0x207	/* L2 Cache Configuration Register 0 */
 #define SPRN_L1CSR0	0x3f2	/* L1 Data Cache Control and Status Register 0 */
 #define   L1CSR0_CPE		0x00010000	/* Data Cache Parity Enable */
+#define   L1CSR0_CUL		0x00000400	/* (D-)Cache Unable to Lock */
 #define   L1CSR0_DCLFR		0x00000100	/* D-Cache Lock Flash Reset */
 #define   L1CSR0_DCFI		0x00000002	/* Data Cache Flash Invalidate */
 #define   L1CSR0_DCE		0x00000001	/* Data Cache Enable */
 #define SPRN_L1CSR1	0x3f3	/* L1 Instruction Cache Control and Status Register 1 */
 #define   L1CSR1_CPE		0x00010000	/* Instruction Cache Parity Enable */
+#define   L1CSR1_ICUL		0x00000400	/* I-Cache Unable to Lock */
 #define   L1CSR1_ICLFR		0x00000100	/* I-Cache Lock Flash Reset */
 #define   L1CSR1_ICFI		0x00000002	/* Instruction Cache Flash Invalidate */
 #define   L1CSR1_ICE		0x00000001	/* Instruction Cache Enable */
@@ -513,6 +515,7 @@
 
 #define SPRN_TLB0CFG	0x2B0	/* TLB 0 Config Register */
 #define SPRN_TLB1CFG	0x2B1	/* TLB 1 Config Register */
+#define   TLBnCFG_NENTRY_MASK	0x00000fff
 #define SPRN_TLB0PS	0x158	/* TLB 0 Page Size Register */
 #define SPRN_TLB1PS	0x159	/* TLB 1 Page Size Register */
 #define SPRN_MMUCSR0	0x3f4	/* MMU control and status register 0 */
@@ -912,6 +915,8 @@
 #define PVR_440SPe_RA	0x53521890 /* 440SPe rev A without RAID 6 support	*/
 #define PVR_440SPe_6_RB	0x53421891 /* 440SPe rev B with RAID 6 support enabled	*/
 #define PVR_440SPe_RB	0x53521891 /* 440SPe rev B without RAID 6 support	*/
+#define PVR_440x5_R1x	0x7ff21910 /* 440 rev 1.x in Xilinx Virtex-5 FXT FPGA */
+#define PVR_440x5_R20	0x7ff21911 /* 440 rev 2.0 in Xilinx Virtex-5 FXT FPGA */
 #define PVR_460EX_SE_RA	0x130218A2 /* 460EX rev A with Security Engine	  */
 #define PVR_460EX_RA	0x130218A3 /* 460EX rev A without Security Engine */
 #define PVR_460EX_RB	0x130218A4 /* 460EX rev B with and without Sec Eng*/
@@ -948,6 +953,7 @@
 #define PVR_VER_E500_V2	0x8021
 #define PVR_VER_E500MC	0x8023
 #define PVR_VER_E5500	0x8024
+#define PVR_VER_E6500	0x8040
 
 #define PVR_86xx	0x80040000
 
@@ -1036,7 +1042,7 @@
 #define SVR_MIN(svr)	(((svr) >>  0) & 0xF)	/* Minor revision field*/
 
 /* Some parts define SVR[0:23] as the SOC version */
-#define SVR_SOC_VER(svr) (((svr) >> 8) & 0xFFFFFF)	/* SOC Version fields */
+#define SVR_SOC_VER(svr) (((svr) >> 8) & 0xFFF7FF) /* SOC w/o E bit*/
 
 /* whether MPC8xxxE (i.e. has SEC) */
 #if defined(CONFIG_MPC85xx)
@@ -1055,86 +1061,49 @@
  */
 
 #define SVR_8533	0x803400
-#define SVR_8533_E	0x803C00
 #define SVR_8535	0x803701
-#define SVR_8535_E	0x803F01
 #define SVR_8536	0x803700
-#define SVR_8536_E	0x803F00
 #define SVR_8540	0x803000
 #define SVR_8541	0x807200
-#define SVR_8541_E	0x807A00
 #define SVR_8543	0x803200
-#define SVR_8543_E	0x803A00
 #define SVR_8544	0x803401
-#define SVR_8544_E	0x803C01
 #define SVR_8545	0x803102
-#define SVR_8545_E	0x803902
-#define SVR_8547_E	0x803901
+#define SVR_8547	0x803101
 #define SVR_8548	0x803100
-#define SVR_8548_E	0x803900
 #define SVR_8555	0x807100
-#define SVR_8555_E	0x807900
 #define SVR_8560	0x807000
 #define SVR_8567	0x807501
-#define SVR_8567_E	0x807D01
 #define SVR_8568	0x807500
-#define SVR_8568_E	0x807D00
 #define SVR_8569	0x808000
-#define SVR_8569_E	0x808800
 #define SVR_8572	0x80E000
-#define SVR_8572_E	0x80E800
 #define SVR_P1010	0x80F100
-#define SVR_P1010_E	0x80F900
 #define SVR_P1011	0x80E500
-#define SVR_P1011_E	0x80ED00
 #define SVR_P1012	0x80E501
-#define SVR_P1012_E	0x80ED01
 #define SVR_P1013	0x80E700
-#define SVR_P1013_E	0x80EF00
 #define SVR_P1014	0x80F101
-#define SVR_P1014_E	0x80F901
-#define SVR_P1015	0x80E502
-#define SVR_P1015_E	0x80ED02
-#define SVR_P1016	0x80E503
-#define SVR_P1016_E	0x80ED03
 #define SVR_P1017	0x80F700
-#define SVR_P1017_E	0x80FF00
 #define SVR_P1020	0x80E400
-#define SVR_P1020_E	0x80EC00
 #define SVR_P1021	0x80E401
-#define SVR_P1021_E	0x80EC01
 #define SVR_P1022	0x80E600
-#define SVR_P1022_E	0x80EE00
 #define SVR_P1023	0x80F600
-#define SVR_P1023_E	0x80FE00
 #define SVR_P1024	0x80E402
-#define SVR_P1024_E	0x80EC02
 #define SVR_P1025	0x80E403
-#define SVR_P1025_E	0x80EC03
 #define SVR_P2010	0x80E300
-#define SVR_P2010_E	0x80EB00
 #define SVR_P2020	0x80E200
-#define SVR_P2020_E	0x80EA00
 #define SVR_P2040	0x821000
-#define SVR_P2040_E	0x821800
 #define SVR_P2041	0x821001
-#define SVR_P2041_E	0x821801
 #define SVR_P3041	0x821103
-#define SVR_P3041_E	0x821903
-#define SVR_P3060	0x820002
-#define SVR_P3060_E	0x820802
 #define SVR_P4040	0x820100
-#define SVR_P4040_E	0x820900
 #define SVR_P4080	0x820000
-#define SVR_P4080_E	0x820800
 #define SVR_P5010	0x822100
-#define SVR_P5010_E	0x822900
 #define SVR_P5020	0x822000
-#define SVR_P5020_E	0x822800
 
 #define SVR_8610	0x80A000
 #define SVR_8641	0x809000
 #define SVR_8641D	0x809001
+
+#define SVR_9130	0x860001
+#define SVR_9131	0x860000
 
 #define SVR_Unknown	0xFFFFFF
 
@@ -1192,6 +1161,7 @@ struct cpu_type {
 };
 
 struct cpu_type *identify_cpu(u32 ver);
+int fixup_cpu(void);
 
 #if defined(CONFIG_MPC85xx) || defined(CONFIG_MPC86xx)
 #define CPU_TYPE_ENTRY(n, v, nc) \

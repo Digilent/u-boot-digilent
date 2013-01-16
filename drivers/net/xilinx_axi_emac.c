@@ -30,10 +30,6 @@
 #include <phy.h>
 #include <miiphy.h>
 
-#if !defined(CONFIG_PHYLIB)
-# error AXI_ETHERNET requires PHYLIB
-#endif
-
 /* Link setup */
 #define XAE_EMMC_LINKSPEED_MASK	0xC0000000 /* Link speed */
 #define XAE_EMMC_LINKSPD_10	0x00000000 /* Link Speed mask for 10 Mbit */
@@ -234,9 +230,46 @@ static u32 phywrite(struct eth_device *dev, u32 phyaddress, u32 registernum,
 	return 0;
 }
 
+static void phy_detection(struct eth_device *dev)
+{
+	int i;
+	u16 phyreg;
+	struct axidma_priv *priv = dev->priv;
+
+	if (priv->phyaddr != -1 ) {
+		phyread(dev, priv->phyaddr, PHY_DETECT_REG, &phyreg);
+		if ((phyreg != 0xFFFF) &&
+			((phyreg & PHY_DETECT_MASK) == PHY_DETECT_MASK)) {
+			/* Found a valid PHY address */
+			debug("Default phy address %d is valid\n", priv->phyaddr);
+			return;
+		} else {
+			debug("PHY address is not setup correctly %d\n", priv->phyaddr);
+			priv->phyaddr = -1;
+		}
+	}
+
+	debug("detecting phy address\n");
+	if (priv->phyaddr == -1 ) {
+		/* detect the PHY address */
+		for (i = 31; i >= 0; i--) {
+			phyread(dev, i, PHY_DETECT_REG, &phyreg);
+			if ((phyreg != 0xFFFF) &&
+			((phyreg & PHY_DETECT_MASK) == PHY_DETECT_MASK)) {
+				/* Found a valid PHY address */
+				priv->phyaddr = i;
+				debug("Found valid phy address, %d\n", i);
+				return;
+			}
+		}
+	}
+	printf("PHY is not detected\n");
+}
+
 /* Setting axi emac and phy to proper setting */
 static int setup_phy(struct eth_device *dev)
 {
+#ifdef CONFIG_PHYLIB
 	u16 phyreg;
 	u32 i, speed, emmc_reg, ret;
 	struct axidma_priv *priv = dev->priv;
@@ -250,20 +283,7 @@ static int setup_phy(struct eth_device *dev)
 			SUPPORTED_1000baseT_Half |
 			SUPPORTED_1000baseT_Full;
 
-	if (priv->phyaddr == -1) {
-		/* Detect the PHY address */
-		for (i = 31; i >= 0; i--) {
-			ret = phyread(dev, i, PHY_DETECT_REG, &phyreg);
-			if (!ret && (phyreg != 0xFFFF) &&
-			((phyreg & PHY_DETECT_MASK) == PHY_DETECT_MASK)) {
-				/* Found a valid PHY address */
-				priv->phyaddr = i;
-				debug("axiemac: Found valid phy address, %x\n",
-									phyreg);
-				break;
-			}
-		}
-	}
+	phy_detection(dev);
 
 	/* Interface - look at tsec */
 	phydev = phy_connect(priv->bus, priv->phyaddr, dev, 0);
@@ -272,7 +292,11 @@ static int setup_phy(struct eth_device *dev)
 	phydev->advertising = phydev->supported;
 	priv->phydev = phydev;
 	phy_config(phydev);
-	phy_startup(phydev);
+	if (phy_startup(phydev)) {
+		printf("axiemac: could not initialize PHY %s\n",
+		       phydev->dev->name);
+		return 0;
+	}
 
 	switch (phydev->speed) {
 	case 1000:
@@ -304,6 +328,65 @@ static int setup_phy(struct eth_device *dev)
 	udelay(1);
 
 	return 1;
+#else
+	int i;
+	struct axidma_priv *priv = dev->priv;
+	struct axi_regs *regs = (struct axi_regs *)dev->iobase;
+	unsigned retries = 100;
+	u16 phyreg;
+	u32 emmc_reg;
+
+
+	debug("waiting for the phy to be up\n");
+
+	/* wait for link up and autonegotiation completed */
+	phyread(dev, priv->phyaddr, PHY_DETECT_REG,  &phyreg);
+	while (retries-- && ((phyreg & 0x24) != 0x24))
+			phyread(dev, priv->phyaddr, PHY_DETECT_REG,  &phyreg);
+
+	phy_detection(dev);
+
+	/* get PHY id */
+	phyread(dev, priv->phyaddr, 2, &phyreg);
+	i = phyreg << 16;
+	phyread(dev, priv->phyaddr, 3, &phyreg);
+	i |= phyreg;
+	debug("axiemac: Phy ID 0x%x\n", i);
+
+	/* Marwell 88e1111 id - ml50x/sp605 */
+	if (i == 0x1410cc2) {
+		debug("Marvell PHY recognized\n");
+
+		/* Setup the emac for the phy speed */
+		emmc_reg = in_be32(&regs->emmc);
+		emmc_reg &= ~XAE_EMMC_LINKSPEED_MASK;
+
+		phyread(dev, priv->phyaddr, 17, &phyreg);
+
+		if ((phyreg & 0x8000) == 0x8000) {
+			emmc_reg |= XAE_EMMC_LINKSPD_1000;
+			printf("1000BASE-T\n");
+		} else if ((phyreg & 0x4000) == 0x4000) {
+			printf("100BASE-T\n");
+			emmc_reg |= XAE_EMMC_LINKSPD_100;
+		} else {
+			printf("10BASE-T\n");
+			emmc_reg |= XAE_EMMC_LINKSPD_10;
+		}
+
+		/* Write new speed setting out to Axi Ethernet */
+		out_be32(&regs->emmc, emmc_reg);
+
+		/*
+		 * Setting the operating speed of the MAC needs a delay. There
+		 * doesn't seem to be register to poll, so please consider this
+		 * during your application design.
+		 */
+		udelay(1);
+		return 1;
+	}
+	return 0;
+#endif
 }
 
 /* STOP DMA transfers */
@@ -468,7 +551,7 @@ static int axiemac_init(struct eth_device *dev, bd_t * bis)
 	return 0;
 }
 
-static int axiemac_send(struct eth_device *dev, volatile void *ptr, int len)
+static int axiemac_send(struct eth_device *dev, void *ptr, int len)
 {
 	struct axidma_priv *priv = dev->priv;
 	u32 timeout;

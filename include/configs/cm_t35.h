@@ -37,6 +37,7 @@
  */
 #define CONFIG_OMAP	/* in a TI OMAP core */
 #define CONFIG_OMAP34XX	/* which is a 34XX */
+#define CONFIG_OMAP_GPIO
 #define CONFIG_CM_T3X	/* working with CM-T35 and CM-T3730 */
 
 #define CONFIG_SYS_TEXT_BASE	0x80008000
@@ -56,7 +57,6 @@
 #define V_OSCK			26000000	/* Clock output from T2 */
 #define V_SCLK			(V_OSCK >> 1)
 
-#undef CONFIG_USE_IRQ				/* no support for IRQs */
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_OF_LIBFDT		1
@@ -77,7 +77,7 @@
 /*
  * Size of malloc() pool
  */
-#define CONFIG_ENV_SIZE		(128 << 10)	/* 128 KiB */
+#define CONFIG_ENV_SIZE		(16 << 10)	/* 16 KiB */
 					/* Sector */
 #define CONFIG_SYS_MALLOC_LEN	(CONFIG_ENV_SIZE + (128 << 10))
 
@@ -156,6 +156,7 @@
 #define CONFIG_DRIVER_OMAP34XX_I2C
 #define CONFIG_SYS_I2C_EEPROM_ADDR	0x50
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	1
+#define CONFIG_I2C_MULTI_BUS
 
 /*
  * TWL4030
@@ -173,7 +174,7 @@
 #define CONFIG_SYS_NAND_BASE		NAND_BASE	/* physical address */
 							/* to access nand at */
 							/* CS0 */
-#define GPMC_NAND_ECC_LP_x16_LAYOUT
+#define GPMC_NAND_ECC_LP_x8_LAYOUT
 
 #define CONFIG_SYS_MAX_NAND_DEVICE	1		/* Max number of NAND */
 							/* devices */
@@ -250,7 +251,6 @@
 #define CONFIG_SYS_AUTOLOAD		"no"
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"CM-T3x # "
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 /* Print Buffer Size */
@@ -276,13 +276,6 @@
 #define CONFIG_SYS_TIMERBASE		(OMAP34XX_GPT2)
 #define CONFIG_SYS_PTV			2       /* Divisor: 2^(PTV+1) => 8 */
 #define CONFIG_SYS_HZ			1000
-
-/*-----------------------------------------------------------------------
- * Stack sizes
- *
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 << 10)	/* regular stack 128 KiB */
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map
@@ -315,7 +308,6 @@
 #define ONENAND_ENV_OFFSET		0x260000 /* environment starts here */
 #define SMNAND_ENV_OFFSET		0x260000 /* environment starts here */
 
-#define CONFIG_SYS_ENV_SECT_SIZE	(128 << 10)	/* 128 KiB */
 #define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
 #define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
 

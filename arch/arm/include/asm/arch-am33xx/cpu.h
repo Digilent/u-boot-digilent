@@ -53,8 +53,10 @@
 /* Reset control */
 #ifdef CONFIG_AM33XX
 #define PRM_RSTCTRL			0x44E00F00
+#define PRM_RSTST			0x44E00F08
 #endif
 #define PRM_RSTCTRL_RESET		0x01
+#define PRM_RSTST_WARM_RESET_MASK	0x232
 
 #ifndef __KERNEL_STRICT_NAMES
 #ifndef __ASSEMBLY__
@@ -62,7 +64,7 @@
 struct cm_wkuppll {
 	unsigned int wkclkstctrl;	/* offset 0x00 */
 	unsigned int wkctrlclkctrl;	/* offset 0x04 */
-	unsigned int resv1[1];
+	unsigned int wkgpio0clkctrl;	/* offset 0x08 */
 	unsigned int wkl4wkclkctrl;	/* offset 0x0c */
 	unsigned int resv2[4];
 	unsigned int idlestdpllmpu;	/* offset 0x20 */
@@ -111,34 +113,54 @@ struct cm_perpll {
 	unsigned int l3clkstctrl;	/* offset 0x0c */
 	unsigned int resv1;
 	unsigned int cpgmac0clkctrl;	/* offset 0x14 */
-	unsigned int resv2[4];
+	unsigned int lcdclkctrl;	/* offset 0x18 */
+	unsigned int usb0clkctrl;	/* offset 0x1C */
+	unsigned int resv2;
+	unsigned int tptc0clkctrl;	/* offset 0x24 */
 	unsigned int emifclkctrl;	/* offset 0x28 */
 	unsigned int ocmcramclkctrl;	/* offset 0x2c */
 	unsigned int gpmcclkctrl;	/* offset 0x30 */
-	unsigned int resv3[2];
+	unsigned int mcasp0clkctrl;	/* offset 0x34 */
+	unsigned int uart5clkctrl;	/* offset 0x38 */
 	unsigned int mmc0clkctrl;	/* offset 0x3C */
 	unsigned int elmclkctrl;	/* offset 0x40 */
 	unsigned int i2c2clkctrl;	/* offset 0x44 */
 	unsigned int i2c1clkctrl;	/* offset 0x48 */
 	unsigned int spi0clkctrl;	/* offset 0x4C */
 	unsigned int spi1clkctrl;	/* offset 0x50 */
-	unsigned int resv4[3];
+	unsigned int resv3[3];
 	unsigned int l4lsclkctrl;	/* offset 0x60 */
 	unsigned int l4fwclkctrl;	/* offset 0x64 */
-	unsigned int resv5[6];
+	unsigned int mcasp1clkctrl;	/* offset 0x68 */
+	unsigned int uart1clkctrl;	/* offset 0x6C */
+	unsigned int uart2clkctrl;	/* offset 0x70 */
+	unsigned int uart3clkctrl;	/* offset 0x74 */
+	unsigned int uart4clkctrl;	/* offset 0x78 */
+	unsigned int timer7clkctrl;	/* offset 0x7C */
 	unsigned int timer2clkctrl;	/* offset 0x80 */
-	unsigned int resv6[11];
+	unsigned int timer3clkctrl;	/* offset 0x84 */
+	unsigned int timer4clkctrl;	/* offset 0x88 */
+	unsigned int resv4[8];
+	unsigned int gpio1clkctrl;	/* offset 0xAC */
 	unsigned int gpio2clkctrl;	/* offset 0xB0 */
-	unsigned int resv7[7];
+	unsigned int gpio3clkctrl;	/* offset 0xB4 */
+	unsigned int resv5;
+	unsigned int tpccclkctrl;	/* offset 0xBC */
+	unsigned int dcan0clkctrl;	/* offset 0xC0 */
+	unsigned int dcan1clkctrl;	/* offset 0xC4 */
+	unsigned int resv6[2];
 	unsigned int emiffwclkctrl;	/* offset 0xD0 */
-	unsigned int resv8[2];
+	unsigned int resv7[2];
 	unsigned int l3instrclkctrl;	/* offset 0xDC */
 	unsigned int l3clkctrl;		/* Offset 0xE0 */
-	unsigned int resv9[14];
+	unsigned int resv8[4];
+	unsigned int mmc1clkctrl;	/* offset 0xF4 */
+	unsigned int mmc2clkctrl;	/* offset 0xF8 */
+	unsigned int resv9[8];
 	unsigned int l4hsclkstctrl;	/* offset 0x11C */
 	unsigned int l4hsclkctrl;	/* offset 0x120 */
 	unsigned int resv10[8];
-	unsigned int cpswclkctrl;	/* offset 0x144 */
+	unsigned int cpswclkstctrl;	/* offset 0x144 */
 };
 
 /* Encapsulating Display pll registers */
@@ -212,9 +234,40 @@ struct vtp_reg {
 struct ctrl_stat {
 	unsigned int resv1[16];
 	unsigned int statusreg;		/* ofset 0x40 */
+	unsigned int resv2[51];
+	unsigned int secure_emif_sdram_config;	/* offset 0x0110 */
 };
 
-void init_timer(void);
+/* AM33XX GPIO registers */
+#define OMAP_GPIO_REVISION		0x0000
+#define OMAP_GPIO_SYSCONFIG		0x0010
+#define OMAP_GPIO_SYSSTATUS		0x0114
+#define OMAP_GPIO_IRQSTATUS1		0x002c
+#define OMAP_GPIO_IRQSTATUS2		0x0030
+#define OMAP_GPIO_CTRL			0x0130
+#define OMAP_GPIO_OE			0x0134
+#define OMAP_GPIO_DATAIN		0x0138
+#define OMAP_GPIO_DATAOUT		0x013c
+#define OMAP_GPIO_LEVELDETECT0		0x0140
+#define OMAP_GPIO_LEVELDETECT1		0x0144
+#define OMAP_GPIO_RISINGDETECT		0x0148
+#define OMAP_GPIO_FALLINGDETECT		0x014c
+#define OMAP_GPIO_DEBOUNCE_EN		0x0150
+#define OMAP_GPIO_DEBOUNCE_VAL		0x0154
+#define OMAP_GPIO_CLEARDATAOUT		0x0190
+#define OMAP_GPIO_SETDATAOUT		0x0194
+
+/* Control Device Register */
+struct ctrl_dev {
+	unsigned int deviceid;		/* offset 0x00 */
+	unsigned int resv1[11];
+	unsigned int macid0l;		/* offset 0x30 */
+	unsigned int macid0h;		/* offset 0x34 */
+	unsigned int macid1l;		/* offset 0x38 */
+	unsigned int macid1h;		/* offset 0x3c */
+	unsigned int resv2[4];
+	unsigned int miisel;		/* offset 0x50 */
+};
 #endif /* __ASSEMBLY__ */
 #endif /* __KERNEL_STRICT_NAMES */
 

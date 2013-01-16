@@ -24,8 +24,7 @@
 #include <libfdt.h>
 #include <fdtdec.h>
 
-/* we need the generic GPIO interface here */
-#include <asm-generic/gpio.h>
+#include <asm/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -40,6 +39,10 @@ static const char * const compat_names[COMPAT_COUNT] = {
 	COMPAT(NVIDIA_TEGRA20_USB, "nvidia,tegra20-ehci"),
 	COMPAT(NVIDIA_TEGRA20_I2C, "nvidia,tegra20-i2c"),
 	COMPAT(NVIDIA_TEGRA20_DVC, "nvidia,tegra20-i2c-dvc"),
+	COMPAT(NVIDIA_TEGRA20_EMC, "nvidia,tegra20-emc"),
+	COMPAT(NVIDIA_TEGRA20_EMC_TABLE, "nvidia,tegra20-emc-table"),
+	COMPAT(NVIDIA_TEGRA20_KBC, "nvidia,tegra20-kbc"),
+	COMPAT(NVIDIA_TEGRA20_NAND, "nvidia,tegra20-nand"),
 };
 
 const char *fdtdec_get_compatible(enum fdt_compat_id id)
@@ -77,11 +80,16 @@ fdt_addr_t fdtdec_get_addr(const void *blob, int node,
 	const fdt_addr_t *cell;
 	int len;
 
-	debug("get_addr: %s\n", prop_name);
+	debug("%s: %s: ", __func__, prop_name);
 	cell = fdt_getprop(blob, node, prop_name, &len);
 	if (cell && (len == sizeof(fdt_addr_t) ||
-			len == sizeof(fdt_addr_t) * 2))
-		return fdt_addr_to_cpu(*cell);
+			len == sizeof(fdt_addr_t) * 2)) {
+		fdt_addr_t addr = fdt_addr_to_cpu(*cell);
+
+		debug("%p\n", (void *)addr);
+		return addr;
+	}
+	debug("(not found)\n");
 	return FDT_ADDR_T_NONE;
 }
 
@@ -91,10 +99,15 @@ s32 fdtdec_get_int(const void *blob, int node, const char *prop_name,
 	const s32 *cell;
 	int len;
 
-	debug("get_size: %s\n", prop_name);
+	debug("%s: %s: ", __func__, prop_name);
 	cell = fdt_getprop(blob, node, prop_name, &len);
-	if (cell && len >= sizeof(s32))
-		return fdt32_to_cpu(cell[0]);
+	if (cell && len >= sizeof(s32)) {
+		s32 val = fdt32_to_cpu(cell[0]);
+
+		debug("%#x (%d)\n", val, val);
+		return val;
+	}
+	debug("(not found)\n");
 	return default_val;
 }
 
@@ -131,6 +144,21 @@ int fdtdec_next_compatible(const void *blob, int node,
 		enum fdt_compat_id id)
 {
 	return fdt_node_offset_by_compatible(blob, node, compat_names[id]);
+}
+
+int fdtdec_next_compatible_subnode(const void *blob, int node,
+		enum fdt_compat_id id, int *depthp)
+{
+	do {
+		node = fdt_next_node(blob, node, depthp);
+	} while (*depthp > 1);
+
+	/* If this is a direct subnode, and compatible, return it */
+	if (*depthp == 1 && 0 == fdt_node_check_compatible(
+						blob, node, compat_names[id]))
+		return node;
+
+	return -FDT_ERR_NOTFOUND;
 }
 
 int fdtdec_next_alias(const void *blob, const char *name,
@@ -311,6 +339,7 @@ int fdtdec_lookup_phandle(const void *blob, int node, const char *prop_name)
 	const u32 *phandle;
 	int lookup;
 
+	debug("%s: %s\n", __func__, prop_name);
 	phandle = fdt_getprop(blob, node, prop_name, NULL);
 	if (!phandle)
 		return -FDT_ERR_NOTFOUND;
@@ -363,6 +392,17 @@ int fdtdec_get_int_array(const void *blob, int node, const char *prop_name,
 	return err;
 }
 
+const u32 *fdtdec_locate_array(const void *blob, int node,
+			       const char *prop_name, int count)
+{
+	const u32 *cell;
+	int err;
+
+	cell = get_prop_check_min_len(blob, node, prop_name,
+				      sizeof(u32) * count, &err);
+	return err ? NULL : cell;
+}
+
 int fdtdec_get_bool(const void *blob, int node, const char *prop_name)
 {
 	const s32 *cell;
@@ -399,7 +439,7 @@ static int fdtdec_decode_gpios(const void *blob, int node,
 	assert(max_count > 0);
 	prop = fdt_get_property(blob, node, prop_name, &len);
 	if (!prop) {
-		debug("FDT: %s: property '%s' missing\n", __func__, prop_name);
+		debug("%s: property '%s' missing\n", __func__, prop_name);
 		return -FDT_ERR_NOTFOUND;
 	}
 
@@ -408,7 +448,7 @@ static int fdtdec_decode_gpios(const void *blob, int node,
 	cell = (u32 *)prop->data;
 	len /= sizeof(u32) * 3;		/* 3 cells per GPIO record */
 	if (len > max_count) {
-		debug("FDT: %s: too many GPIOs / cells for "
+		debug(" %s: too many GPIOs / cells for "
 			"property '%s'\n", __func__, prop_name);
 		return -FDT_ERR_BADLAYOUT;
 	}
@@ -447,4 +487,28 @@ int fdtdec_setup_gpio(struct fdt_gpio_state *gpio)
 	if (gpio_request(gpio->gpio, gpio->name))
 		return -1;
 	return 0;
+}
+
+int fdtdec_get_byte_array(const void *blob, int node, const char *prop_name,
+		u8 *array, int count)
+{
+	const u8 *cell;
+	int err;
+
+	cell = get_prop_check_min_len(blob, node, prop_name, count, &err);
+	if (!err)
+		memcpy(array, cell, count);
+	return err;
+}
+
+const u8 *fdtdec_locate_byte_array(const void *blob, int node,
+			     const char *prop_name, int count)
+{
+	const u8 *cell;
+	int err;
+
+	cell = get_prop_check_min_len(blob, node, prop_name, count, &err);
+	if (err)
+		return NULL;
+	return cell;
 }

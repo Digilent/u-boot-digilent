@@ -23,9 +23,12 @@
 #ifndef __ASM_ARCH_MX5_IMX_REGS_H__
 #define __ASM_ARCH_MX5_IMX_REGS_H__
 
+#define ARCH_MXC
+
 #if defined(CONFIG_MX51)
 #define IRAM_BASE_ADDR		0x1FFE0000	/* internal ram */
-#define IPU_CTRL_BASE_ADDR	0x40000000
+#define IPU_SOC_BASE_ADDR	0x40000000
+#define IPU_SOC_OFFSET		0x1E000000
 #define SPBA0_BASE_ADDR         0x70000000
 #define AIPS1_BASE_ADDR         0x73F00000
 #define AIPS2_BASE_ADDR         0x83F00000
@@ -34,7 +37,8 @@
 #define NFC_BASE_ADDR_AXI       0xCFFF0000
 #define CS1_BASE_ADDR           0xB8000000
 #elif defined(CONFIG_MX53)
-#define IPU_CTRL_BASE_ADDR      0x18000000
+#define IPU_SOC_BASE_ADDR	0x18000000
+#define IPU_SOC_OFFSET		0x06000000
 #define SPBA0_BASE_ADDR         0x50000000
 #define AIPS1_BASE_ADDR         0x53F00000
 #define AIPS2_BASE_ADDR         0x63F00000
@@ -43,6 +47,7 @@
 #define NFC_BASE_ADDR_AXI       0xF7FF0000
 #define IRAM_BASE_ADDR          0xF8000000
 #define CS1_BASE_ADDR           0xF4000000
+#define SATA_BASE_ADDR		0x10000000
 #else
 #error "CPU_TYPE not defined"
 #endif
@@ -93,6 +98,8 @@
 #define GPIO5_BASE_ADDR         (AIPS1_BASE_ADDR + 0x000DC000)
 #define GPIO6_BASE_ADDR         (AIPS1_BASE_ADDR + 0x000E0000)
 #define GPIO7_BASE_ADDR         (AIPS1_BASE_ADDR + 0x000E4000)
+#define I2C3_BASE_ADDR		(AIPS1_BASE_ADDR + 0x000EC000)
+#define UART4_BASE_ADDR         (AIPS1_BASE_ADDR + 0x000F0000)
 #endif
 /*
  * AIPS 2
@@ -132,6 +139,10 @@
 #define TVE_BASE_ADDR		(AIPS2_BASE_ADDR + 0x000F0000)
 #define VPU_BASE_ADDR		(AIPS2_BASE_ADDR + 0x000F4000)
 #define SAHARA_BASE_ADDR	(AIPS2_BASE_ADDR + 0x000F8000)
+
+#if defined(CONFIG_MX53)
+#define UART5_BASE_ADDR         (AIPS2_BASE_ADDR + 0x00090000)
+#endif
 
 /*
  * WEIM CSnGCR1
@@ -310,6 +321,8 @@
 #define BOARD_REV_1_0           0x0
 #define BOARD_REV_2_0           0x1
 
+#define BOARD_VER_OFFSET	0x8
+
 #define IMX_IIM_BASE            (IIM_BASE_ADDR)
 
 #if !(defined(__KERNEL_STRICT_NAMES) || defined(__ASSEMBLY__))
@@ -450,6 +463,24 @@ struct src {
 	u32	simr;
 };
 
+struct srtc_regs {
+	u32	lpscmr;		/* 0x00 */
+	u32	lpsclr;		/* 0x04 */
+	u32	lpsar;		/* 0x08 */
+	u32	lpsmcr;		/* 0x0c */
+	u32	lpcr;		/* 0x10 */
+	u32	lpsr;		/* 0x14 */
+	u32	lppdr;		/* 0x18 */
+	u32	lpgr;		/* 0x1c */
+	u32	hpcmr;		/* 0x20 */
+	u32	hpclr;		/* 0x24 */
+	u32	hpamr;		/* 0x28 */
+	u32	hpalr;		/* 0x2c */
+	u32	hpcr;		/* 0x30 */
+	u32	hpisr;		/* 0x34 */
+	u32	hpienr;		/* 0x38 */
+};
+
 /* CSPI registers */
 struct cspi_regs {
 	u32 rxdata;
@@ -483,6 +514,11 @@ struct iim_regs {
 		u32	fuse_regs[0x20];
 		u32	fuse_rsvd[0xe0];
 	} bank[4];
+};
+
+struct fuse_bank0_regs {
+	u32	fuse0_23[24];
+	u32	gp[8];
 };
 
 struct fuse_bank1_regs {

@@ -122,7 +122,6 @@
  */
 #define CONFIG_HAS_ETH1
 #define CONFIG_MII
-#define CONFIG_DISCOVER_PHY
 
 #define CONFIG_FEC_MXC
 #define IMX_FEC_BASE				FEC_BASE_ADDR
@@ -136,7 +135,6 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX			3
 #define CONFIG_BAUDRATE				115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{9600, 19200, 38400, 57600, 115200}
 
 /***********************************************************
  * Command definition
@@ -177,12 +175,6 @@
 #define CONFIG_SYS_HZ			1000
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_HUSH_PARSER
-#define	CONFIG_SYS_PROMPT_HUSH_PS2	"Vision II U-boot > "
-
-/*
- * Stack sizes
- */
-#define CONFIG_STACKSIZE		(128 * 1024)	/* regular stack */
 
 /*
  * Physical Memory Map
@@ -214,12 +206,15 @@
  */
 #define CONFIG_PREBOOT
 #define CONFIG_VIDEO
-#define CONFIG_VIDEO_MX5
+#define CONFIG_VIDEO_IPUV3
 #define CONFIG_CFB_CONSOLE
 #define CONFIG_VGA_AS_SINGLE_DEVICE
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+#define CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
+#define CONFIG_IPUV3_CLK	133000000
 
 #endif				/* __CONFIG_H */

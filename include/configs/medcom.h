@@ -1,7 +1,7 @@
 /*
  *  (C) Copyright 2010,2011
  *  NVIDIA Corporation <www.nvidia.com>
- *  (C) Copyright 2011
+ *  (C) Copyright 2011-2012
  *  Avionic Design GmbH <www.avionic-design.de>
  *
  * See file CREDITS for list of people who contributed to this
@@ -26,17 +26,20 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#include "tegra2-common.h"
+#include "tegra20-common.h"
+
+/* Enable fdt support for Medcom. Flash the image in u-boot-dtb.bin */
+#define CONFIG_DEFAULT_DEVICE_TREE	tegra20-medcom
+#define CONFIG_OF_CONTROL
+#define CONFIG_OF_SEPARATE
 
 /* High-level configuration options */
-#define TEGRA2_SYSMEM			"mem=384M@0M nvmem=128M@384M"
-#define V_PROMPT			"Tegra2 (Medcom) # "
-#define CONFIG_TEGRA2_BOARD_STRING	"Avionic Design Medcom"
-#define CONFIG_SYS_BOARD_ODMDATA	0x2b0d8011
+#define V_PROMPT			"Tegra20 (Medcom) # "
+#define CONFIG_TEGRA_BOARD_STRING	"Avionic Design Medcom"
 
 /* Board-specific serial config */
 #define CONFIG_SERIAL_MULTI
-#define CONFIG_TEGRA2_ENABLE_UARTD	/* UARTD: debug UART */
+#define CONFIG_TEGRA_ENABLE_UARTD	/* UARTD: debug UART */
 #define CONFIG_SYS_NS16550_COM1		NV_PA_APB_UARTD_BASE
 
 #define CONFIG_BOARD_EARLY_INIT_F
@@ -46,8 +49,22 @@
 /* SD/MMC */
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
-#define CONFIG_TEGRA2_MMC
+#define CONFIG_TEGRA_MMC
 #define CONFIG_CMD_MMC
+
+/* USB host support */
+#define CONFIG_USB_EHCI
+#define CONFIG_USB_EHCI_TEGRA
+#define CONFIG_USB_STORAGE
+#define CONFIG_CMD_USB
+
+/* USB networking support */
+#define CONFIG_USB_HOST_ETHER
+#define CONFIG_USB_ETHER_SMSC95XX
+
+/* General networking support */
+#define CONFIG_CMD_NET
+#define CONFIG_CMD_DHCP
 
 #define CONFIG_DOS_PARTITION
 #define CONFIG_EFI_PARTITION
@@ -60,5 +77,7 @@
 	"mmc rescan;"					\
 	"ext2load mmc 0 0x17000000 /boot/uImage;"	\
 	"bootm"
+
+#include "tegra-common-post.h"
 
 #endif /* __CONFIG_H */

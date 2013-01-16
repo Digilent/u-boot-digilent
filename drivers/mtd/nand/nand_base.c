@@ -39,7 +39,7 @@
 #include <malloc.h>
 #include <watchdog.h>
 #include <linux/err.h>
-#include <linux/mtd/compat.h>
+#include <linux/compat.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/nand_ecc.h>
@@ -2535,13 +2535,14 @@ static int nand_flash_detect_onfi(struct mtd_info *mtd, struct nand_chip *chip,
 		chip->read_byte(mtd) != 'F' || chip->read_byte(mtd) != 'I')
 		return 0;
 
-	printk(KERN_INFO "ONFI flash detected\n");
+	MTDDEBUG(MTD_DEBUG_LEVEL0, "ONFI flash detected\n");
 	chip->cmdfunc(mtd, NAND_CMD_PARAM, 0, -1);
 	for (i = 0; i < 3; i++) {
 		chip->read_buf(mtd, (uint8_t *)p, sizeof(*p));
 		if (onfi_crc16(ONFI_CRC_BASE, (uint8_t *)p, 254) ==
 				le16_to_cpu(p->crc)) {
-			printk(KERN_INFO "ONFI param page %d valid\n", i);
+			MTDDEBUG(MTD_DEBUG_LEVEL0,
+				 "ONFI param page %d valid\n", i);
 			break;
 		}
 	}
@@ -2577,14 +2578,13 @@ static int nand_flash_detect_onfi(struct mtd_info *mtd, struct nand_chip *chip,
 	mtd->writesize = le32_to_cpu(p->byte_per_page);
 	mtd->erasesize = le32_to_cpu(p->pages_per_block) * mtd->writesize;
 	mtd->oobsize = le16_to_cpu(p->spare_bytes_per_page);
-	chip->chipsize = (uint64_t)le32_to_cpu(p->blocks_per_lun) * mtd->erasesize;
+	chip->chipsize = le32_to_cpu(p->blocks_per_lun);
+	chip->chipsize *= (uint64_t)mtd->erasesize * p->lun_count;
 	*busw = 0;
 	if (le16_to_cpu(p->features) & 1)
 		*busw = NAND_BUSWIDTH_16;
 
-	chip->options &= ~NAND_CHIPOPTIONS_MSK;
-	chip->options |= (NAND_NO_READRDY |
-			NAND_NO_AUTOINCR) & NAND_CHIPOPTIONS_MSK;
+	chip->options |= NAND_NO_READRDY | NAND_NO_AUTOINCR;
 
 	return 1;
 }
@@ -2756,8 +2756,7 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 		}
 	}
 	/* Get chip options, preserve non chip based options */
-	chip->options &= ~NAND_CHIPOPTIONS_MSK;
-	chip->options |= type->options & NAND_CHIPOPTIONS_MSK;
+	chip->options |= type->options;
 
 	/* Check if chip is a not a samsung device. Do not clear the
 	 * options for chips which are not having an extended id.
@@ -2940,7 +2939,8 @@ int nand_scan_tail(struct mtd_info *mtd)
 	struct nand_chip *chip = mtd->priv;
 
 	if (!(chip->options & NAND_OWN_BUFFERS))
-		chip->buffers = kmalloc(sizeof(*chip->buffers), GFP_KERNEL);
+		chip->buffers = memalign(ARCH_DMA_MINALIGN,
+					 sizeof(*chip->buffers));
 	if (!chip->buffers)
 		return -ENOMEM;
 

@@ -31,7 +31,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#ifndef CONFIG_DDR_RAW_TIMING
+#ifndef CONFIG_SYS_DDR_RAW_TIMING
 #define CONFIG_SYS_DRAM_SIZE	1024
 
 fsl_ddr_cfg_regs_t ddr_cfg_regs_800 = {
@@ -101,7 +101,7 @@ unsigned long get_sdram_size(void)
 
 	cpu = gd->cpu;
 	/* P1014 and it's derivatives support max 16it DDR width */
-	if (cpu->soc_ver == SVR_P1014 || cpu->soc_ver == SVR_P1014_E)
+	if (cpu->soc_ver == SVR_P1014)
 		ddr_size = (CONFIG_SYS_DRAM_SIZE / 2);
 	else
 		ddr_size = CONFIG_SYS_DRAM_SIZE;
@@ -146,11 +146,12 @@ phys_size_t fixed_sdram(void)
 
 	cpu = gd->cpu;
 	/* P1014 and it's derivatives support max 16bit DDR width */
-	if (cpu->soc_ver == SVR_P1014 || cpu->soc_ver == SVR_P1014_E) {
+	if (cpu->soc_ver == SVR_P1014) {
+		ddr_cfg_regs.ddr_sdram_cfg &= ~SDRAM_CFG_DBW_MASK;
 		ddr_cfg_regs.ddr_sdram_cfg |= SDRAM_CFG_16_BE;
-		ddr_cfg_regs.cs[0].bnds = CONFIG_SYS_DDR_CS0_BNDS >> 1;
-		ddr_cfg_regs.ddr_sdram_cfg &= ~0x00180000;
-		ddr_cfg_regs.ddr_sdram_cfg |= 0x001080000;
+		/* divide SA and EA by two and then mask the rest so we don't
+		 * write to reserved fields */
+		ddr_cfg_regs.cs[0].bnds = (CONFIG_SYS_DDR_CS0_BNDS >> 1) & 0x0fff0fff;
 	}
 
 	ddr_size = (phys_size_t) CONFIG_SYS_SDRAM_SIZE * 1024 * 1024;
@@ -165,7 +166,7 @@ phys_size_t fixed_sdram(void)
 	return ddr_size;
 }
 
-#else /* CONFIG_DDR_RAW_TIMING */
+#else /* CONFIG_SYS_DDR_RAW_TIMING */
 /*
  * Samsung K4B2G0846C-HCF8
  * The following timing are for "downshift"
@@ -238,7 +239,7 @@ void fsl_ddr_board_options(memctl_options_t *popts,
 
 	cpu = gd->cpu;
 	/* P1014 and it's derivatives support max 16it DDR width */
-	if (cpu->soc_ver == SVR_P1014 || cpu->soc_ver == SVR_P1014_E)
+	if (cpu->soc_ver == SVR_P1014)
 		popts->data_bus_width = DDR_DATA_BUS_WIDTH_16;
 
 	for (i = 0; i < CONFIG_CHIP_SELECTS_PER_CTRL; i++) {
@@ -247,4 +248,4 @@ void fsl_ddr_board_options(memctl_options_t *popts,
 	}
 }
 
-#endif /* CONFIG_DDR_RAW_TIMING */
+#endif /* CONFIG_SYS_DDR_RAW_TIMING */

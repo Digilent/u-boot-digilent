@@ -42,7 +42,6 @@ void sr32(void *, u32, u32, u32);
 u32 wait_on_value(u32, u32, void *, u32);
 void sdelay(unsigned long);
 void set_pl310_ctrl_reg(u32 val);
-void omap_rev_string(void);
 void setup_clocks_for_console(void);
 void prcm_init(void);
 void bypass_dpll(u32 *const base);
@@ -55,6 +54,10 @@ u32 omap_sdram_size(void);
 u32 cortex_rev(void);
 void init_omap_revision(void);
 void do_io_settings(void);
+void omap_vc_init(u16 speed_khz);
+int omap_vc_bypass_send_value(u8 sa, u8 reg_addr, u8 reg_data);
+u32 warm_reset(void);
+void force_emif_self_refresh(void);
 /*
  * This is used to verify if the configuration header
  * was executed by Romcode prior to control of transfer
@@ -110,12 +113,6 @@ static inline u32 omap_hw_init_context(void)
 	else
 		return OMAP_INIT_CONTEXT_UBOOT_FROM_NOR;
 #endif
-}
-
-static inline u32 omap_revision(void)
-{
-	extern u32 *const omap4_revision;
-	return *omap4_revision;
 }
 
 #endif

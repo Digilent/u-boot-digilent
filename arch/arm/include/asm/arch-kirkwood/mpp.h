@@ -85,7 +85,7 @@
 #define MPP7_SPI_SCn		MPP(  7, 0x2, 0, 1, 1,   1,   1,   1    )
 #define MPP7_PTP_TRIG_GEN	MPP(  7, 0x3, 0, 1, 1,   1,   1,   1    )
 
-#define MPP8_GPIO		MPP(  8, 0x0, 1, 1, 1,    1,  1,   1    )
+#define MPP8_GPIO		MPP(  8, 0x0, 1, 1, 1,   1,   1,   1    )
 #define MPP8_TW_SDA		MPP(  8, 0x1, 1, 1, 1,   1,   1,   1    )
 #define MPP8_UART0_RTS		MPP(  8, 0x2, 0, 1, 1,   1,   1,   1    )
 #define MPP8_UART1_RTS		MPP(  8, 0x3, 0, 1, 1,   1,   1,   1    )
@@ -312,6 +312,6 @@
 
 #define MPP_MAX			49
 
-void kirkwood_mpp_conf(unsigned int *mpp_list);
+void kirkwood_mpp_conf(u32 *mpp_list, u32 *mpp_save);
 
 #endif

@@ -20,8 +20,7 @@
  * OMAP HSMMC register definitions
  */
 #define OMAP_HSMMC1_BASE		0x48060100
-#define OMAP_HSMMC2_BASE		0x481D8000
-#define OMAP_HSMMC3_BASE		0x47C24000
+#define OMAP_HSMMC2_BASE		0x481D8100
 
 typedef struct hsmmc {
 	unsigned char res1[0x10];
@@ -159,6 +158,6 @@ typedef struct hsmmc {
 #define mmc_reg_out(addr, mask, val)\
 	writel((readl(addr) & (~(mask))) | ((val) & (mask)), (addr))
 
-int omap_mmc_init(int dev_index);
+int omap_mmc_init(int dev_index, uint host_caps_mask, uint f_max);
 
 #endif /* MMC_HOST_DEF_H */

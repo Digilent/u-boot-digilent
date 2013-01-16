@@ -67,7 +67,6 @@
 #define CONFIG_REVISION_TAG
 #define CONFIG_CMDLINE_TAG			/* enable passing of ATAGs */
 #define CONFIG_MISC_INIT_R			/* Call misc_init_r */
-#undef	CONFIG_USE_IRQ				/* don't need IRQ/FIQ stuff */
 
 #define CONFIG_DISPLAY_BOARDINFO		/* call checkboard() */
 #define CONFIG_DISPLAY_CPUINFO			/* display cpu info and speed */
@@ -88,7 +87,6 @@
 #define CONFIG_USART_BASE		ATMEL_BASE_DBGU
 #define CONFIG_USART_ID			ATMEL_ID_SYS
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{115200, 19200, 38400, 57600, 9600}
 
 #define CONFIG_BOOTDELAY		3
 #define CONFIG_ZERO_BOOTDELAY_CHECK
@@ -215,7 +213,6 @@
 # define CONFIG_SYS_NAND_MASK_CLE		(1 << 22)
 # define CONFIG_SYS_NAND_ENABLE_PIN		AT91_PIO_PORTD, 15
 # define CONFIG_SYS_NAND_READY_PIN		AT91_PIO_PORTA, 22
-# define CONFIG_SYS_64BIT_VSPRINTF		/* needed for nand_util.c */
 #endif
 
 /* Ethernet */
@@ -275,11 +272,5 @@
  */
 #define CONFIG_SYS_MALLOC_LEN		ROUND(3 * CONFIG_ENV_SIZE + \
 					128*1024, 0x1000)
-
-#define CONFIG_STACKSIZE		(32 * 1024)	/* regular stack */
-
-#ifdef CONFIG_USE_IRQ
-# error CONFIG_USE_IRQ not supported
-#endif
 
 #endif

@@ -254,20 +254,17 @@ int board_early_init_f(void)
 		(1 << ATMEL_ID_PIOCDE),
 		&pmc->pcer);
 
+	at91_seriald_hw_init();
 	return 0;
 }
 
 int board_init(void)
 {
-	/* Enable Ctrlc */
-	console_init_f();
-
 	/* arch number of AT91SAM9263EK-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_AT91SAM9263EK;
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
 
-	at91_seriald_hw_init();
 #ifdef CONFIG_CMD_NAND
 	at91sam9263ek_nand_hw_init();
 #endif

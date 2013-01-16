@@ -104,7 +104,7 @@ HOSTCFLAGS	+= -pedantic
 
 #########################################################################
 #
-# Option checker (courtesy linux kernel) to ensure
+# Option checker, gcc version (courtesy linux kernel) to ensure
 # only supported compiler options are used
 #
 CC_OPTIONS_CACHE_FILE := $(OBJTREE)/include/generated/cc_options.mk
@@ -125,11 +125,20 @@ cc-option = $(strip $(if $(findstring $1,$(CC_OPTIONS)),$1,\
 		$(if $(call cc-option-sys,$1),$1,$2)))
 endif
 
+# cc-version
+# Usage gcc-ver := $(call cc-version)
+cc-version = $(shell $(SHELL) $(SRCTREE)/tools/gcc-version.sh $(CC))
+binutils-version = $(shell $(SHELL) $(SRCTREE)/tools/binutils-version.sh $(AS))
+
 #
 # Include the make variables (CC, etc...)
 #
 AS	= $(CROSS_COMPILE)as
-LD	= $(CROSS_COMPILE)ld
+
+# Always use GNU ld
+LD	= $(shell if $(CROSS_COMPILE)ld.bfd -v > /dev/null 2>&1; \
+		then echo "$(CROSS_COMPILE)ld.bfd"; else echo "$(CROSS_COMPILE)ld"; fi;)
+
 CC	= $(CROSS_COMPILE)gcc
 CPP	= $(CC) -E
 AR	= $(CROSS_COMPILE)ar
@@ -201,6 +210,10 @@ ifneq ($(CONFIG_SPL_TEXT_BASE),)
 CPPFLAGS += -DCONFIG_SPL_TEXT_BASE=$(CONFIG_SPL_TEXT_BASE)
 endif
 
+ifneq ($(CONFIG_SPL_PAD_TO),)
+CPPFLAGS += -DCONFIG_SPL_PAD_TO=$(CONFIG_SPL_PAD_TO)
+endif
+
 ifeq ($(CONFIG_SPL_BUILD),y)
 CPPFLAGS += -DCONFIG_SPL_BUILD
 endif
@@ -223,11 +236,6 @@ CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes \
 else
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
 endif
-
-# Xilinx, added to prevent unaligned accesses which started happening
-# with GCC 4.5.2 tools
-
-CFLAGS += -mno-unaligned-access
 
 CFLAGS_SSP := $(call cc-option,-fno-stack-protector)
 CFLAGS += $(CFLAGS_SSP)

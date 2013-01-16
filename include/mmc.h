@@ -27,6 +27,7 @@
 #define _MMC_H_
 
 #include <linux/list.h>
+#include <linux/compiler.h>
 
 #define SD_VERSION_SD	0x20000
 #define SD_VERSION_2	(SD_VERSION_SD | 0x20)
@@ -46,6 +47,9 @@
 #define MMC_MODE_8BIT		0x200
 #define MMC_MODE_SPI		0x400
 #define MMC_MODE_HC		0x800
+
+#define MMC_MODE_MASK_WIDTH_BITS (MMC_MODE_4BIT | MMC_MODE_8BIT)
+#define MMC_MODE_WIDTH_BITS_SHIFT 8
 
 #define SD_DATA_4BIT	0x00040000
 
@@ -156,6 +160,7 @@
 #define EXT_CSD_CARD_TYPE		196	/* RO */
 #define EXT_CSD_SEC_CNT			212	/* RO, 4 bytes */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
+#define EXT_CSD_BOOT_MULT		226	/* RO */
 
 /*
  * EXT_CSD field definitions
@@ -205,62 +210,11 @@ struct mmc_cid {
 	char pnm[7];
 };
 
-/*
- * WARNING!
- *
- * This structure is used by atmel_mci.c only.
- * It works for the AVR32 architecture but NOT
- * for ARM/AT91 architectures.
- * Its use is highly depreciated.
- * After the atmel_mci.c driver for AVR32 has
- * been replaced this structure will be removed.
- */
-struct mmc_csd
-{
-	u8	csd_structure:2,
-		spec_vers:4,
-		rsvd1:2;
-	u8	taac;
-	u8	nsac;
-	u8	tran_speed;
-	u16	ccc:12,
-		read_bl_len:4;
-	u64	read_bl_partial:1,
-		write_blk_misalign:1,
-		read_blk_misalign:1,
-		dsr_imp:1,
-		rsvd2:2,
-		c_size:12,
-		vdd_r_curr_min:3,
-		vdd_r_curr_max:3,
-		vdd_w_curr_min:3,
-		vdd_w_curr_max:3,
-		c_size_mult:3,
-		sector_size:5,
-		erase_grp_size:5,
-		wp_grp_size:5,
-		wp_grp_enable:1,
-		default_ecc:2,
-		r2w_factor:3,
-		write_bl_len:4,
-		write_bl_partial:1,
-		rsvd3:5;
-	u8	file_format_grp:1,
-		copy:1,
-		perm_write_protect:1,
-		tmp_write_protect:1,
-		file_format:2,
-		ecc:2;
-	u8	crc:7;
-	u8	one:1;
-};
-
 struct mmc_cmd {
 	ushort cmdidx;
 	uint resp_type;
 	uint cmdarg;
 	uint response[4];
-	uint flags;
 };
 
 struct mmc_data {
@@ -320,6 +274,7 @@ int get_mmc_num(void);
 int board_mmc_getcd(struct mmc *mmc);
 int mmc_switch_part(int dev_num, unsigned int part_num);
 int mmc_getcd(struct mmc *mmc);
+void spl_mmc_load(void) __noreturn;
 
 #ifdef CONFIG_GENERIC_MMC
 #define mmc_host_is_spi(mmc)	((mmc)->host_caps & MMC_MODE_SPI)

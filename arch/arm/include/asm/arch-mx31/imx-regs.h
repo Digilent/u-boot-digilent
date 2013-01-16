@@ -541,6 +541,8 @@ struct esdc_regs {
 
 #endif
 
+#define ARCH_MXC
+
 #define __REG(x)     (*((volatile u32 *)(x)))
 #define __REG16(x)   (*((volatile u16 *)(x)))
 #define __REG8(x)    (*((volatile u8 *)(x)))
@@ -606,6 +608,13 @@ struct esdc_regs {
 #define UART4_BASE	0x43FB0000
 #define UART5_BASE	0x43FB4000
 
+#define I2C1_BASE_ADDR          0x43f80000
+#define I2C1_CLK_OFFSET		26
+#define I2C2_BASE_ADDR          0x43F98000
+#define I2C2_CLK_OFFSET		28
+#define I2C3_BASE_ADDR          0x43f84000
+#define I2C3_CLK_OFFSET		30
+
 #define ESDCTL_SDE			(1 << 31)
 #define ESDCTL_CMD_RW			(0 << 28)
 #define ESDCTL_CMD_PRECHARGE		(1 << 28)
@@ -662,7 +671,7 @@ struct esdc_regs {
 #define IPU_CONF_PF_EN		(1<<3)
 #define IPU_CONF_ROT_EN		(1<<2)
 #define IPU_CONF_IC_EN		(1<<1)
-#define IPU_CONF_SCI_EN		(1<<0)
+#define IPU_CONF_CSI_EN		(1<<0)
 
 #define ARM_PPMRR		0x40000015
 

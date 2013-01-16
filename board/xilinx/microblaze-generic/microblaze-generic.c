@@ -28,19 +28,21 @@
 #include <common.h>
 #include <config.h>
 #include <netdev.h>
+#include <asm/processor.h>
 #include <asm/microblaze_intc.h>
 #include <asm/asm.h>
 
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifdef CONFIG_SYS_GPIO_0
-	*((unsigned long *)(CONFIG_SYS_GPIO_0_ADDR)) =
-	    ++(*((unsigned long *)(CONFIG_SYS_GPIO_0_ADDR)));
+	*((u32 volatile *)(CONFIG_SYS_GPIO_0_ADDR)) =
+	    ++(*((u32 volatile *)(CONFIG_SYS_GPIO_0_ADDR)));
 #endif
-#ifdef CONFIG_SYS_RESET_ADDRESS
+
 	puts ("Reseting board\n");
-	asm ("bra r0");
-#endif
+	__asm__ __volatile__ ("	mts rmsr, r0;" \
+				"bra r0");
+
 	return 0;
 }
 
@@ -69,6 +71,14 @@ int fsl_init2 (void) {
 }
 #endif
 
+void board_init(void)
+{
+	gpio_init();
+#ifdef CONFIG_SYS_FSL_2
+	fsl_init2();
+#endif
+}
+
 int board_eth_init(bd_t *bis)
 {
 	int ret = 0;
@@ -90,41 +100,19 @@ int board_eth_init(bd_t *bis)
 	ret |= xilinx_emaclite_initialize(bis, XILINX_EMACLITE_BASEADDR,
 			txpp, rxpp);
 #endif
-
 #ifdef CONFIG_XILINX_LL_TEMAC
-# ifdef XILINX_LLTEMAC_BASEADDR
-#  ifdef XILINX_LLTEMAC_FIFO_BASEADDR
-	ret |= xilinx_ll_temac_eth_init(bis, XILINX_LLTEMAC_BASEADDR,
-			XILINX_LL_TEMAC_M_FIFO, XILINX_LLTEMAC_FIFO_BASEADDR);
-#  elif XILINX_LLTEMAC_SDMA_CTRL_BASEADDR
-#   if XILINX_LLTEMAC_SDMA_USE_DCR == 1
-	ret |= xilinx_ll_temac_eth_init(bis, XILINX_LLTEMAC_BASEADDR,
-			XILINX_LL_TEMAC_M_SDMA_DCR,
-			XILINX_LLTEMAC_SDMA_CTRL_BASEADDR);
-#   else
-	ret |= xilinx_ll_temac_eth_init(bis, XILINX_LLTEMAC_BASEADDR,
-			XILINX_LL_TEMAC_M_SDMA_PLB,
-			XILINX_LLTEMAC_SDMA_CTRL_BASEADDR);
-#   endif
-#  endif
-# endif
-# ifdef XILINX_LLTEMAC_BASEADDR1
-#  ifdef XILINX_LLTEMAC_FIFO_BASEADDR1
-	ret |= xilinx_ll_temac_eth_init(bis, XILINX_LLTEMAC_BASEADDR1,
-			XILINX_LL_TEMAC_M_FIFO, XILINX_LLTEMAC_FIFO_BASEADDR1);
-#  elif XILINX_LLTEMAC_SDMA_CTRL_BASEADDR1
-#   if XILINX_LLTEMAC_SDMA_USE_DCR == 1
-	ret |= xilinx_ll_temac_eth_init(bis, XILINX_LLTEMAC_BASEADDR1,
-			XILINX_LL_TEMAC_M_SDMA_DCR,
-			XILINX_LLTEMAC_SDMA_CTRL_BASEADDR1);
-#   else
-	ret |= xilinx_ll_temac_eth_init(bis, XILINX_LLTEMAC_BASEADDR1,
-			XILINX_LL_TEMAC_M_SDMA_PLB,
-			XILINX_LLTEMAC_SDMA_CTRL_BASEADDR1);
-#   endif
+# ifdef XILINX_LLTEMAC_FIFO_BASEADDR
+	ret |= xilinx_ll_temac_initialize(bis, XILINX_LLTEMAC_BASEADDR, 0,
+					XILINX_LLTEMAC_FIFO_BASEADDR);
+# elif XILINX_LLTEMAC_SDMA_CTRL_BASEADDR
+#  if XILINX_LLTEMAC_SDMA_USE_DCR == 1
+	ret |= xilinx_ll_temac_initialize(bis, XILINX_LLTEMAC_BASEADDR, 3,
+					XILINX_LLTEMAC_SDMA_CTRL_BASEADDR);
+#  else
+	ret |= xilinx_ll_temac_initialize(bis, XILINX_LLTEMAC_BASEADDR, 1,
+					XILINX_LLTEMAC_SDMA_CTRL_BASEADDR);
 #  endif
 # endif
 #endif
-
 	return ret;
 }

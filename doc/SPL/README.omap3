@@ -34,14 +34,14 @@ DDR1: 0x80000000 - 0xBFFFFFFF
 
 Option 1 (SPL only):
 0x40200800 - 0x4020BBFF: Area for SPL text, data and rodata
-0x4020BC00 - 0x4020FFFC: Area for the SPL stack.
+0x4020E000 - 0x4020FFFC: Area for the SPL stack.
 0x80000000 - 0x8007FFFF: Area for the SPL BSS.
 0x80100000: CONFIG_SYS_TEXT_BASE of U-Boot
 0x80208000 - 0x80307FFF: malloc() pool available to SPL.
 
 Option 2 (SPL or X-Loader):
 0x40200800 - 0x4020BBFF: Area for SPL text, data and rodata
-0x4020BC00 - 0x4020FFFC: Area for the SPL stack.
+0x4020E000 - 0x4020FFFC: Area for the SPL stack.
 0x80008000: CONFIG_SYS_TEXT_BASE of U-Boot
 0x87000000 - 0x8707FFFF: Area for the SPL BSS.
 0x87080000 - 0x870FFFFF: malloc() pool available to SPL.
@@ -50,25 +50,3 @@ For the areas that reside within DDR1 they must not be used prior to s_init()
 completing.  Note that CONFIG_SYS_TEXT_BASE must be clear of the areas that SPL
 uses while running.  This is why we have two versions of the memory map that
 only vary in where the BSS and malloc pool reside.
-
-Estimating stack usage
-----------------------
-
-With gcc 4.6 (and later) and the use of GNU cflow it is possible to estimate
-stack usage at various points in run sequence of SPL.  The -fstack-usage option
-to gcc will produce '.su' files (such as arch/arm/cpu/armv7/syslib.su) that
-will give stack usage information and cflow can construct program flow.
-
-Must have gcc 4.6 or later, which supports -fstack-usage
-
-1) Build normally
-2) Perform the following shell command to generate a list of C files used in
-SPL:
-$ find spl -name '*.su' | sed -e 's:^spl/::' -e 's:[.]su$:.c:' > used-spl.list
-3) Execute cflow:
-$ cflow --main=board_init_r `cat used-spl.list` 2>&1 | $PAGER
-
-cflow will spit out a number of warnings as it does not parse
-the config files and picks functions based on #ifdef.  Parsing the '.i'
-files instead introduces another set of headaches.  These warnings are
-not usually important to understanding the flow, however.

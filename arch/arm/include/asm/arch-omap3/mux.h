@@ -445,6 +445,17 @@
 #define CONTROL_PADCONF_STRBEN_DLY1	0x0224
 #define CONTROL_PADCONF_SYS_BOOT8	0x0226
 
+/* AM/DM37xx specific */
+#define CONTROL_PADCONF_GPIO127		0x0A54
+#define CONTROL_PADCONF_GPIO126		0x0A56
+#define CONTROL_PADCONF_GPIO128		0x0A58
+#define CONTROL_PADCONF_GPIO129		0x0A5A
+
+/* AM/DM37xx specific: gpio_127, gpio_127 and gpio_129 require configuration
+ * of the extended drain cells */
+#define OMAP34XX_CTRL_WKUP_CTRL		(OMAP34XX_CTRL_BASE + 0x0A5C)
+#define OMAP34XX_CTRL_WKUP_CTRL_GPIO_IO_PWRDNZ	(1<<6)
+
 #define MUX_VAL(OFFSET,VALUE)\
 	writew((VALUE), OMAP34XX_CTRL_BASE + (OFFSET));
 

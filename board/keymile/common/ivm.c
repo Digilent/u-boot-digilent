@@ -163,7 +163,7 @@ static int ivm_findinventorystring(int type,
 		if (addr == INVENTORYDATASIZE) {
 			xcode = -1;
 			printf("Error end of string not found\n");
-		} else if ((size >= (maxlen - 1)) &&
+		} else if ((size > (maxlen - 1)) &&
 			   (buf[addr] != '\r')) {
 			xcode = -1;
 			printf("string too long till next CR\n");
@@ -218,7 +218,7 @@ static int ivm_analyze_block2(unsigned char *buf, int len)
 		buf[4] = (val >> 16) & 0xff;
 		buf[5] = (val >> 8) & 0xff;
 		buf[6] = val & 0xff;
-		sprintf((char *)valbuf, "%pM", buf);
+		sprintf((char *)valbuf, "%pM", buf + 1);
 	}
 #endif
 #ifdef MACH_TYPE_KM_KIRKWOOD

@@ -66,7 +66,11 @@
  * CONFIG_CONSOLE_TIME	      - display time/date in upper right
  *				corner, needs CONFIG_CMD_DATE and
  *				CONFIG_CONSOLE_CURSOR
- * CONFIG_VIDEO_LOGO	      - display Linux Logo in upper left corner
+ * CONFIG_VIDEO_LOGO	      - display Linux Logo in upper left corner.
+ *				Use CONFIG_SPLASH_SCREEN_ALIGN with
+ *				environment variable "splashpos" to place
+ *				the logo on other position. In this case
+ *				no CONSOLE_EXTRA_INFO is possible.
  * CONFIG_VIDEO_BMP_LOGO      - use bmp_logo instead of linux_logo
  * CONFIG_CONSOLE_EXTRA_INFO  - display additional board information
  *				strings that normaly goes to serial
@@ -164,7 +168,7 @@
 /*
  * Defines for the i.MX31 driver (mx3fb.c)
  */
-#if defined(CONFIG_VIDEO_MX3) || defined(CONFIG_VIDEO_MX5)
+#if defined(CONFIG_VIDEO_MX3) || defined(CONFIG_VIDEO_IPUV3)
 #define VIDEO_FB_16BPP_WORD_SWAP
 #endif
 
@@ -360,6 +364,8 @@ void console_cursor(int state);
 extern void video_get_info_str(int line_number,	char *info);
 #endif
 
+DECLARE_GLOBAL_DATA_PTR;
+
 /* Locals */
 static GraphicDevice *pGD;	/* Pointer to Graphic array */
 
@@ -376,6 +382,8 @@ static int console_col;		/* cursor col */
 static int console_row;		/* cursor row */
 
 static u32 eorx, fgx, bgx;	/* color pats */
+
+static int cfb_do_flush_cache;
 
 static const int video_font_draw_table8[] = {
 	0x00000000, 0x000000ff, 0x0000ff00, 0x0000ffff,
@@ -553,6 +561,8 @@ static void video_drawchars(int xx, int yy, unsigned char *s, int count)
 					SWAP32((video_font_draw_table32
 						[bits & 15][3] & eorx) ^ bgx);
 			}
+			if (cfb_do_flush_cache)
+				flush_cache((ulong)dest0, 32);
 			dest0 += VIDEO_FONT_WIDTH * VIDEO_PIXEL_SIZE;
 			s++;
 		}
@@ -621,6 +631,8 @@ static void video_invertchar(int xx, int yy)
 		for (x = firstx; x < lastx; x++) {
 			u8 *dest = (u8 *)(video_fb_address) + x + y;
 			*dest = ~*dest;
+			if (cfb_do_flush_cache)
+				flush_cache((ulong)dest, 4);
 		}
 	}
 }
@@ -683,6 +695,43 @@ static void memcpyl(int *d, int *s, int c)
 }
 #endif
 
+static void console_clear_line(int line, int begin, int end)
+{
+#ifdef VIDEO_HW_RECTFILL
+	video_hw_rectfill(VIDEO_PIXEL_SIZE,		/* bytes per pixel */
+			  VIDEO_FONT_WIDTH * begin,	/* dest pos x */
+			  video_logo_height +
+			  VIDEO_FONT_HEIGHT * line,	/* dest pos y */
+			  VIDEO_FONT_WIDTH * (end - begin + 1), /* fr. width */
+			  VIDEO_FONT_HEIGHT,		/* frame height */
+			  bgx				/* fill color */
+		);
+#else
+	if (begin == 0 && (end + 1) == CONSOLE_COLS) {
+		memsetl(CONSOLE_ROW_FIRST +
+			CONSOLE_ROW_SIZE * line,	/* offset of row */
+			CONSOLE_ROW_SIZE >> 2,		/* length of row */
+			bgx				/* fill color */
+		);
+	} else {
+		void *offset;
+		int i, size;
+
+		offset = CONSOLE_ROW_FIRST +
+			 CONSOLE_ROW_SIZE * line +	/* offset of row */
+			 VIDEO_FONT_WIDTH *
+			 VIDEO_PIXEL_SIZE * begin;	/* offset of col */
+		size = VIDEO_FONT_WIDTH * VIDEO_PIXEL_SIZE * (end - begin + 1);
+		size >>= 2; /* length to end for memsetl() */
+		/* fill at col offset of i'th line using bgx as fill color */
+		for (i = 0; i < VIDEO_FONT_HEIGHT; i++)
+			memsetl(offset + i * VIDEO_LINE_LEN, size, bgx);
+	}
+#endif
+	if (cfb_do_flush_cache)
+		flush_cache((ulong)CONSOLE_ROW_FIRST, CONSOLE_SIZE);
+}
+
 static void console_scrollup(void)
 {
 	/* copy up rows ignoring the first one */
@@ -703,25 +752,12 @@ static void console_scrollup(void)
 	memcpyl(CONSOLE_ROW_FIRST, CONSOLE_ROW_SECOND,
 		CONSOLE_SCROLL_SIZE >> 2);
 #endif
-
 	/* clear the last one */
-#ifdef VIDEO_HW_RECTFILL
-	video_hw_rectfill(VIDEO_PIXEL_SIZE,	/* bytes per pixel */
-			  0,			/* dest pos x */
-			  VIDEO_VISIBLE_ROWS
-			  - VIDEO_FONT_HEIGHT,	/* dest pos y */
-			  VIDEO_VISIBLE_COLS,	/* frame width */
-			  VIDEO_FONT_HEIGHT,	/* frame height */
-			  CONSOLE_BG_COL	/* fill color */
-		);
-#else
-	memsetl(CONSOLE_ROW_LAST, CONSOLE_ROW_SIZE >> 2, CONSOLE_BG_COL);
-#endif
+	console_clear_line(CONSOLE_ROWS - 1, 0, CONSOLE_COLS - 1);
 }
 
 static void console_back(void)
 {
-	CURSOR_OFF;
 	console_col--;
 
 	if (console_col < 0) {
@@ -730,7 +766,6 @@ static void console_back(void)
 		if (console_row < 0)
 			console_row = 0;
 	}
-	CURSOR_SET;
 }
 
 static void console_newline(void)
@@ -781,6 +816,9 @@ void video_putc(const char c)
 	case 8:		/* backspace */
 		console_back();
 		break;
+
+	case 7:		/* bell */
+		break;	/* ignored */
 
 	default:		/* draw the char */
 		video_putchar(console_col * VIDEO_FONT_WIDTH,
@@ -1446,7 +1484,42 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 
 #ifdef CONFIG_VIDEO_LOGO
-void logo_plot(void *screen, int width, int x, int y)
+static int video_logo_xpos;
+static int video_logo_ypos;
+
+static void plot_logo_or_black(void *screen, int width, int x, int y,	\
+			int black);
+
+static void logo_plot(void *screen, int width, int x, int y)
+{
+	plot_logo_or_black(screen, width, x, y, 0);
+}
+
+static void logo_black(void)
+{
+	plot_logo_or_black(video_fb_address, \
+			VIDEO_COLS, \
+			video_logo_xpos, \
+			video_logo_ypos, \
+			1);
+}
+
+static int do_clrlogo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc != 1)
+		return cmd_usage(cmdtp);
+
+	logo_black();
+	return 0;
+}
+
+U_BOOT_CMD(
+	   clrlogo, 1, 0, do_clrlogo,
+	   "fill the boot logo area with black",
+	   " "
+	   );
+
+static void plot_logo_or_black(void *screen, int width, int x, int y, int black)
 {
 
 	int xcount, i;
@@ -1454,8 +1527,21 @@ void logo_plot(void *screen, int width, int x, int y)
 	int ycount = video_logo_height;
 	unsigned char r, g, b, *logo_red, *logo_blue, *logo_green;
 	unsigned char *source;
-	unsigned char *dest = (unsigned char *) screen +
-		((y * width * VIDEO_PIXEL_SIZE) + x * VIDEO_PIXEL_SIZE);
+	unsigned char *dest;
+
+#ifdef CONFIG_SPLASH_SCREEN_ALIGN
+	if (x == BMP_ALIGN_CENTER)
+		x = max(0, (VIDEO_VISIBLE_COLS - VIDEO_LOGO_WIDTH) / 2);
+	else if (x < 0)
+		x = max(0, VIDEO_VISIBLE_COLS - VIDEO_LOGO_WIDTH + x + 1);
+
+	if (y == BMP_ALIGN_CENTER)
+		y = max(0, (VIDEO_VISIBLE_ROWS - VIDEO_LOGO_HEIGHT) / 2);
+	else if (y < 0)
+		y = max(0, VIDEO_VISIBLE_ROWS - VIDEO_LOGO_HEIGHT + y + 1);
+#endif /* CONFIG_SPLASH_SCREEN_ALIGN */
+
+	dest = (unsigned char *)screen + (y * width  + x) * VIDEO_PIXEL_SIZE;
 
 #ifdef CONFIG_VIDEO_BMP_LOGO
 	source = bmp_logo_bitmap;
@@ -1491,9 +1577,15 @@ void logo_plot(void *screen, int width, int x, int y)
 #endif
 		xcount = VIDEO_LOGO_WIDTH;
 		while (xcount--) {
-			r = logo_red[*source - VIDEO_LOGO_LUT_OFFSET];
-			g = logo_green[*source - VIDEO_LOGO_LUT_OFFSET];
-			b = logo_blue[*source - VIDEO_LOGO_LUT_OFFSET];
+			if (black) {
+				r = 0x00;
+				g = 0x00;
+				b = 0x00;
+			} else {
+				r = logo_red[*source - VIDEO_LOGO_LUT_OFFSET];
+				g = logo_green[*source - VIDEO_LOGO_LUT_OFFSET];
+				b = logo_blue[*source - VIDEO_LOGO_LUT_OFFSET];
+			}
 
 			switch (VIDEO_DATA_FORMAT) {
 			case GDF__8BIT_INDEX:
@@ -1558,42 +1650,66 @@ static void *video_logo(void)
 	char info[128];
 	int space, len;
 	__maybe_unused int y_off = 0;
+	__maybe_unused ulong addr;
+	__maybe_unused char *s;
 
-#ifdef CONFIG_SPLASH_SCREEN
-	char *s;
-	ulong addr;
-
-	s = getenv("splashimage");
-	if (s != NULL) {
-		int x = 0, y = 0;
-
-		addr = simple_strtoul(s, NULL, 16);
 #ifdef CONFIG_SPLASH_SCREEN_ALIGN
-		s = getenv("splashpos");
-		if (s != NULL) {
-			if (s[0] == 'm')
-				x = BMP_ALIGN_CENTER;
-			else
-				x = simple_strtol(s, NULL, 0);
+	s = getenv("splashpos");
+	if (s != NULL) {
+		if (s[0] == 'm')
+			video_logo_xpos = BMP_ALIGN_CENTER;
+		else
+			video_logo_xpos = simple_strtol(s, NULL, 0);
 
-			s = strchr(s + 1, ',');
-			if (s != NULL) {
-				if (s[1] == 'm')
-					y = BMP_ALIGN_CENTER;
-				else
-					y = simple_strtol(s + 1, NULL, 0);
-			}
+		s = strchr(s + 1, ',');
+		if (s != NULL) {
+			if (s[1] == 'm')
+				video_logo_ypos = BMP_ALIGN_CENTER;
+			else
+				video_logo_ypos = simple_strtol(s + 1, NULL, 0);
 		}
+	}
 #endif /* CONFIG_SPLASH_SCREEN_ALIGN */
 
-		if (video_display_bitmap(addr, x, y) == 0) {
+#ifdef CONFIG_SPLASH_SCREEN
+	s = getenv("splashimage");
+	if (s != NULL) {
+
+		addr = simple_strtoul(s, NULL, 16);
+
+
+		if (video_display_bitmap(addr,
+					video_logo_xpos,
+					video_logo_ypos) == 0) {
 			video_logo_height = 0;
 			return ((void *) (video_fb_address));
 		}
 	}
 #endif /* CONFIG_SPLASH_SCREEN */
 
-	logo_plot(video_fb_address, VIDEO_COLS, 0, 0);
+	logo_plot(video_fb_address, VIDEO_COLS,
+		  video_logo_xpos, video_logo_ypos);
+
+#ifdef CONFIG_SPLASH_SCREEN_ALIGN
+	/*
+	 * when using splashpos for video_logo, skip any info
+	 * output on video console if the logo is not at 0,0
+	 */
+	if (video_logo_xpos || video_logo_ypos) {
+		/*
+		 * video_logo_height is used in text and cursor offset
+		 * calculations. Since the console is below the logo,
+		 * we need to adjust the logo height
+		 */
+		if (video_logo_ypos == BMP_ALIGN_CENTER)
+			video_logo_height += max(0, (VIDEO_VISIBLE_ROWS - \
+						     VIDEO_LOGO_HEIGHT) / 2);
+		else if (video_logo_ypos > 0)
+			video_logo_height += video_logo_ypos;
+
+		return video_fb_address + video_logo_height * VIDEO_LINE_LEN;
+	}
+#endif
 
 	sprintf(info, " %s", version_string);
 
@@ -1651,6 +1767,29 @@ static void *video_logo(void)
 }
 #endif
 
+static int cfb_fb_is_in_dram(void)
+{
+	bd_t *bd = gd->bd;
+#if defined(CONFIG_ARM) || defined(CONFIG_AVR32) || defined(COFNIG_NDS32) || \
+defined(CONFIG_SANDBOX) || defined(CONFIG_X86)
+	ulong start, end;
+	int i;
+
+	for (i = 0; i < CONFIG_NR_DRAM_BANKS; ++i) {
+		start = bd->bi_dram[i].start;
+		end = bd->bi_dram[i].start + bd->bi_dram[i].size - 1;
+		if ((ulong)video_fb_address >= start &&
+		    (ulong)video_fb_address < end)
+			return 1;
+	}
+#else
+	if ((ulong)video_fb_address >= bd->bi_memstart &&
+	    (ulong)video_fb_address < bd->bi_memstart + bd->bi_memsize)
+		return 1;
+#endif
+	return 0;
+}
+
 static int video_init(void)
 {
 	unsigned char color8;
@@ -1663,6 +1802,8 @@ static int video_init(void)
 #ifdef CONFIG_VIDEO_HW_CURSOR
 	video_init_hw_cursor(VIDEO_FONT_WIDTH, VIDEO_FONT_HEIGHT);
 #endif
+
+	cfb_do_flush_cache = cfb_fb_is_in_dram() && dcache_status();
 
 	/* Init drawing pats */
 	switch (VIDEO_DATA_FORMAT) {

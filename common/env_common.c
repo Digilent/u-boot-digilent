@@ -80,6 +80,9 @@ const uchar default_environment[] = {
 #ifdef	CONFIG_ETH5ADDR
 	"eth5addr="	MK_STR(CONFIG_ETH5ADDR)		"\0"
 #endif
+#ifdef	CONFIG_ETHPRIME
+	"ethprime="	CONFIG_ETHPRIME			"\0"
+#endif
 #ifdef	CONFIG_IPADDR
 	"ipaddr="	MK_STR(CONFIG_IPADDR)		"\0"
 #endif
@@ -116,13 +119,26 @@ const uchar default_environment[] = {
 #if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
 	"pcidelay="	MK_STR(CONFIG_PCI_BOOTDELAY)	"\0"
 #endif
+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
+	"arch="		CONFIG_SYS_ARCH			"\0"
+	"cpu="		CONFIG_SYS_CPU			"\0"
+	"board="	CONFIG_SYS_BOARD		"\0"
+#ifdef CONFIG_SYS_VENDOR
+	"vendor="	CONFIG_SYS_VENDOR		"\0"
+#endif
+#ifdef CONFIG_SYS_SOC
+	"soc="		CONFIG_SYS_SOC			"\0"
+#endif
+#endif
 #ifdef	CONFIG_EXTRA_ENV_SETTINGS
 	CONFIG_EXTRA_ENV_SETTINGS
 #endif
 	"\0"
 };
 
-struct hsearch_data env_htab;
+struct hsearch_data env_htab = {
+	.apply = env_check_apply,
+};
 
 static uchar __env_get_char_spec(int index)
 {
@@ -164,6 +180,11 @@ const uchar *env_get_addr(int index)
 
 void set_default_env(const char *s)
 {
+	/*
+	 * By default, do not apply changes as they will eventually
+	 * be applied by someone else
+	 */
+	int do_apply = 0;
 	if (sizeof(default_environment) > ENV_SIZE) {
 		puts("*** Error - default environment is too large\n\n");
 		return;
@@ -175,6 +196,14 @@ void set_default_env(const char *s)
 				"using default environment\n\n",
 				s + 1);
 		} else {
+			/*
+			 * This set_to_default was explicitly asked for
+			 * by the user, as opposed to being a recovery
+			 * mechanism.  Therefore we check every single
+			 * variable and apply changes to the system
+			 * right away (e.g. baudrate, console).
+			 */
+			do_apply = 1;
 			puts(s);
 		}
 	} else {
@@ -182,12 +211,27 @@ void set_default_env(const char *s)
 	}
 
 	if (himport_r(&env_htab, (char *)default_environment,
-			sizeof(default_environment), '\0', 0) == 0)
+			sizeof(default_environment), '\0', 0,
+			0, NULL, do_apply) == 0)
 		error("Environment import failed: errno = %d\n", errno);
 
 	gd->flags |= GD_FLG_ENV_READY;
 }
 
+
+/* [re]set individual variables to their value in the default environment */
+int set_default_vars(int nvars, char * const vars[])
+{
+	/*
+	 * Special use-case: import from default environment
+	 * (and use \0 as a separator)
+	 */
+	return himport_r(&env_htab, (const char *)default_environment,
+				sizeof(default_environment), '\0', H_NOCLEAR,
+				nvars, vars, 1 /* do_apply */);
+}
+
+#ifndef CONFIG_SPL_BUILD
 /*
  * Check if CRC is valid and (if yes) import the environment.
  * Note that "buf" may or may not be aligned.
@@ -207,7 +251,8 @@ int env_import(const char *buf, int check)
 		}
 	}
 
-	if (himport_r(&env_htab, (char *)ep->data, ENV_SIZE, '\0', 0)) {
+	if (himport_r(&env_htab, (char *)ep->data, ENV_SIZE, '\0', 0,
+			0, NULL, 0 /* do_apply */)) {
 		gd->flags |= GD_FLG_ENV_READY;
 		return 1;
 	}
@@ -218,6 +263,7 @@ int env_import(const char *buf, int check)
 
 	return 0;
 }
+#endif
 
 void env_relocate(void)
 {
@@ -225,7 +271,8 @@ void env_relocate(void)
 	env_reloc();
 #endif
 	if (gd->env_valid == 0) {
-#if defined(CONFIG_ENV_IS_NOWHERE)	/* Environment not changable */
+#if defined(CONFIG_ENV_IS_NOWHERE) || defined(CONFIG_SPL_BUILD)
+		/* Environment not changable */
 		set_default_env(NULL);
 #else
 		bootstage_error(BOOTSTAGE_ID_NET_CHECKSUM);
@@ -236,7 +283,7 @@ void env_relocate(void)
 	}
 }
 
-#ifdef CONFIG_AUTO_COMPLETE
+#if defined(CONFIG_AUTO_COMPLETE) && !defined(CONFIG_SPL_BUILD)
 int env_complete(char *var, int maxv, char *cmdv[], int bufsz, char *buf)
 {
 	ENTRY *match;

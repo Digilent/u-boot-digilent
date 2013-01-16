@@ -143,6 +143,7 @@ static const table_entry_t uimage_type[] = {
 	{	IH_TYPE_INVALID,    NULL,	  "Invalid Image",	},
 	{	IH_TYPE_MULTI,	    "multi",	  "Multi-File Image",	},
 	{	IH_TYPE_OMAPIMAGE,  "omapimage",  "TI OMAP SPL With GP CH",},
+	{	IH_TYPE_PBLIMAGE,   "pblimage",   "Freescale PBL Boot Image",},
 	{	IH_TYPE_RAMDISK,    "ramdisk",	  "RAMDisk Image",	},
 	{	IH_TYPE_SCRIPT,     "script",	  "Script",		},
 	{	IH_TYPE_STANDALONE, "standalone", "Standalone Program", },
@@ -1829,7 +1830,7 @@ static int fit_parse_spec(const char *spec, char sepc, ulong addr_curr,
  *     addr and conf_name are set accordingly
  *     0 otherwise
  */
-inline int fit_parse_conf(const char *spec, ulong addr_curr,
+int fit_parse_conf(const char *spec, ulong addr_curr,
 		ulong *addr, const char **conf_name)
 {
 	return fit_parse_spec(spec, '#', addr_curr, addr, conf_name);
@@ -1855,7 +1856,7 @@ inline int fit_parse_conf(const char *spec, ulong addr_curr,
  *     addr and image_name are set accordingly
  *     0 otherwise
  */
-inline int fit_parse_subimage(const char *spec, ulong addr_curr,
+int fit_parse_subimage(const char *spec, ulong addr_curr,
 		ulong *addr, const char **image_name)
 {
 	return fit_parse_spec(spec, ':', addr_curr, addr, image_name);
@@ -2042,13 +2043,13 @@ void fit_image_print(const void *fit, int image_noffset, const char *p)
 		printf("%s  Architecture: %s\n", p, genimg_get_arch_name(arch));
 	}
 
-	if (type == IH_TYPE_KERNEL) {
+	if ((type == IH_TYPE_KERNEL) || (type == IH_TYPE_RAMDISK)) {
 		fit_image_get_os(fit, image_noffset, &os);
 		printf("%s  OS:           %s\n", p, genimg_get_os_name(os));
 	}
 
 	if ((type == IH_TYPE_KERNEL) || (type == IH_TYPE_STANDALONE) ||
-		(type == IH_TYPE_FIRMWARE)) {
+		(type == IH_TYPE_FIRMWARE) || (type == IH_TYPE_RAMDISK)) {
 		ret = fit_image_get_load(fit, image_noffset, &load);
 		printf("%s  Load Address: ", p);
 		if (ret)
@@ -2057,7 +2058,8 @@ void fit_image_print(const void *fit, int image_noffset, const char *p)
 			printf("0x%08lx\n", load);
 	}
 
-	if ((type == IH_TYPE_KERNEL) || (type == IH_TYPE_STANDALONE)) {
+	if ((type == IH_TYPE_KERNEL) || (type == IH_TYPE_STANDALONE) ||
+		(type == IH_TYPE_RAMDISK)) {
 		fit_image_get_entry(fit, image_noffset, &entry);
 		printf("%s  Entry Point:  ", p);
 		if (ret)

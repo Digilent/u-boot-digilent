@@ -43,6 +43,7 @@
 #include <common.h>
 #include <command.h>
 #include <asm/processor.h>
+#include <asm/unaligned.h>
 #include <linux/ctype.h>
 #include <asm/byteorder.h>
 #include <asm/unaligned.h>
@@ -153,7 +154,7 @@ int hub_port_reset(struct usb_device *dev, int port,
 			unsigned short *portstat)
 {
 	int tries;
-	struct usb_port_status portsts;
+	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
 	unsigned short portstatus, portchange;
 
 	USB_HUB_PRINTF("hub_port_reset: resetting port %d...\n", port);
@@ -162,13 +163,13 @@ int hub_port_reset(struct usb_device *dev, int port,
 		usb_set_port_feature(dev, port + 1, USB_PORT_FEAT_RESET);
 		mdelay(200);
 
-		if (usb_get_port_status(dev, port + 1, &portsts) < 0) {
+		if (usb_get_port_status(dev, port + 1, portsts) < 0) {
 			USB_HUB_PRINTF("get_port_status failed status %lX\n",
 					dev->status);
 			return -1;
 		}
-		portstatus = le16_to_cpu(portsts.wPortStatus);
-		portchange = le16_to_cpu(portsts.wPortChange);
+		portstatus = le16_to_cpu(portsts->wPortStatus);
+		portchange = le16_to_cpu(portsts->wPortChange);
 
 		USB_HUB_PRINTF("portstatus %x, change %x, %s\n",
 				portstatus, portchange,
@@ -206,19 +207,19 @@ int hub_port_reset(struct usb_device *dev, int port,
 void usb_hub_port_connect_change(struct usb_device *dev, int port)
 {
 	struct usb_device *usb;
-	struct usb_port_status portsts;
+	ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
 	unsigned short portstatus;
 
 	/* Check status */
-	if (usb_get_port_status(dev, port + 1, &portsts) < 0) {
+	if (usb_get_port_status(dev, port + 1, portsts) < 0) {
 		USB_HUB_PRINTF("get_port_status failed\n");
 		return;
 	}
 
-	portstatus = le16_to_cpu(portsts.wPortStatus);
+	portstatus = le16_to_cpu(portsts->wPortStatus);
 	USB_HUB_PRINTF("portstatus %x, change %x, %s\n",
 			portstatus,
-			le16_to_cpu(portsts.wPortChange),
+			le16_to_cpu(portsts->wPortChange),
 			portspeed(portstatus));
 
 	/* Clear the connection change status */
@@ -267,7 +268,9 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 static int usb_hub_configure(struct usb_device *dev)
 {
 	int i;
-	unsigned char buffer[USB_BUFSIZ], *bitmap;
+	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, buffer, USB_BUFSIZ);
+	unsigned char *bitmap;
+	short hubCharacteristics;
 	struct usb_hub_descriptor *descriptor;
 	struct usb_hub_device *hub;
 #ifdef USB_HUB_DEBUG
@@ -303,8 +306,9 @@ static int usb_hub_configure(struct usb_device *dev)
 	}
 	memcpy((unsigned char *)&hub->desc, buffer, descriptor->bLength);
 	/* adjust 16bit values */
-	hub->desc.wHubCharacteristics =
-				le16_to_cpu(descriptor->wHubCharacteristics);
+	put_unaligned(le16_to_cpu(get_unaligned(
+			&descriptor->wHubCharacteristics)),
+			&hub->desc.wHubCharacteristics);
 	/* set the bitmap */
 	bitmap = (unsigned char *)&hub->desc.DeviceRemovable[0];
 	/* devices not removable by default */
@@ -321,7 +325,8 @@ static int usb_hub_configure(struct usb_device *dev)
 	dev->maxchild = descriptor->bNbrPorts;
 	USB_HUB_PRINTF("%d ports detected\n", dev->maxchild);
 
-	switch (hub->desc.wHubCharacteristics & HUB_CHAR_LPSM) {
+	hubCharacteristics = get_unaligned(&hub->desc.wHubCharacteristics);
+	switch (hubCharacteristics & HUB_CHAR_LPSM) {
 	case 0x00:
 		USB_HUB_PRINTF("ganged power switching\n");
 		break;
@@ -334,12 +339,12 @@ static int usb_hub_configure(struct usb_device *dev)
 		break;
 	}
 
-	if (hub->desc.wHubCharacteristics & HUB_CHAR_COMPOUND)
+	if (hubCharacteristics & HUB_CHAR_COMPOUND)
 		USB_HUB_PRINTF("part of a compound device\n");
 	else
 		USB_HUB_PRINTF("standalone hub\n");
 
-	switch (hub->desc.wHubCharacteristics & HUB_CHAR_OCPM) {
+	switch (hubCharacteristics & HUB_CHAR_OCPM) {
 	case 0x00:
 		USB_HUB_PRINTF("global over-current protection\n");
 		break;
@@ -389,16 +394,16 @@ static int usb_hub_configure(struct usb_device *dev)
 	usb_hub_power_on(hub);
 
 	for (i = 0; i < dev->maxchild; i++) {
-		struct usb_port_status portsts;
+		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
 		unsigned short portstatus, portchange;
 
-		if (usb_get_port_status(dev, i + 1, &portsts) < 0) {
+		if (usb_get_port_status(dev, i + 1, portsts) < 0) {
 			USB_HUB_PRINTF("get_port_status failed\n");
 			continue;
 		}
 
-		portstatus = le16_to_cpu(portsts.wPortStatus);
-		portchange = le16_to_cpu(portsts.wPortChange);
+		portstatus = le16_to_cpu(portsts->wPortStatus);
+		portchange = le16_to_cpu(portsts->wPortChange);
 		USB_HUB_PRINTF("Port %d Status %X Change %X\n",
 				i + 1, portstatus, portchange);
 

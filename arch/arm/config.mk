@@ -33,25 +33,38 @@ endif
 
 PLATFORM_CPPFLAGS += -DCONFIG_ARM -D__ARM__
 
-# Explicitly specifiy 32-bit ARM ISA since toolchain default can be -mthumb:
-PF_CPPFLAGS_ARM := $(call cc-option,-marm,)
+# Choose between ARM/Thumb instruction sets
+ifeq ($(CONFIG_SYS_THUMB_BUILD),y)
+PF_CPPFLAGS_ARM := $(call cc-option, -mthumb -mthumb-interwork,\
+			$(call cc-option,-marm,)\
+			$(call cc-option,-mno-thumb-interwork,)\
+		)
+else
+PF_CPPFLAGS_ARM := $(call cc-option,-marm,) \
+		$(call cc-option,-mno-thumb-interwork,)
+endif
+
+# Only test once
+ifneq ($(CONFIG_SPL_BUILD),y)
+ALL-$(CONFIG_SYS_THUMB_BUILD)	+= checkthumb
+endif
 
 # Try if EABI is supported, else fall back to old API,
 # i. e. for example:
 # - with ELDK 4.2 (EABI supported), use:
-#	-mabi=aapcs-linux -mno-thumb-interwork
+#	-mabi=aapcs-linux
 # - with ELDK 4.1 (gcc 4.x, no EABI), use:
-#	-mabi=apcs-gnu -mno-thumb-interwork
+#	-mabi=apcs-gnu
 # - with ELDK 3.1 (gcc 3.x), use:
-#	-mapcs-32 -mno-thumb-interwork
+#	-mapcs-32
 PF_CPPFLAGS_ABI := $(call cc-option,\
-			-mabi=aapcs-linux -mno-thumb-interwork,\
+			-mabi=aapcs-linux,\
 			$(call cc-option,\
 				-mapcs-32,\
 				$(call cc-option,\
 					-mabi=apcs-gnu,\
 				)\
-			) $(call cc-option,-mno-thumb-interwork,)\
+			)\
 		)
 PLATFORM_CPPFLAGS += $(PF_CPPFLAGS_ARM) $(PF_CPPFLAGS_ABI)
 
@@ -73,4 +86,22 @@ endif
 # needed for relocation
 ifndef CONFIG_NAND_SPL
 LDFLAGS_u-boot += -pie
+endif
+
+#
+# FIXME: binutils versions < 2.22 have a bug in the assembler where
+# branches to weak symbols can be incorrectly optimized in thumb mode
+# to a short branch (b.n instruction) that won't reach when the symbol
+# gets preempted
+#
+# http://sourceware.org/bugzilla/show_bug.cgi?id=12532
+#
+ifeq ($(CONFIG_SYS_THUMB_BUILD),y)
+ifeq ($(GAS_BUG_12532),)
+export GAS_BUG_12532:=$(shell if [ $(call binutils-version) -lt 0222 ] ; \
+	then echo y; else echo n; fi)
+endif
+ifeq ($(GAS_BUG_12532),y)
+PLATFORM_RELFLAGS += -fno-optimize-sibling-calls
+endif
 endif

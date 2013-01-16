@@ -54,7 +54,6 @@ extern unsigned int davinci_arm_clk_get(void);
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #define CONFIG_SYS_MEMTEST_END		0x81000000	/* 16MB RAM test */
 #define CONFIG_NR_DRAM_BANKS		1
-#define CONFIG_STACKSIZE		(256 << 10)	/* 256 KiB */
 #define PHYS_SDRAM_1			0x80000000	/* DDR Start */
 #define PHYS_SDRAM_1_SIZE		(256 << 20)	/* DDR size 256MB */
 
@@ -73,7 +72,6 @@ extern unsigned int davinci_arm_clk_get(void);
 #define CONFIG_SYS_NS16550_CLK		24000000
 #define CONFIG_CONS_INDEX		1
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /* I2C Configuration */
 #define CONFIG_HARD_I2C
@@ -109,7 +107,6 @@ extern unsigned int davinci_arm_clk_get(void);
 #endif
 
 /* U-Boot general configuration */
-#undef CONFIG_USE_IRQ				/* No IRQ/FIQ in U-Boot */
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_BOOTFILE		"uImage"	/* Boot file name */
 #define CONFIG_SYS_PROMPT	"DM6467 EVM > "	/* Monitor Command Prompt */
@@ -120,7 +117,6 @@ extern unsigned int davinci_arm_clk_get(void);
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CRC32_VERIFY

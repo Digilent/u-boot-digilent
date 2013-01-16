@@ -53,9 +53,8 @@
 #define CONFIG_CMD_I2C
 #define CONFIG_HARD_I2C
 #define CONFIG_I2C_MXC
-#define CONFIG_SYS_I2C_MX53_PORT2       1
+#define CONFIG_SYS_I2C_BASE		I2C2_BASE_ADDR
 #define CONFIG_SYS_I2C_SPEED            100000
-#define CONFIG_SYS_I2C_SLAVE            0xfe
 
 /* PMIC Configs */
 #define CONFIG_PMIC
@@ -78,7 +77,6 @@
 /* Eth Configs */
 #define CONFIG_HAS_ETH1
 #define CONFIG_MII
-#define CONFIG_DISCOVER_PHY
 
 #define CONFIG_FEC_MXC
 #define IMX_FEC_BASE	FEC_BASE_ADDR
@@ -90,11 +88,13 @@
 #define CONFIG_CMD_NET
 #define CONFIG_CMD_DATE
 
+/* Miscellaneous commands */
+#define CONFIG_CMD_BMODE
+
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX		1
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{9600, 19200, 38400, 57600, 115200}
 
 /* Command definition */
 #include <config_cmd_default.h>
@@ -150,7 +150,6 @@
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"MX53EVK U-Boot > "
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
@@ -167,9 +166,6 @@
 
 #define CONFIG_SYS_HZ		1000
 #define CONFIG_CMDLINE_EDITING
-
-/* Stack sizes */
-#define CONFIG_STACKSIZE	(128 * 1024)	/* regular stack */
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS	1

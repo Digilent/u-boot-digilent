@@ -250,11 +250,9 @@ void board_init_f(ulong board_type)
 
 void board_init_r(gd_t *new_gd, ulong dest_addr)
 {
-	extern void malloc_bin_reloc (void);
 #ifndef CONFIG_ENV_IS_NOWHERE
 	extern char * env_name_spec;
 #endif
-	char *s;
 	bd_t *bd;
 
 	gd = new_gd;
@@ -316,8 +314,6 @@ void board_init_r(gd_t *new_gd, ulong dest_addr)
 	/* initialize environment */
 	env_relocate();
 
-	bd->bi_ip_addr = getenv_IPaddr ("ipaddr");
-
 	stdio_init();
 	jumptable_init();
 	console_init_r();
@@ -329,9 +325,6 @@ void board_init_r(gd_t *new_gd, ulong dest_addr)
 	bb_miiphy_init();
 #endif
 #if defined(CONFIG_CMD_NET)
-	s = getenv("bootfile");
-	if (s)
-		copy_filename(BootFile, s, sizeof(BootFile));
 	puts("Net:   ");
 	eth_initialize(gd->bd);
 #endif

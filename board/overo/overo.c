@@ -101,16 +101,6 @@ int board_init(void)
 }
 
 /*
- * Routine: omap_rev_string
- * Description: For SPL builds output board rev
- */
-#ifdef CONFIG_SPL_BUILD
-void omap_rev_string(void)
-{
-}
-#endif
-
-/*
  * Routine: get_board_revision
  * Description: Returns the board revision
  */
@@ -403,7 +393,7 @@ int board_eth_init(bd_t *bis)
 #if defined(CONFIG_GENERIC_MMC) && !defined(CONFIG_SPL_BUILD)
 int board_mmc_init(bd_t *bis)
 {
-	omap_mmc_init(0);
+	omap_mmc_init(0, 0, 0);
 	return 0;
 }
 #endif

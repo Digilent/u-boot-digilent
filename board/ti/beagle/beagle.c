@@ -50,8 +50,6 @@
 #include <asm/ehci-omap.h>
 #endif
 
-#define pr_debug(fmt, args...) debug(fmt, ##args)
-
 #define TWL4030_I2C_BUS			0
 #define EXPANSION_EEPROM_I2C_BUS	1
 #define EXPANSION_EEPROM_I2C_ADDRESS	0x50
@@ -68,6 +66,7 @@
 #define BBTOYS_VGA			0x02000B00
 #define BBTOYS_LCD			0x03000B00
 #define BCT_BRETTL3			0x01000F00
+#define BCT_BRETTL4			0x02000F00
 #define BEAGLE_NO_EEPROM		0xffffffff
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -111,7 +110,7 @@ int board_init(void)
  *		GPIO173, GPIO172, GPIO171: 1 0 1 => C4
  *		GPIO173, GPIO172, GPIO171: 0 0 0 => xM
  */
-int get_board_revision(void)
+static int get_board_revision(void)
 {
 	int revision;
 
@@ -210,7 +209,7 @@ void get_board_mem_timings(u32 *mcfg, u32 *ctrla, u32 *ctrlb, u32 *rfr_ctrl,
  *		bus 1 for the availability of an AT24C01B serial EEPROM.
  *		returns the device_vendor field from the EEPROM
  */
-unsigned int get_expansion_id(void)
+static unsigned int get_expansion_id(void)
 {
 	i2c_set_bus_num(EXPANSION_EEPROM_I2C_BUS);
 
@@ -229,11 +228,12 @@ unsigned int get_expansion_id(void)
 	return expansion_config.device_vendor;
 }
 
+#ifdef CONFIG_VIDEO_OMAP3
 /*
  * Configure DSS to display background color on DVID
  * Configure VENC to display color bar on S-Video
  */
-void beagle_display_init(void)
+static void beagle_display_init(void)
 {
 	omap3_dss_venc_config(&venc_config_std_tv, VENC_HEIGHT, VENC_WIDTH);
 	switch (get_board_revision()) {
@@ -283,6 +283,7 @@ static void beagle_dvi_pup(void)
 		break;
 	}
 }
+#endif
 
 /*
  * Routine: misc_init_r
@@ -417,8 +418,11 @@ int misc_init_r(void)
 		printf("Recognized BeagleBoardToys LCD board\n");
 		break;;
 	case BCT_BRETTL3:
-	    printf("Recognized bct electronic GmbH brettl3 board\n");
-	    break;
+		printf("Recognized bct electronic GmbH brettl3 board\n");
+		break;
+	case BCT_BRETTL4:
+		printf("Recognized bct electronic GmbH brettl4 board\n");
+		break;
 	case BEAGLE_NO_EEPROM:
 		printf("No EEPROM on expansion board\n");
 		setenv("buddy", "none");
@@ -456,9 +460,11 @@ int misc_init_r(void)
 
 	dieid_num_r();
 
+#ifdef CONFIG_VIDEO_OMAP3
 	beagle_dvi_pup();
 	beagle_display_init();
 	omap3_dss_enable();
+#endif
 
 	return 0;
 }
@@ -477,12 +483,12 @@ void set_muxconf_regs(void)
 #if defined(CONFIG_GENERIC_MMC) && !defined(CONFIG_SPL_BUILD)
 int board_mmc_init(bd_t *bis)
 {
-	omap_mmc_init(0);
+	omap_mmc_init(0, 0, 0);
 	return 0;
 }
 #endif
 
-#ifdef CONFIG_USB_EHCI
+#if defined(CONFIG_USB_EHCI) && !defined(CONFIG_SPL_BUILD)
 /* Call usb_stop() before starting the kernel */
 void show_boot_progress(int val)
 {

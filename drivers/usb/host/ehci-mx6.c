@@ -22,7 +22,7 @@
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/mx6x_pins.h>
-#include <asm/arch/iomux-v3.h>
+#include <asm/imx-common/iomux-v3.h>
 
 #include "ehci.h"
 #include "ehci-core.h"
@@ -73,7 +73,8 @@ static void usbh1_internal_phy_clock_gate(int on)
 
 static void usbh1_power_config(void)
 {
-	struct anatop_regs *anatop = (struct anatop_regs *)ANATOP_BASE_ADDR;
+	struct anatop_regs __iomem *anatop =
+		(struct anatop_regs __iomem *)ANATOP_BASE_ADDR;
 	/*
 	 * Some phy and power's special controls for host1
 	 * 1. The external charger detector needs to be disabled
@@ -87,7 +88,7 @@ static void usbh1_power_config(void)
 		     &anatop->usb2_chrg_detect);
 
 	__raw_writel(ANADIG_USB2_PLL_480_CTRL_BYPASS,
-		     &anatop->usb2_pll_480_ctrl);
+		     &anatop->usb2_pll_480_ctrl_clr);
 
 	__raw_writel(ANADIG_USB2_PLL_480_CTRL_ENABLE |
 		     ANADIG_USB2_PLL_480_CTRL_POWER |

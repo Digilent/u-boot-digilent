@@ -96,15 +96,6 @@ extern unsigned long nand_env_oob_offset;
 # endif
 #endif /* CONFIG_ENV_IS_IN_NAND */
 
-#if defined(CONFIG_ENV_IS_IN_MG_DISK)
-# ifndef CONFIG_ENV_ADDR
-#  error "Need to define CONFIG_ENV_ADDR when using CONFIG_ENV_IS_IN_MG_DISK"
-# endif
-# ifndef CONFIG_ENV_SIZE
-#  error "Need to define CONFIG_ENV_SIZE when using CONFIG_ENV_IS_IN_MG_DISK"
-# endif
-#endif /* CONFIG_ENV_IS_IN_MG_DISK */
-
 /* Embedded env is only supported for some flash types */
 #ifdef CONFIG_ENV_IS_EMBEDDED
 # if	!defined(CONFIG_ENV_IS_IN_FLASH)	&& \
@@ -190,8 +181,20 @@ void env_crc_update(void);
 /* [re]set to the default environment */
 void set_default_env(const char *s);
 
+/* [re]set individual variables to their value in the default environment */
+int set_default_vars(int nvars, char * const vars[]);
+
 /* Import from binary representation into hash table */
 int env_import(const char *buf, int check);
+
+/*
+ * Check if variable "name" can be changed from oldval to newval,
+ * and if so, apply the changes (e.g. baudrate).
+ * When (flag & H_FORCE) is set, it does not print out any error
+ * message and forces overwriting of write-once variables.
+ */
+int env_check_apply(const char *name, const char *oldval,
+			const char *newval, int flag);
 
 #endif /* DO_DEPS_ONLY */
 

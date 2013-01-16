@@ -31,8 +31,15 @@
 #include <asm/arch/imx-regs.h>
 #include <asm/io.h>
 #include <asm/errno.h>
+#include <linux/compiler.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+/*
+ * Timeout the transfer after 5 mS. This is usually a bit more, since
+ * the code in the tightloops this timeout is used in adds some overhead.
+ */
+#define FEC_XFER_TIMEOUT	5000
 
 #ifndef CONFIG_MII
 #error "CONFIG_MII has to be defined!"
@@ -187,9 +194,10 @@ int fec_phy_write(struct mii_dev *bus, int phyAddr, int dev_addr, int regAddr,
 #ifndef CONFIG_PHYLIB
 static int miiphy_restart_aneg(struct eth_device *dev)
 {
+	int ret = 0;
+#if !defined(CONFIG_FEC_MXC_NO_ANEG)
 	struct fec_priv *fec = (struct fec_priv *)dev->priv;
 	struct ethernet_regs *eth = fec->bus->priv;
-	int ret = 0;
 
 	/*
 	 * Wake up from sleep if necessary
@@ -213,6 +221,7 @@ static int miiphy_restart_aneg(struct eth_device *dev)
 	if (fec->mii_postcall)
 		ret = fec->mii_postcall(fec->phy_id);
 
+#endif
 	return ret;
 }
 
@@ -247,7 +256,7 @@ static int miiphy_wait_aneg(struct eth_device *dev)
 
 static int fec_rx_task_enable(struct fec_priv *fec)
 {
-	writel(1 << 24, &fec->eth->r_des_active);
+	writel(FEC_R_DES_ACTIVE_RDAR, &fec->eth->r_des_active);
 	return 0;
 }
 
@@ -258,7 +267,7 @@ static int fec_rx_task_disable(struct fec_priv *fec)
 
 static int fec_tx_task_enable(struct fec_priv *fec)
 {
-	writel(1 << 24, &fec->eth->x_des_active);
+	writel(FEC_X_DES_ACTIVE_TDAR, &fec->eth->x_des_active);
 	return 0;
 }
 
@@ -398,6 +407,40 @@ static void fec_eth_phy_config(struct eth_device *dev)
 #endif
 }
 
+/*
+ * Do initial configuration of the FEC registers
+ */
+static void fec_reg_setup(struct fec_priv *fec)
+{
+	uint32_t rcntrl;
+
+	/*
+	 * Set interrupt mask register
+	 */
+	writel(0x00000000, &fec->eth->imask);
+
+	/*
+	 * Clear FEC-Lite interrupt event register(IEVENT)
+	 */
+	writel(0xffffffff, &fec->eth->ievent);
+
+
+	/*
+	 * Set FEC-Lite receive control register(R_CNTRL):
+	 */
+
+	/* Start with frame length = 1518, common for all modes. */
+	rcntrl = PKTSIZE << FEC_RCNTRL_MAX_FL_SHIFT;
+	if (fec->xcv_type != SEVENWIRE)		/* xMII modes */
+		rcntrl |= FEC_RCNTRL_FCE | FEC_RCNTRL_MII_MODE;
+	if (fec->xcv_type == RGMII)
+		rcntrl |= FEC_RCNTRL_RGMII;
+	else if (fec->xcv_type == RMII)
+		rcntrl |= FEC_RCNTRL_RMII;
+
+	writel(rcntrl, &fec->eth->r_cntrl);
+}
+
 /**
  * Start the FEC engine
  * @param[in] dev Our device to handle
@@ -472,7 +515,13 @@ static int fec_open(struct eth_device *edev)
 		fec_eth_phy_config(edev);
 	if (fec->phydev) {
 		/* Start up the PHY */
-		phy_startup(fec->phydev);
+		int ret = phy_startup(fec->phydev);
+
+		if (ret) {
+			printf("Could not initialize PHY %s\n",
+			       fec->phydev->dev->name);
+			return ret;
+		}
 		speed = fec->phydev->speed;
 	} else {
 		speed = _100BASET;
@@ -512,7 +561,6 @@ static int fec_init(struct eth_device *dev, bd_t* bd)
 {
 	struct fec_priv *fec = (struct fec_priv *)dev->priv;
 	uint32_t mib_ptr = (uint32_t)&fec->eth->rmon_t_drop;
-	uint32_t rcntrl;
 	uint32_t size;
 	int i, ret;
 
@@ -560,35 +608,9 @@ static int fec_init(struct eth_device *dev, bd_t* bd)
 				   (unsigned)fec->rbd_base + size);
 	}
 
-	/*
-	 * Set interrupt mask register
-	 */
-	writel(0x00000000, &fec->eth->imask);
+	fec_reg_setup(fec);
 
-	/*
-	 * Clear FEC-Lite interrupt event register(IEVENT)
-	 */
-	writel(0xffffffff, &fec->eth->ievent);
-
-
-	/*
-	 * Set FEC-Lite receive control register(R_CNTRL):
-	 */
-
-	/* Start with frame length = 1518, common for all modes. */
-	rcntrl = PKTSIZE << FEC_RCNTRL_MAX_FL_SHIFT;
-	if (fec->xcv_type == SEVENWIRE)
-		rcntrl |= FEC_RCNTRL_FCE;
-	else if (fec->xcv_type == RGMII)
-		rcntrl |= FEC_RCNTRL_RGMII;
-	else if (fec->xcv_type == RMII)
-		rcntrl |= FEC_RCNTRL_RMII;
-	else	/* MII mode */
-		rcntrl |= FEC_RCNTRL_FCE | FEC_RCNTRL_MII_MODE;
-
-	writel(rcntrl, &fec->eth->r_cntrl);
-
-	if (fec->xcv_type == MII10 || fec->xcv_type == MII100)
+	if (fec->xcv_type != SEVENWIRE)
 		fec_mii_setspeed(fec);
 
 	/*
@@ -676,11 +698,13 @@ static void fec_halt(struct eth_device *dev)
  * @param[in] length Data count in bytes
  * @return 0 on success
  */
-static int fec_send(struct eth_device *dev, volatile void *packet, int length)
+static int fec_send(struct eth_device *dev, void *packet, int length)
 {
 	unsigned int status;
-	uint32_t size;
+	uint32_t size, end;
 	uint32_t addr;
+	int timeout = FEC_XFER_TIMEOUT;
+	int ret = 0;
 
 	/*
 	 * This routine transmits one frame.  This routine only accepts
@@ -706,8 +730,9 @@ static int fec_send(struct eth_device *dev, volatile void *packet, int length)
 #endif
 
 	addr = (uint32_t)packet;
-	size = roundup(length, ARCH_DMA_MINALIGN);
-	flush_dcache_range(addr, addr + size);
+	end = roundup(addr + length, ARCH_DMA_MINALIGN);
+	addr &= ~(ARCH_DMA_MINALIGN - 1);
+	flush_dcache_range(addr, end);
 
 	writew(length, &fec->tbd_base[fec->tbd_index].data_length);
 	writel(addr, &fec->tbd_base[fec->tbd_index].data_pointer);
@@ -743,22 +768,28 @@ static int fec_send(struct eth_device *dev, volatile void *packet, int length)
 	 * invalidate data cache to see what's really in RAM. Also, we need
 	 * barrier here.
 	 */
-	invalidate_dcache_range(addr, addr + size);
-	while (readw(&fec->tbd_base[fec->tbd_index].status) & FEC_TBD_READY) {
-		udelay(1);
-		invalidate_dcache_range(addr, addr + size);
+	while (--timeout) {
+		if (!(readl(&fec->eth->x_des_active) & FEC_X_DES_ACTIVE_TDAR))
+			break;
 	}
 
-	debug("fec_send: status 0x%x index %d\n",
+	if (!timeout)
+		ret = -EINVAL;
+
+	invalidate_dcache_range(addr, addr + size);
+	if (readw(&fec->tbd_base[fec->tbd_index].status) & FEC_TBD_READY)
+		ret = -EINVAL;
+
+	debug("fec_send: status 0x%x index %d ret %i\n",
 			readw(&fec->tbd_base[fec->tbd_index].status),
-			fec->tbd_index);
+			fec->tbd_index, ret);
 	/* for next transmission use the other buffer */
 	if (fec->tbd_index)
 		fec->tbd_index = 0;
 	else
 		fec->tbd_index = 1;
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -774,9 +805,9 @@ static int fec_recv(struct eth_device *dev)
 	int frame_length, len = 0;
 	struct nbuf *frame;
 	uint16_t bd_status;
-	uint32_t addr, size;
+	uint32_t addr, size, end;
 	int i;
-	uchar buff[FEC_MAX_PKT_SIZE];
+	uchar buff[FEC_MAX_PKT_SIZE] __aligned(ARCH_DMA_MINALIGN);
 
 	/*
 	 * Check if any critical events have happened
@@ -838,8 +869,9 @@ static int fec_recv(struct eth_device *dev)
 			 * Invalidate data cache over the buffer
 			 */
 			addr = (uint32_t)frame;
-			size = roundup(frame_length, ARCH_DMA_MINALIGN);
-			invalidate_dcache_range(addr, addr + size);
+			end = roundup(addr + frame_length, ARCH_DMA_MINALIGN);
+			addr &= ~(ARCH_DMA_MINALIGN - 1);
+			invalidate_dcache_range(addr, end);
 
 			/*
 			 *  Fill the buffer and pass it to upper layers
@@ -933,24 +965,7 @@ static int fec_probe(bd_t *bd, int dev_id, int phy_id, uint32_t base_addr)
 		udelay(10);
 	}
 
-	/*
-	 * Set interrupt mask register
-	 */
-	writel(0x00000000, &fec->eth->imask);
-
-	/*
-	 * Clear FEC-Lite interrupt event register(IEVENT)
-	 */
-	writel(0xffffffff, &fec->eth->ievent);
-
-	/*
-	 * Set FEC-Lite receive control register(R_CNTRL):
-	 */
-	/*
-	 * Frame length=1518; MII mode;
-	 */
-	writel((PKTSIZE << FEC_RCNTRL_MAX_FL_SHIFT) | FEC_RCNTRL_FCE |
-		FEC_RCNTRL_MII_MODE, &fec->eth->r_cntrl);
+	fec_reg_setup(fec);
 	fec_mii_setspeed(fec);
 
 	if (dev_id == -1) {

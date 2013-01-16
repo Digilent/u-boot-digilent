@@ -25,6 +25,8 @@
 #ifndef __ASM_ARCH_MX35_H
 #define __ASM_ARCH_MX35_H
 
+#define ARCH_MXC
+
 /*
  * IRAM
  */
@@ -39,7 +41,7 @@
 #define MAX_BASE_ADDR           0x43F04000
 #define EVTMON_BASE_ADDR        0x43F08000
 #define CLKCTL_BASE_ADDR        0x43F0C000
-#define I2C_BASE_ADDR           0x43F80000
+#define I2C1_BASE_ADDR		0x43F80000
 #define I2C3_BASE_ADDR          0x43F84000
 #define ATA_BASE_ADDR           0x43F8C000
 #define UART1_BASE		0x43F90000
@@ -72,7 +74,6 @@
 #define MMC_SDHC2_BASE_ADDR	0x53FB8000
 #define MMC_SDHC3_BASE_ADDR	0x53FBC000
 #define IPU_CTRL_BASE_ADDR	0x53FC0000
-#define GPIO3_BASE_ADDR		0x53FA4000
 #define GPIO1_BASE_ADDR		0x53FCC000
 #define GPIO2_BASE_ADDR		0x53FD0000
 #define SDMA_BASE_ADDR		0x53FD4000
@@ -177,7 +178,7 @@
 #define IPU_CONF_PF_EN		(1<<3)
 #define IPU_CONF_ROT_EN		(1<<2)
 #define IPU_CONF_IC_EN		(1<<1)
-#define IPU_CONF_SCI_EN		(1<<0)
+#define IPU_CONF_CSI_EN		(1<<0)
 
 /*
  * CSPI register definitions
@@ -215,32 +216,6 @@
 
 #if !(defined(__KERNEL_STRICT_NAMES) || defined(__ASSEMBLY__))
 #include <asm/types.h>
-
-enum mxc_main_clocks {
-	CPU_CLK,
-	AHB_CLK,
-	IPG_CLK,
-	IPG_PER_CLK,
-	NFC_CLK,
-	USB_CLK,
-	HSP_CLK,
-};
-
-enum mxc_peri_clocks {
-	UART1_BAUD,
-	UART2_BAUD,
-	UART3_BAUD,
-	SSI1_BAUD,
-	SSI2_BAUD,
-	CSI_BAUD,
-	MSHC_CLK,
-	ESDHC1_CLK,
-	ESDHC2_CLK,
-	ESDHC3_CLK,
-	SPDIF_CLK,
-	SPI1_CLK,
-	SPI2_CLK,
-};
 
 /* Clock Control Module (CCM) registers */
 struct ccm_regs {

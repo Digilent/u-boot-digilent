@@ -31,7 +31,8 @@ extern struct serial_device *default_serial_console(void);
 	defined(CONFIG_MB86R0x) || defined(CONFIG_MPC5xxx) || \
 	defined(CONFIG_MPC83xx) || defined(CONFIG_MPC85xx) || \
 	defined(CONFIG_MPC86xx) || defined(CONFIG_SYS_SC520) || \
-	defined(CONFIG_TEGRA2) || defined(CONFIG_SYS_COREBOOT)
+	defined(CONFIG_TEGRA20) || defined(CONFIG_SYS_COREBOOT) || \
+	defined(CONFIG_MICROBLAZE)
 extern struct serial_device serial0_device;
 extern struct serial_device serial1_device;
 #if defined(CONFIG_SYS_NS16550_SERIAL)
@@ -87,6 +88,11 @@ extern struct serial_device bfin_serial0_device;
 extern struct serial_device bfin_serial1_device;
 extern struct serial_device bfin_serial2_device;
 extern struct serial_device bfin_serial3_device;
+#endif
+
+#if defined(CONFIG_ZYNQ_SERIAL)
+extern struct serial_device uart_zynq_serial0_device;
+extern struct serial_device uart_zynq_serial1_device;
 #endif
 
 extern void serial_register(struct serial_device *);

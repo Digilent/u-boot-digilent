@@ -564,6 +564,13 @@ int do_bootm_subcommand(cmd_tbl_t *cmdtp, int flag, int argc,
 			break;
 		case BOOTM_STATE_OS_GO:
 			disable_interrupts();
+#ifdef CONFIG_NETCONSOLE
+			/*
+			 * Stop the ethernet stack if NetConsole could have
+			 * left it up
+			 */
+			eth_halt();
+#endif
 			arch_preboot_os();
 			boot_fn(BOOTM_STATE_OS_GO, argc, argv, &images);
 			break;
@@ -621,6 +628,11 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	 * recover from any failures any more...
 	 */
 	iflag = disable_interrupts();
+
+#ifdef CONFIG_NETCONSOLE
+	/* Stop the ethernet stack if NetConsole could have left it up */
+	eth_halt();
+#endif
 
 #if defined(CONFIG_CMD_USB)
 	/*
@@ -1587,7 +1599,6 @@ static int bootz_start(cmd_tbl_t *cmdtp, int flag, int argc,
 
 static int do_bootz(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	ulong		iflag;
 	bootm_headers_t	images;
 
 	if (bootz_start(cmdtp, flag, argc, argv, &images))
@@ -1598,7 +1609,12 @@ static int do_bootz(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	 * overwrite all exception vector code, so we cannot easily
 	 * recover from any failures any more...
 	 */
-	iflag = disable_interrupts();
+	disable_interrupts();
+
+#ifdef CONFIG_NETCONSOLE
+	/* Stop the ethernet stack if NetConsole could have left it up */
+	eth_halt();
+#endif
 
 #if defined(CONFIG_CMD_USB)
 	/*

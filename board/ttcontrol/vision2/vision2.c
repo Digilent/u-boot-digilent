@@ -521,7 +521,7 @@ static void setup_fec(void)
 }
 
 struct fsl_esdhc_cfg esdhc_cfg[1] = {
-	{MMC_SDHC1_BASE_ADDR, 1},
+	{MMC_SDHC1_BASE_ADDR},
 };
 
 int get_mmc_getcd(u8 *cd, struct mmc *mmc)
@@ -604,7 +604,7 @@ void lcd_enable(void)
 	gpio_set_value(2, 1);
 	mxc_request_iomux(MX51_PIN_GPIO1_2, IOMUX_CONFIG_ALT0);
 
-	ret = mx51_fb_init(&nec_nl6448bc26_09c, 0, IPU_PIX_FMT_RGB666);
+	ret = ipuv3_fb_init(&nec_nl6448bc26_09c, 0, IPU_PIX_FMT_RGB666);
 	if (ret)
 		puts("LCD cannot be configured\n");
 }
@@ -674,9 +674,16 @@ int board_late_init(void)
 	udelay(2000);
 #endif
 
-	setenv("stdout", "serial");
-
 	return 0;
+}
+
+/*
+ * Do not overwrite the console
+ * Use always serial for U-Boot console
+ */
+int overwrite_console(void)
+{
+	return 1;
 }
 
 int checkboard(void)

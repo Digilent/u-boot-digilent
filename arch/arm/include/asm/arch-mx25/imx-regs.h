@@ -34,6 +34,9 @@
 #define _IMX_REGS_H
 
 #ifndef __ASSEMBLY__
+
+#include <asm/types.h>
+
 #ifdef CONFIG_FEC_MXC
 extern void mx25_fec_init_pins(void);
 #endif
@@ -168,6 +171,8 @@ struct aips_regs {
 };
 
 #endif
+
+#define ARCH_MXC
 
 /* AIPS 1 */
 #define IMX_AIPS1_BASE		(0x43F00000)

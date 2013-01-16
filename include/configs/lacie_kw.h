@@ -27,9 +27,20 @@
 #elif defined(CONFIG_NETSPACE_V2)
 #define CONFIG_MACH_TYPE		MACH_TYPE_NETSPACE_V2
 #define CONFIG_IDENT_STRING		" NS v2"
+#elif defined(CONFIG_NETSPACE_LITE_V2)
+#define MACH_TYPE_NETSPACE_LITE_V2	2983 /* missing in mach-types.h */
+#define CONFIG_MACH_TYPE		MACH_TYPE_NETSPACE_LITE_V2
+#define CONFIG_IDENT_STRING		" NS v2 Lite"
+#elif defined(CONFIG_NETSPACE_MINI_V2)
+#define MACH_TYPE_NETSPACE_MINI_V2	2831 /* missing in mach-types.h */
+#define CONFIG_MACH_TYPE		MACH_TYPE_NETSPACE_MINI_V2
+#define CONFIG_IDENT_STRING		" NS v2 Mini"
 #elif defined(CONFIG_NETSPACE_MAX_V2)
 #define CONFIG_MACH_TYPE		MACH_TYPE_NETSPACE_MAX_V2
 #define CONFIG_IDENT_STRING		" NS Max v2"
+#elif defined(CONFIG_D2NET_V2)
+#define CONFIG_MACH_TYPE		MACH_TYPE_D2NET_V2
+#define CONFIG_IDENT_STRING		" D2 v2"
 #elif defined(CONFIG_NET2BIG_V2)
 #define CONFIG_MACH_TYPE		MACH_TYPE_NET2BIG_V2
 #define CONFIG_IDENT_STRING		" 2Big v2"
@@ -41,8 +52,13 @@
  * High Level Configuration Options (easy to change)
  */
 #define CONFIG_FEROCEON_88FR131		/* CPU Core subversion */
-#define CONFIG_KIRKWOOD			/* SOC Family Name */
-#define CONFIG_KW88F6281		/* SOC Name */
+#define CONFIG_KIRKWOOD			/* SoC Family Name */
+/* SoC name */
+#if defined(CONFIG_NETSPACE_LITE_V2) || defined(CONFIG_NETSPACE_MINI_V2)
+#define CONFIG_KW88F6192
+#else
+#define CONFIG_KW88F6281
+#endif
 #define CONFIG_SKIP_LOWLEVEL_INIT	/* disable board lowlevel_init */
 
 /*
@@ -56,7 +72,9 @@
 #define CONFIG_CMD_SF
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_IDE
+#ifndef CONFIG_NETSPACE_MINI_V2 /* No USB ports on Network Space v2 Mini */
 #define CONFIG_CMD_USB
+#endif
 
 /*
  * Core clock definition
@@ -66,15 +84,16 @@
 /*
  * SDRAM configuration
  */
-#if defined(CONFIG_NET2BIG_V2)
-#define CONFIG_NR_DRAM_BANKS		2
-#else
 #define CONFIG_NR_DRAM_BANKS		1
-#endif
 
-#ifdef CONFIG_INETSPACE_V2
-/* Different SDRAM configuration and size for Internet Space v2 */
-#define CONFIG_SYS_KWD_CONFIG ($(SRCTREE)/$(CONFIG_BOARDDIR)/kwbimage-is2.cfg)
+/*
+ * Different SDRAM configuration and size for some of the boards derived
+ * from the Network Space v2
+ */
+#if defined(CONFIG_INETSPACE_V2)
+#define CONFIG_SYS_KWD_CONFIG $(SRCTREE)/$(CONFIG_BOARDDIR)/kwbimage-is2.cfg
+#elif defined(CONFIG_NETSPACE_LITE_V2) || defined(CONFIG_NETSPACE_MINI_V2)
+#define CONFIG_SYS_KWD_CONFIG $(SRCTREE)/$(CONFIG_BOARDDIR)/kwbimage-ns2l.cfg
 #endif
 
 /*
@@ -92,7 +111,9 @@
 #define CONFIG_ENV_SPI_MAX_HZ           20000000 /* 20Mhz */
 #define CONFIG_SYS_IDE_MAXBUS           1
 #define CONFIG_SYS_IDE_MAXDEVICE        1
-#if defined(CONFIG_NET2BIG_V2)
+#if defined(CONFIG_D2NET_V2)
+#define CONFIG_SYS_PROMPT		"d2v2> "
+#elif defined(CONFIG_NET2BIG_V2)
 #define CONFIG_SYS_PROMPT		"2big2> "
 #else
 #define CONFIG_SYS_PROMPT		"ns2> "
@@ -112,7 +133,8 @@
  */
 #ifdef CONFIG_MVSATA_IDE
 #define CONFIG_SYS_ATA_IDE0_OFFSET      MV_SATA_PORT0_OFFSET
-#if defined(CONFIG_NETSPACE_MAX_V2) || defined(CONFIG_NET2BIG_V2)
+#if defined(CONFIG_NETSPACE_MAX_V2) || defined(CONFIG_D2NET_V2) || \
+	defined(CONFIG_NET2BIG_V2)
 #define CONFIG_SYS_ATA_IDE1_OFFSET      MV_SATA_PORT1_OFFSET
 #endif
 #endif /* CONFIG_MVSATA_IDE */
@@ -134,6 +156,12 @@
 #endif /* CONFIG_CMD_I2C */
 
 /*
+ * Partition support
+ */
+#define CONFIG_DOS_PARTITION
+#define CONFIG_EFI_PARTITION
+
+/*
  * File systems support
  */
 #define CONFIG_CMD_EXT2
@@ -143,7 +171,6 @@
  * Use the HUSH parser
  */
 #define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 /*
  * Console configuration

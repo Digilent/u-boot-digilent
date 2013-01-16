@@ -29,6 +29,7 @@ COBJS-$(CONFIG_ALTERA_UART) += altera_uart.o
 COBJS-$(CONFIG_ALTERA_JTAG_UART) += altera_jtag_uart.o
 COBJS-$(CONFIG_ARM_DCC) += arm_dcc.o
 COBJS-$(CONFIG_ATMEL_USART) += atmel_usart.o
+COBJS-$(CONFIG_LPC32XX_HSUART) += lpc32xx_hsuart.o
 COBJS-$(CONFIG_MCFUART) += mcfuart.o
 COBJS-$(CONFIG_NS9750_UART) += ns9750_serial.o
 COBJS-$(CONFIG_OPENCORES_YANU) += opencores_yanu.o
@@ -55,7 +56,7 @@ COBJS-$(CONFIG_S3C44B0_SERIAL) += serial_s3c44b0.o
 COBJS-$(CONFIG_XILINX_UARTLITE) += serial_xuartlite.o
 COBJS-$(CONFIG_SANDBOX_SERIAL) += sandbox.o
 COBJS-$(CONFIG_SCIF_CONSOLE) += serial_sh.o
-COBJS-$(CONFIG_PSS_SERIAL) += serial_xpsuart.o
+COBJS-$(CONFIG_ZYNQ_SERIAL) += serial_zynq.o
 
 ifndef CONFIG_SPL_BUILD
 COBJS-$(CONFIG_USB_TTY) += usbtty.o

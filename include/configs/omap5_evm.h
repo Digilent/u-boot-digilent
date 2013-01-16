@@ -38,7 +38,7 @@
 #define CONFIG_OMAP54XX	/* which is a 54XX */
 #define CONFIG_OMAP5430	/* which is in a 5430 */
 #define CONFIG_5430EVM	/* working with EVM */
-#define CONFIG_ARCH_CPU_INIT
+#define CONFIG_OMAP_GPIO
 
 /* Get CPU defs */
 #include <asm/arch/cpu.h>
@@ -49,10 +49,9 @@
 #define CONFIG_DISPLAY_BOARDINFO
 
 /* Clock Defines */
-#define V_OSCK	38400000 /* Clock output from T2 */
+#define V_OSCK			19200000	/* Clock output from T2 */
 #define V_SCLK	V_OSCK
 
-#undef CONFIG_USE_IRQ	/* no support for IRQs */
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_OF_LIBFDT
@@ -97,9 +96,10 @@
 #define CONFIG_DRIVER_OMAP34XX_I2C
 #define CONFIG_I2C_MULTI_BUS
 
-/* TWL6030 */
-#define CONFIG_TWL6030_POWER
-#define CONFIG_CMD_BAT
+/* TWL6035 */
+#ifndef CONFIG_SPL_BUILD
+#define CONFIG_TWL6035_POWER
+#endif
 
 /* MMC */
 #define CONFIG_GENERIC_MMC
@@ -111,14 +111,8 @@
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV		1	/* SLOT2: eMMC(1) */
 #define CONFIG_ENV_OFFSET		0xE0000
+#define CONFIG_CMD_SAVEENV
 
-/* USB */
-#define CONFIG_MUSB_UDC
-#define CONFIG_USB_OMAP3
-
-/* USB device configuration */
-#define CONFIG_USB_DEVICE
-#define CONFIG_USB_TTY
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV
 
 /* Flash */
@@ -154,7 +148,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x82000000\0" \
-	"console=ttyS2,115200n8\0" \
+	"console=ttyO2,115200n8\0" \
 	"usbtty=cdc_acm\0" \
 	"vram=16M\0" \
 	"mmcdev=0\0" \
@@ -191,7 +185,6 @@
 
 #define CONFIG_SYS_LONGHELP	/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER	/* use "hush" command parser */
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"OMAP5430 EVM # "
 #define CONFIG_SYS_CBSIZE		256
 /* Print Buffer Size */
@@ -216,17 +209,6 @@
 #define CONFIG_SYS_HZ			1000
 
 /*
- * Stack sizes
- *
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 << 10)	/* Regular stack */
-#ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ	(4 << 10)	/* IRQ stack */
-#define CONFIG_STACKSIZE_FIQ	(4 << 10)	/* FIQ stack */
-#endif
-
-/*
  * SDRAM Memory Map
  * Even though we use two CS all the memory
  * is mapped to one contiguous block
@@ -234,10 +216,7 @@
 #define CONFIG_NR_DRAM_BANKS	1
 
 #define CONFIG_SYS_SDRAM_BASE		0x80000000
-#define CONFIG_SYS_INIT_RAM_ADDR	0x4030D800
-#define CONFIG_SYS_INIT_RAM_SIZE	0x800
-#define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_INIT_RAM_ADDR + \
-					 CONFIG_SYS_INIT_RAM_SIZE - \
+#define CONFIG_SYS_INIT_SP_ADDR         (NON_SECURE_SRAM_END - \
 					 GENERATED_GBL_DATA_SIZE)
 
 #define CONFIG_SYS_EMIF_PRECALCULATED_TIMING_REGS
@@ -250,9 +229,11 @@
 
 /* Defines for SPL */
 #define CONFIG_SPL
-#define CONFIG_SPL_TEXT_BASE		0x40304350
-#define CONFIG_SPL_MAX_SIZE		0x1E000	/* 120K */
-#define CONFIG_SPL_STACK		LOW_LEVEL_SRAM_STACK
+#define CONFIG_SPL_FRAMEWORK
+#define CONFIG_SPL_TEXT_BASE		0x40300350
+#define CONFIG_SPL_MAX_SIZE		0x19000	/* 100K */
+#define CONFIG_SPL_STACK		CONFIG_SYS_INIT_SP_ADDR
+#define CONFIG_SPL_DISPLAY_PRINT
 
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300 /* address 0x60000 */
 #define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS	0x200 /* 256 KB */
@@ -266,7 +247,7 @@
 #define CONFIG_SPL_FAT_SUPPORT
 #define CONFIG_SPL_LIBGENERIC_SUPPORT
 #define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_LDSCRIPT "arch/arm/cpu/armv7/omap-common/u-boot-spl.lds"
+#define CONFIG_SPL_LDSCRIPT "$(CPUDIR)/omap-common/u-boot-spl.lds"
 
 /*
  * 64 bytes before this address should be set aside for u-boot.img's

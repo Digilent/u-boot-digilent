@@ -26,7 +26,6 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(ARCH).o
 LIBGCC	= $(obj)libgcc.o
 
-ifndef CONFIG_SPL_BUILD
 GLSOBJS	+= _ashldi3.o
 GLSOBJS	+= _ashrdi3.o
 GLSOBJS	+= _divsi3.o
@@ -37,6 +36,7 @@ GLSOBJS	+= _umodsi3.o
 
 GLCOBJS	+= div0.o
 
+ifndef CONFIG_SPL_BUILD
 COBJS-y	+= board.o
 COBJS-y	+= bootm.o
 COBJS-$(CONFIG_SYS_L2_PL310) += cache-pl310.o
@@ -44,6 +44,8 @@ COBJS-y	+= interrupts.o
 COBJS-y	+= reset.o
 SOBJS-$(CONFIG_USE_ARCH_MEMSET) += memset.o
 SOBJS-$(CONFIG_USE_ARCH_MEMCPY) += memcpy.o
+else
+COBJS-$(CONFIG_SPL_FRAMEWORK) += spl.o
 endif
 
 COBJS-y	+= cache.o

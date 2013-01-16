@@ -62,7 +62,6 @@ DECLARE_GLOBAL_DATA_PTR;
 */
 
 extern void timer_interrupt_init(void);
-extern void malloc_bin_reloc(void);
 extern int do_ambapp_print(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]);
 extern int prom_init(void);
 
@@ -166,7 +165,6 @@ char *str_init_seq_done = "\n\rInit sequence done...\r\n\r\n";
 void board_init_f(ulong bootflag)
 {
 	bd_t *bd;
-	unsigned char *s;
 	init_fnc_t **init_fnc_ptr;
 	int j;
 
@@ -333,8 +331,6 @@ void board_init_f(ulong bootflag)
 	mac_read_from_eeprom();
 #endif
 
-	/* IP Address */
-	bd->bi_ip_addr = getenv_IPaddr("ipaddr");
 #if defined(CONFIG_PCI)
 	/*
 	 * Do pci configuration
@@ -359,11 +355,6 @@ void board_init_f(ulong bootflag)
 
 	/* Initialize from environment */
 	load_addr = getenv_ulong("loadaddr", 16, load_addr);
-#if defined(CONFIG_CMD_NET)
-	if ((s = getenv("bootfile")) != NULL) {
-		copy_filename(BootFile, s, sizeof(BootFile));
-	}
-#endif /* CONFIG_CMD_NET */
 
 	WATCHDOG_RESET();
 

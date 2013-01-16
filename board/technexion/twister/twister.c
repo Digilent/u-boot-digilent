@@ -100,7 +100,17 @@ int board_init(void)
 
 int misc_init_r(void)
 {
+	char *eth_addr;
+
 	dieid_num_r();
+
+	eth_addr = getenv("ethaddr");
+	if (eth_addr)
+		return 0;
+
+#ifndef CONFIG_SPL_BUILD
+	TAM3517_READ_MAC_FROM_EEPROM;
+#endif
 
 	return 0;
 }
@@ -133,7 +143,7 @@ int board_eth_init(bd_t *bis)
 	!defined(CONFIG_SPL_BUILD)
 int board_mmc_init(bd_t *bis)
 {
-	return omap_mmc_init(0);
+	return omap_mmc_init(0, 0, 0);
 }
 #endif
 

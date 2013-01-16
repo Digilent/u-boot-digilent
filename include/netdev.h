@@ -52,7 +52,7 @@ int calxedaxgmac_initialize(u32 id, ulong base_addr);
 int cs8900_initialize(u8 dev_num, int base_addr);
 int davinci_emac_initialize(void);
 int dc21x4x_initialize(bd_t *bis);
-int designware_initialize(u32 id, ulong base_addr, u32 phy_addr);
+int designware_initialize(u32 id, ulong base_addr, u32 phy_addr, u32 interface);
 int dm9000_initialize(bd_t *bis);
 int dnet_eth_initialize(int id, void *regs, unsigned int phy_addr);
 int e1000_initialize(bd_t *bis);
@@ -102,9 +102,10 @@ int xilinx_axiemac_initialize(bd_t *bis, unsigned long base_addr,
 							unsigned long dma_addr);
 int xilinx_emaclite_initialize(bd_t *bis, unsigned long base_addr,
 							int txpp, int rxpp);
-int xilinx_ll_temac_eth_init(bd_t *bis, unsigned long base_addr, int flags,
-						unsigned long ctrl_addr);
-int zynq_gem_initialize(bd_t *bis);						
+int xilinx_ll_temac_initialize(bd_t *bis, unsigned long base_addr,
+						int mode, unsigned long ctrl);
+int zynq_gem_initialize(bd_t *bis, int base_addr);
+int zynq_gem_initialize_old(bd_t *bis);						
 
 /*
  * As long as the Xilinx xps_ll_temac ethernet driver has not its own interface

@@ -30,6 +30,7 @@
 #include <common.h>
 #include <watchdog.h>
 #include <command.h>
+#include <malloc.h>
 #include <version.h>
 #ifdef CONFIG_MODEM_SUPPORT
 #include <malloc.h>		/* for free() prototype */
@@ -112,6 +113,11 @@ int abortboot(int bootdelay)
 	u_int presskey_len = 0;
 	u_int presskey_max = 0;
 	u_int i;
+
+#ifndef CONFIG_ZERO_BOOTDELAY_CHECK
+	if (bootdelay == 0)
+		return 0;
+#endif
 
 #  ifdef CONFIG_AUTOBOOT_PROMPT
 	printf(CONFIG_AUTOBOOT_PROMPT);
@@ -216,7 +222,8 @@ int abortboot(int bootdelay)
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	if (bootdelay >= 0)
+		printf("Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -333,7 +340,7 @@ void main_loop (void)
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
 
-		run_command(p, 0);
+		run_command_list(p, -1, 0);
 
 # ifdef CONFIG_AUTOBOOT_KEYED
 		disable_ctrlc(prev);	/* restore Control C checking */
@@ -376,12 +383,12 @@ void main_loop (void)
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
-	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
+	if (bootdelay != -1 && s && !abortboot(bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
 
-		run_command(s, 0);
+		run_command_list(s, -1, 0);
 
 # ifdef CONFIG_AUTOBOOT_KEYED
 		disable_ctrlc(prev);	/* restore Control C checking */
@@ -392,7 +399,7 @@ void main_loop (void)
 	if (menukey == CONFIG_MENUKEY) {
 		s = getenv("menucmd");
 		if (s)
-			run_command(s, 0);
+			run_command_list(s, -1, 0);
 	}
 #endif /* CONFIG_MENUKEY */
 #endif /* CONFIG_BOOTDELAY */
@@ -973,7 +980,6 @@ int readline_into_buffer(const char *const prompt, char *buffer, int timeout)
 
 #ifdef CONFIG_SHOW_ACTIVITY
 		while (!tstc()) {
-			extern void show_activity(int arg);
 			show_activity(0);
 			WATCHDOG_RESET();
 		}
@@ -1372,6 +1378,90 @@ int run_command(const char *cmd, int flag)
 	return parse_string_outer(cmd,
 			FLAG_PARSE_SEMICOLON | FLAG_EXIT_FROM_LOOP);
 #endif
+}
+
+#ifndef CONFIG_SYS_HUSH_PARSER
+/**
+ * Execute a list of command separated by ; or \n using the built-in parser.
+ *
+ * This function cannot take a const char * for the command, since if it
+ * finds newlines in the string, it replaces them with \0.
+ *
+ * @param cmd	String containing list of commands
+ * @param flag	Execution flags (CMD_FLAG_...)
+ * @return 0 on success, or != 0 on error.
+ */
+static int builtin_run_command_list(char *cmd, int flag)
+{
+	char *line, *next;
+	int rcode = 0;
+
+	/*
+	 * Break into individual lines, and execute each line; terminate on
+	 * error.
+	 */
+	line = next = cmd;
+	while (*next) {
+		if (*next == '\n') {
+			*next = '\0';
+			/* run only non-empty commands */
+			if (*line) {
+				debug("** exec: \"%s\"\n", line);
+				if (builtin_run_command(line, 0) < 0) {
+					rcode = 1;
+					break;
+				}
+			}
+			line = next + 1;
+		}
+		++next;
+	}
+	if (rcode == 0 && *line)
+		rcode = (builtin_run_command(line, 0) >= 0);
+
+	return rcode;
+}
+#endif
+
+int run_command_list(const char *cmd, int len, int flag)
+{
+	int need_buff = 1;
+	char *buff = (char *)cmd;	/* cast away const */
+	int rcode = 0;
+
+	if (len == -1) {
+		len = strlen(cmd);
+#ifdef CONFIG_SYS_HUSH_PARSER
+		/* hush will never change our string */
+		need_buff = 0;
+#else
+		/* the built-in parser will change our string if it sees \n */
+		need_buff = strchr(cmd, '\n') != NULL;
+#endif
+	}
+	if (need_buff) {
+		buff = malloc(len + 1);
+		if (!buff)
+			return 1;
+		memcpy(buff, cmd, len);
+		buff[len] = '\0';
+	}
+#ifdef CONFIG_SYS_HUSH_PARSER
+	rcode = parse_string_outer(buff, FLAG_PARSE_SEMICOLON);
+#else
+	/*
+	 * This function will overwrite any \n it sees with a \0, which
+	 * is why it can't work with a const char *. Here we are making
+	 * using of internal knowledge of this function, to avoid always
+	 * doing a malloc() which is actually required only in a case that
+	 * is pretty rare.
+	 */
+	rcode = builtin_run_command_list(buff, flag);
+	if (need_buff)
+		free(buff);
+#endif
+
+	return rcode;
 }
 
 /****************************************************************************/

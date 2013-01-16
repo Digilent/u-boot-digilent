@@ -28,7 +28,6 @@
 
 #define CONFIG_ARM926EJS			/* arm926ejs CPU core */
 #define CONFIG_MX25
-#define CONFIG_MX25_CLK32		32768	/* OSC32K frequency */
 #define CONFIG_SYS_HZ			1000
 #define CONFIG_SYS_TEXT_BASE		0xA0000000
 
@@ -69,7 +68,6 @@
 #define CONFIG_MXC_UART_BASE	UART2_BASE
 #define CONFIG_CONS_INDEX	1	/* use UART2 for console */
 #define CONFIG_BAUDRATE		115200	/* Default baud rate */
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /*
  * Ethernet
@@ -93,8 +91,6 @@
 #define CONFIG_CMD_NET
 #define CONFIG_CMD_CACHE
 
-#define CONFIG_SYS_64BIT_VSPRINTF
-
 /*
  * Additional command
  */
@@ -105,7 +101,6 @@
 #define CONFIG_CMD_USB
 
 #define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /*
  * USB
@@ -175,6 +170,5 @@
  * Size of malloc() pool
  */
 #define CONFIG_SYS_MALLOC_LEN		(0x400000 - 0x8000)
-#define CONFIG_STACKSIZE		(32*1024)	/* regular stack */
 
 #endif	/* __CONFIG_H */

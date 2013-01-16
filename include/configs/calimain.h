@@ -161,7 +161,6 @@
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + (16 << 20))
 
 #define CONFIG_NR_DRAM_BANKS	1 /* we have 1 bank of DRAM */
-#define CONFIG_STACKSIZE	(256*1024) /* regular stack */
 
 /*
  * Serial Driver info
@@ -173,7 +172,6 @@
 #define CONFIG_SYS_NS16550_CLK	clk_get(DAVINCI_UART2_CLKID)
 #define CONFIG_CONS_INDEX	1		/* use UART0 for console */
 #define CONFIG_BAUDRATE		115200		/* Default baud rate */
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_FLASH_CFI_DRIVER
@@ -220,7 +218,6 @@
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CRC32_VERIFY
@@ -354,6 +351,7 @@
 #define CONFIG_SYS_INIT_SP_ADDR		(0x8001ff00)
 
 #define CONFIG_BOOTCOUNT_LIMIT
+#define CONFIG_SYS_BOOTCOUNT_LE		/* Use little-endian accessors */
 #define CONFIG_SYS_BOOTCOUNT_ADDR	DAVINCI_RTC_BASE
 
 #ifndef __ASSEMBLY__
