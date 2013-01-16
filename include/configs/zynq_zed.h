@@ -42,9 +42,9 @@
 /* Default environment */
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define CONFIG_EXTRA_ENV_SETTINGS	\
-	"ethaddr=00:00:00:00:00:00\0"	\
+	"ethaddr=00:0a:35:00:01:22\0"	\
 	"kernel_image=uImage\0"	\
-	"ramdisk_image=uramdisk.image.gz\0"	\
+	"ramdisk_image=ramdisk.image.gz\0"	\
 	"devicetree_image=devicetree.dtb\0"	\
 	"devicetree_linaro_image=devicetree_linaro.dtb\0"	\
 	"kernel_size=0x500000\0"	\
@@ -71,7 +71,7 @@
 		"fatload mmc 0 0x2A00000 ${devicetree_image};" \
 		"fatload mmc 0 0x2000000 ${ramdisk_image};" \
 		"bootm 0x3000000 0x2000000 0x2A00000\0" \
-	"sdboot=echo Copying Linux from SD to RAM...;" \
+	"sdboot_linaro=echo Copying Linux from SD to RAM...;" \
 		"mmcinfo;" \
 		"fatload mmc 0 0x3000000 ${kernel_image};" \
 		"fatload mmc 0 0x2A00000 ${devicetree_linaro_image};" \
