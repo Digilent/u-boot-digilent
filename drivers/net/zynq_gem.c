@@ -581,6 +581,28 @@ int zynq_gem_initialize(bd_t *bis, int base_addr, int phy_addr, u32 emio)
 
 	dev->iobase = base_addr;
 
+	/* Use Mac address stored in GEM if env var eth_hwaddr is not defined */
+	if(getenv("ethaddr") == NULL)
+	{
+		struct zynq_gem_regs *regs = (struct zynq_gem_regs *)dev->iobase;
+		char *mac_string = (char*) malloc(18*sizeof(char));
+		char hwaddr[6];
+		u32 macaddrlow, macaddrhigh;
+
+		macaddrlow = regs->laddr[0][LADDR_LOW];
+		macaddrhigh = regs->laddr[0][LADDR_HIGH];
+		hwaddr[0] = macaddrlow & 0xff;
+		hwaddr[1] = (macaddrlow >> 8) & 0xff;
+		hwaddr[2] = (macaddrlow >> 16) & 0xff;
+		hwaddr[3] = (macaddrlow >> 24) & 0xff;
+		hwaddr[4] = (macaddrhigh) & 0xff;
+		hwaddr[5] = (macaddrhigh >> 8) & 0xff;
+		
+		sprintf(mac_string, "%02x:%02x:%02x:%02x:%02x:%02x", hwaddr[0], hwaddr[1],
+					hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
+		setenv("ethaddr", mac_string);
+	}
+
 	dev->init = zynq_gem_init;
 	dev->halt = zynq_gem_halt;
 	dev->send = zynq_gem_send;
