@@ -1,0 +1,15 @@
+/*
+ * Digilent Zybo board DTS
+ *
+ * Copyright (C) 2013 Xilinx, Inc.
+ * Copyright (C) 2014 Digilent, Inc.
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+/dts-v1/;
+#include "zynq-7000.dtsi"
+
+/ {
+	model = "Zynq Zybo Board";
+	compatible = "xlnx,zynq-zybo", "xlnx,zynq-7000";
+};
