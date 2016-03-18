@@ -310,6 +310,11 @@
 
 #define CONFIG_SPL_LDSCRIPT	"arch/arm/mach-zynq/u-boot-spl.lds"
 
+/* FPGA support */
+#define CONFIG_SPL_FPGA_SUPPORT
+#define CONFIG_SPL_FPGA_LOAD_ADDR      0x1000000
+#define CONFIG_SPL_FPGA_LOAD_ARGS_NAME "bitstream"
+
 /* MMC support */
 #ifdef CONFIG_ZYNQ_SDHCI
 #define CONFIG_SPL_MMC_SUPPORT
