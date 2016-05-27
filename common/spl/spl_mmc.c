@@ -198,7 +198,7 @@ static int mmc_load_fpga_image_fat(struct mmc *mmc)
 		return -1;
 	}
 
-	err =  fpga_loadbitstream(devnum, (char *)spl_image.load_addr,
+	err = fpga_loadbitstream(devnum, (char *)spl_image.load_addr,
 				  desc_xilinx->size, BIT_FULL);
 	if (err) {
 		printf("spl: fail to load bitstream, err - %d\n", err);
