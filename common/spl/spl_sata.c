@@ -23,7 +23,7 @@ DECLARE_GLOBAL_DATA_PTR;
 int spl_sata_load_image(void)
 {
 	int err;
-	block_dev_desc_t *stor_dev;
+	struct blk_desc *stor_dev;
 
 	err = init_sata(CONFIG_SPL_SATA_BOOT_DEVICE);
 	if (err) {
@@ -34,7 +34,7 @@ int spl_sata_load_image(void)
 	} else {
 		/* try to recognize storage devices immediately */
 		scsi_scan(0);
-		stor_dev = scsi_get_dev(0);
+		stor_dev = blk_get_devnum_by_type(IF_TYPE_SCSI, 0);
 		if (!stor_dev)
 			return -ENODEV;
 	}

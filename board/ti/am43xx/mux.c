@@ -9,6 +9,7 @@
 #include <common.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/arch/mux.h>
+#include "../common/board_detect.h"
 #include "board.h"
 
 static struct module_pin_mux rmii1_pin_mux[] = {
@@ -125,7 +126,7 @@ void enable_board_pin_mux(void)
 	configure_module_pin_mux(i2c0_pin_mux);
 	configure_module_pin_mux(mdio_pin_mux);
 
-	if (board_is_gpevm()) {
+	if (board_is_evm()) {
 		configure_module_pin_mux(gpio5_7_pin_mux);
 		configure_module_pin_mux(rgmii1_pin_mux);
 #if defined(CONFIG_NAND)

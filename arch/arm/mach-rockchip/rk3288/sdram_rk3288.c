@@ -36,7 +36,7 @@ struct chan_info {
 struct dram_info {
 	struct chan_info chan[2];
 	struct ram_info info;
-	struct udevice *ddr_clk;
+	struct clk ddr_clk;
 	struct rk3288_cru *cru;
 	struct rk3288_grf *grf;
 	struct rk3288_sgrf *sgrf;
@@ -561,14 +561,14 @@ static void dram_all_config(const struct dram_info *dram,
 			&sdram_params->ch[chan];
 
 		sys_reg |= info->row_3_4 << SYS_REG_ROW_3_4_SHIFT(chan);
-		sys_reg |= 1 << SYS_REG_CHINFO_SHIFT(chan);
+		sys_reg |= chan << SYS_REG_CHINFO_SHIFT(chan);
 		sys_reg |= (info->rank - 1) << SYS_REG_RANK_SHIFT(chan);
 		sys_reg |= (info->col - 9) << SYS_REG_COL_SHIFT(chan);
-		sys_reg |= info->bk == 3 ? 0 : 1 << SYS_REG_BK_SHIFT(chan);
+		sys_reg |= info->bk == 3 ? 1 << SYS_REG_BK_SHIFT(chan) : 0;
 		sys_reg |= (info->cs0_row - 13) << SYS_REG_CS0_ROW_SHIFT(chan);
 		sys_reg |= (info->cs1_row - 13) << SYS_REG_CS1_ROW_SHIFT(chan);
-		sys_reg |= (2 >> info->bw) << SYS_REG_BW_SHIFT(chan);
-		sys_reg |= (2 >>info->dbw) << SYS_REG_DBW_SHIFT(chan);
+		sys_reg |= info->bw << SYS_REG_BW_SHIFT(chan);
+		sys_reg |= info->dbw << SYS_REG_DBW_SHIFT(chan);
 
 		dram_cfg_rbc(&dram->chan[chan], chan, sdram_params);
 	}
@@ -576,7 +576,7 @@ static void dram_all_config(const struct dram_info *dram,
 	rk_clrsetreg(&dram->sgrf->soc_con2, 0x1f, sdram_params->base.stride);
 }
 
-static int sdram_init(const struct dram_info *dram,
+static int sdram_init(struct dram_info *dram,
 		      const struct rk3288_sdram_params *sdram_params)
 {
 	int channel;
@@ -592,8 +592,8 @@ static int sdram_init(const struct dram_info *dram,
 		return -E2BIG;
 	}
 
-	debug("ddr clk %s\n", dram->ddr_clk->name);
-	ret = clk_set_rate(dram->ddr_clk, sdram_params->base.ddr_freq);
+	debug("ddr clk dpll\n");
+	ret = clk_set_rate(&dram->ddr_clk, sdram_params->base.ddr_freq);
 	debug("ret=%d\n", ret);
 	if (ret) {
 		debug("Could not set DDR clock\n");
@@ -720,13 +720,13 @@ size_t sdram_size_mb(struct rk3288_pmu *pmu)
 		rank = 1 + (sys_reg >> SYS_REG_RANK_SHIFT(ch) &
 			SYS_REG_RANK_MASK);
 		col = 9 + (sys_reg >> SYS_REG_COL_SHIFT(ch) & SYS_REG_COL_MASK);
-		bk = 3 - ((sys_reg >> SYS_REG_BK_SHIFT(ch)) & SYS_REG_BK_MASK) ;
+		bk = sys_reg & (1 << SYS_REG_BK_SHIFT(ch)) ? 3 : 0;
 		cs0_row = 13 + (sys_reg >> SYS_REG_CS0_ROW_SHIFT(ch) &
 				SYS_REG_CS0_ROW_MASK);
 		cs1_row = 13 + (sys_reg >> SYS_REG_CS1_ROW_SHIFT(ch) &
 				SYS_REG_CS1_ROW_MASK);
-		bw = (2 >> (sys_reg >> SYS_REG_BW_SHIFT(ch)) &
-			SYS_REG_BW_MASK);
+		bw = (sys_reg >> SYS_REG_BW_SHIFT(ch)) &
+			SYS_REG_BW_MASK;
 		row_3_4 = sys_reg >> SYS_REG_ROW_3_4_SHIFT(ch) &
 			SYS_REG_ROW_3_4_MASK;
 
@@ -756,7 +756,7 @@ static int veyron_init(struct dram_info *priv)
 	struct udevice *pmic;
 	int ret;
 
-	ret = uclass_first_device(UCLASS_PMIC, &pmic);
+	ret = uclass_first_device_err(UCLASS_PMIC, &pmic);
 	if (ret)
 		return ret;
 
@@ -836,6 +836,7 @@ static int rk3288_dmc_probe(struct udevice *dev)
 	struct dram_info *priv = dev_get_priv(dev);
 	struct regmap *map;
 	int ret;
+	struct udevice *dev_clk;
 
 	map = syscon_get_regmap_by_driver_data(ROCKCHIP_SYSCON_NOC);
 	if (IS_ERR(map))
@@ -856,7 +857,11 @@ static int rk3288_dmc_probe(struct udevice *dev)
 	priv->chan[1].pctl = regmap_get_range(map, 2);
 	priv->chan[1].publ = regmap_get_range(map, 3);
 
-	ret = uclass_get_device(UCLASS_CLK, CLK_DDR, &priv->ddr_clk);
+	ret = uclass_get_device(UCLASS_CLK, 0, &dev_clk);
+	if (ret)
+		return ret;
+	priv->ddr_clk.id = CLK_DDR;
+	ret = clk_request(dev_clk, &priv->ddr_clk);
 	if (ret)
 		return ret;
 

@@ -10,7 +10,6 @@
 #define __PIC32MZDASK_CONFIG_H
 
 /* System Configuration */
-#define CONFIG_SYS_TEXT_BASE		0x9d004000 /* .text */
 #define CONFIG_DISPLAY_BOARDINFO
 
 /*--------------------------------------------
@@ -82,8 +81,6 @@
 #define CONFIG_NET_RETRY_COUNT		20
 #define CONFIG_ARP_TIMEOUT		500 /* millisec */
 
-#define CONFIG_CMD_MII
-
 /*
  * BOOTP options
  */
@@ -92,18 +89,17 @@
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_HOSTNAME
 
-/*
- * Handover flattened device tree (dtb file) to Linux kernel
- */
-#define CONFIG_OF_LIBFDT	1
-
 /*-----------------------------------------------------------------------
  * SDHC Configuration
  */
 #define CONFIG_SDHCI
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
-#define CONFIG_CMD_MMC
+
+/*--------------------------------------------------
+ * USB Configuration
+ */
+#define CONFIG_USB_MUSB_PIO_ONLY
 
 /*-----------------------------------------------------------------------
  * File System Configuration
@@ -114,15 +110,10 @@
 #define CONFIG_SUPPORT_VFAT
 #define CONFIG_FS_FAT
 #define CONFIG_FAT_WRITE
-#define CONFIG_CMD_FS_GENERIC
 #define CONFIG_CMD_PART
-#define CONFIG_CMD_FAT
 
 /* EXT4 FS */
 #define CONFIG_FS_EXT4
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_EXT4
-#define CONFIG_CMD_EXT4_WRITE
 
 /* -------------------------------------------------
  * Environment
@@ -134,7 +125,6 @@
  * Board boot configuration
  */
 #define CONFIG_TIMESTAMP	/* Print image info with timestamp */
-#define CONFIG_BOOTDELAY	5
 
 #define MEM_LAYOUT_ENV_SETTINGS					\
 	"kernel_addr_r="__stringify(CONFIG_SYS_LOAD_ADDR)"\0"	\
@@ -153,6 +143,7 @@
 
 #define BOOT_TARGET_DEVICES(func)	\
 	func(MMC, mmc, 0)		\
+	func(USB, usb, 0)		\
 	func(DHCP, dhcp, na)
 
 #include <config_distro_bootcmd.h>

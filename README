@@ -890,23 +890,6 @@ The following options need to be configured:
 		'Sane' compilers will generate smaller code if
 		CONFIG_PRE_CON_BUF_SZ is a power of 2
 
-- Boot Delay:	CONFIG_BOOTDELAY - in seconds
-		Delay before automatically booting the default image;
-		set to -1 to disable autoboot.
-		set to -2 to autoboot with no delay and not check for abort
-		(even when CONFIG_ZERO_BOOTDELAY_CHECK is defined).
-
-		See doc/README.autoboot for these options that
-		work with CONFIG_BOOTDELAY. None are required.
-		CONFIG_BOOT_RETRY_TIME
-		CONFIG_BOOT_RETRY_MIN
-		CONFIG_AUTOBOOT_KEYED
-		CONFIG_AUTOBOOT_PROMPT
-		CONFIG_AUTOBOOT_DELAY_STR
-		CONFIG_AUTOBOOT_STOP_STR
-		CONFIG_ZERO_BOOTDELAY_CHECK
-		CONFIG_RESET_TO_RETRY
-
 - Autoboot Command:
 		CONFIG_BOOTCOMMAND
 		Only needed when CONFIG_BOOTDELAY is enabled;
@@ -1003,6 +986,7 @@ The following options need to be configured:
 		CONFIG_CMD_ECHO		  echo arguments
 		CONFIG_CMD_EDITENV	  edit env variable
 		CONFIG_CMD_EEPROM	* EEPROM read/write support
+		CONFIG_CMD_EEPROM_LAYOUT* EEPROM layout aware commands
 		CONFIG_CMD_ELF		* bootelf, bootvx
 		CONFIG_CMD_ENV_CALLBACK	* display details about env callbacks
 		CONFIG_CMD_ENV_FLAGS	* display details about env flags
@@ -1066,7 +1050,7 @@ The following options need to be configured:
 		CONFIG_CMD_RUN		  run command in env variable
 		CONFIG_CMD_SANDBOX	* sb command to access sandbox features
 		CONFIG_CMD_SAVES	* save S record dump
-		CONFIG_CMD_SCSI		* SCSI Support
+		CONFIG_SCSI		* SCSI Support
 		CONFIG_CMD_SDRAM	* print SDRAM configuration information
 					  (requires CONFIG_CMD_I2C)
 		CONFIG_CMD_SETGETDCR	  Support for DCR Register access
@@ -1107,6 +1091,14 @@ The following options need to be configured:
 
 
 		XXX - this list needs to get updated!
+
+- Removal of commands
+		If no commands are needed to boot, you can disable
+		CONFIG_CMDLINE to remove them. In this case, the command line
+		will not be available, and when U-Boot wants to execute the
+		boot command (on start-up) it will call board_run_command()
+		instead. This can reduce image size significantly for very
+		simple boot procedures.
 
 - Regular expression support:
 		CONFIG_REGEX
@@ -1246,7 +1238,7 @@ The following options need to be configured:
 		CONFIG_MTD_PARTITIONS  Memory Technology Device partition table.
 
 		If IDE or SCSI support is enabled (CONFIG_CMD_IDE or
-		CONFIG_CMD_SCSI) you must configure support for at
+		CONFIG_SCSI) you must configure support for at
 		least one non-MTD partition type as well.
 
 - IDE Reset method:
@@ -1794,7 +1786,7 @@ CBFS (Coreboot Filesystem) support
 
 		The DIU driver will look for the 'video-mode' environment
 		variable, and if defined, enable the DIU as a console during
-		boot.  See the documentation file README.video for a
+		boot.  See the documentation file doc/README.video for a
 		description of this variable.
 
 - LCD Support:	CONFIG_LCD
@@ -1908,7 +1900,7 @@ CBFS (Coreboot Filesystem) support
 
 		If this option is set, then U-Boot will prevent the environment
 		variable "splashimage" from being set to a problematic address
-		(see README.displaying-bmps).
+		(see doc/README.displaying-bmps).
 		This option is useful for targets where, due to alignment
 		restrictions, an improperly aligned BMP image will cause a data
 		abort. If you think you will not have problems with unaligned
@@ -3093,20 +3085,6 @@ CBFS (Coreboot Filesystem) support
 		will set it back to normal.  This command currently
 		supports i.MX53 and i.MX6.
 
-- Signing support:
-		CONFIG_RSA
-
-		This enables the RSA algorithm used for FIT image verification
-		in U-Boot. See doc/uImage.FIT/signature.txt for more information.
-
-		The Modular Exponentiation algorithm in RSA is implemented using
-		driver model. So CONFIG_DM needs to be enabled by default for this
-		library to function.
-
-		The signing part is build into mkimage regardless of this
-		option. The software based modular exponentiation is built into
-		mkimage irrespective of this option.
-
 - bootcount support:
 		CONFIG_BOOTCOUNT_LIMIT
 
@@ -3306,32 +3284,13 @@ FIT uImage format:
 		enabled per default for backward compatibility.
 
 - FIT image support:
-		CONFIG_FIT
-		Enable support for the FIT uImage format.
-
-		CONFIG_FIT_BEST_MATCH
-		When no configuration is explicitly selected, default to the
-		one whose fdt's compatibility field best matches that of
-		U-Boot itself. A match is considered "best" if it matches the
-		most specific compatibility entry of U-Boot's fdt's root node.
-		The order of entries in the configuration's fdt is ignored.
-
-		CONFIG_FIT_SIGNATURE
-		This option enables signature verification of FIT uImages,
-		using a hash signed and verified using RSA. If
-		CONFIG_SHA_PROG_HW_ACCEL is defined, i.e support for progressive
-		hashing is available using hardware, RSA library will use it.
-		See doc/uImage.FIT/signature.txt for more details.
-
-		WARNING: When relying on signed FIT images with required
-		signature check the legacy image format is default
-		disabled. If a board need legacy image format support
-		enable this through CONFIG_IMAGE_FORMAT_LEGACY
-
 		CONFIG_FIT_DISABLE_SHA256
 		Supporting SHA256 hashes has quite an impact on binary size.
 		For constrained systems sha256 hash support can be disabled
 		with this option.
+
+		TODO(sjg@chromium.org): Adjust this option to be positive,
+		and move it to Kconfig
 
 - Standalone program support:
 		CONFIG_STANDALONE_LOAD_ADDR
@@ -3511,6 +3470,10 @@ FIT uImage format:
 		An example is the LPC32XX MLC NAND driver, which will
 		consider that a completely unreadable NAND block is bad,
 		and thus should be skipped silently.
+
+		CONFIG_SPL_ABORT_ON_RAW_IMAGE
+		When defined, SPL will proceed to another boot method
+		if the image it has loaded does not have a signature.
 
 		CONFIG_SPL_RELOC_STACK
 		Adress of the start of the stack SPL will use after
@@ -4067,16 +4030,6 @@ Configuration Settings:
 - CONFIG_ENV_ACCESS_IGNORE_FORCE
 	If defined, don't allow the -f switch to env set override variable
 	access flags.
-
-- CONFIG_SYS_GENERIC_BOARD
-	This selects the architecture-generic board system instead of the
-	architecture-specific board files. It is intended to move boards
-	to this new framework over time. Defining this will disable the
-	arch/foo/lib/board.c file and use common/board_f.c and
-	common/board_r.c instead. To use this option your architecture
-	must support it (i.e. must select HAVE_GENERIC_BOARD in arch/Kconfig).
-	If you find problems enabling this option on your board please report
-	the problem and send patches!
 
 - CONFIG_OMAP_PLATFORM_RESET_TIME_MAX_USEC (OMAP only)
 	This is set by OMAP boards for the max time that reset should
@@ -4853,6 +4806,11 @@ Low Level (hardware related) configuration options:
 		exception is when U-Boot is loaded (to RAM) by some
 		other boot loader or by a debugger which performs
 		these initializations itself.
+
+- CONFIG_SKIP_LOWLEVEL_INIT_ONLY
+		[ARM926EJ-S only] This allows just the call to lowlevel_init()
+		to be skipped. The normal CPU15 init (such as enabling the
+		instruction cache) is still performed.
 
 - CONFIG_SPL_BUILD
 		Modifies the behaviour of start.S when compiling a loader

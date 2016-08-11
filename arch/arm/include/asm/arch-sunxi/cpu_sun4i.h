@@ -18,6 +18,10 @@
 #define SUNXI_SRAM_D_BASE		0x00010000	/* 4 kiB */
 #define SUNXI_SRAM_B_BASE		0x00020000	/* 64 kiB (secure) */
 
+#ifdef CONFIG_MACH_SUN8I_A83T
+#define SUNXI_CPUCFG_BASE		0x01700000
+#endif
+
 #define SUNXI_SRAMC_BASE		0x01c00000
 #define SUNXI_DRAMC_BASE		0x01c01000
 #define SUNXI_DMA_BASE			0x01c02000
@@ -82,12 +86,22 @@
 #define SUNXI_AD_DA_BASE		0x01c22c00
 #define SUNXI_KEYPAD_BASE		0x01c23000
 #define SUNXI_TZPC_BASE			0x01c23400
+
+#if defined(CONFIG_MACH_SUN8I_A83T) || defined(CONFIG_MACH_SUN8I_H3)
+/* SID address space starts at 0x01c1400, but e-fuse is at offset 0x200 */
+#define SUNXI_SID_BASE			0x01c14200
+#else
 #define SUNXI_SID_BASE			0x01c23800
+#endif
+
 #define SUNXI_SJTAG_BASE		0x01c23c00
 
 #define SUNXI_TP_BASE			0x01c25000
 #define SUNXI_PMU_BASE			0x01c25400
-#define SUN7I_CPUCFG_BASE              0x01c25c00
+
+#ifdef CONFIG_MACH_SUN7I
+#define SUNXI_CPUCFG_BASE		0x01c25c00
+#endif
 
 #define SUNXI_UART0_BASE		0x01c28000
 #define SUNXI_UART1_BASE		0x01c28400
@@ -129,6 +143,8 @@
 #define SUNXI_DRAM_PHY0_BASE		0x01c65000
 #define SUNXI_DRAM_PHY1_BASE		0x01c66000
 
+#define SUNXI_GIC400_BASE		0x01c80000
+
 /* module sram */
 #define SUNXI_SRAM_C_BASE		0x01d00000
 
@@ -141,7 +157,11 @@
 
 #define SUNXI_RTC_BASE			0x01f00000
 #define SUNXI_PRCM_BASE			0x01f01400
-#define SUN6I_CPUCFG_BASE		0x01f01c00
+
+#if defined CONFIG_SUNXI_GEN_SUN6I && !defined CONFIG_MACH_SUN8I_A83T
+#define SUNXI_CPUCFG_BASE		0x01f01c00
+#endif
+
 #define SUNXI_R_TWI_BASE		0x01f02400
 #define SUNXI_R_UART_BASE		0x01f02800
 #define SUNXI_R_PIO_BASE		0x01f02c00

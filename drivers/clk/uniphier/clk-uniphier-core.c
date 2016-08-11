@@ -8,16 +8,15 @@
 #include <mapmem.h>
 #include <linux/bitops.h>
 #include <linux/io.h>
-#include <clk.h>
+#include <linux/sizes.h>
+#include <clk-uclass.h>
 #include <dm/device.h>
 
 #include "clk-uniphier.h"
 
-DECLARE_GLOBAL_DATA_PTR;
-
-static int uniphier_clk_enable(struct udevice *dev, int index)
+static int uniphier_clk_enable(struct clk *clk)
 {
-	struct uniphier_clk_priv *priv = dev_get_priv(dev);
+	struct uniphier_clk_priv *priv = dev_get_priv(clk->dev);
 	struct uniphier_clk_gate_data *gate = priv->socdata->gate;
 	unsigned int nr_gate = priv->socdata->nr_gate;
 	void __iomem *reg;
@@ -25,7 +24,7 @@ static int uniphier_clk_enable(struct udevice *dev, int index)
 	int i;
 
 	for (i = 0; i < nr_gate; i++) {
-		if (gate[i].index != index)
+		if (gate[i].index != clk->id)
 			continue;
 
 		reg = priv->base + gate[i].reg;
@@ -42,9 +41,9 @@ static int uniphier_clk_enable(struct udevice *dev, int index)
 	return 0;
 }
 
-static ulong uniphier_clk_get_rate(struct udevice *dev, int index)
+static ulong uniphier_clk_get_rate(struct clk *clk)
 {
-	struct uniphier_clk_priv *priv = dev_get_priv(dev);
+	struct uniphier_clk_priv *priv = dev_get_priv(clk->dev);
 	struct uniphier_clk_rate_data *rdata = priv->socdata->rate;
 	unsigned int nr_rdata = priv->socdata->nr_rate;
 	void __iomem *reg;
@@ -53,7 +52,7 @@ static ulong uniphier_clk_get_rate(struct udevice *dev, int index)
 	int i;
 
 	for (i = 0; i < nr_rdata; i++) {
-		if (rdata[i].index != index)
+		if (rdata[i].index != clk->id)
 			continue;
 
 		if (rdata[i].reg == UNIPHIER_CLK_RATE_IS_FIXED)
@@ -76,9 +75,9 @@ static ulong uniphier_clk_get_rate(struct udevice *dev, int index)
 	return matched_rate;
 }
 
-static ulong uniphier_clk_set_rate(struct udevice *dev, int index, ulong rate)
+static ulong uniphier_clk_set_rate(struct clk *clk, ulong rate)
 {
-	struct uniphier_clk_priv *priv = dev_get_priv(dev);
+	struct uniphier_clk_priv *priv = dev_get_priv(clk->dev);
 	struct uniphier_clk_rate_data *rdata = priv->socdata->rate;
 	unsigned int nr_rdata = priv->socdata->nr_rate;
 	void __iomem *reg;
@@ -88,7 +87,7 @@ static ulong uniphier_clk_set_rate(struct udevice *dev, int index, ulong rate)
 
 	/* first, decide the best match rate */
 	for (i = 0; i < nr_rdata; i++) {
-		if (rdata[i].index != index)
+		if (rdata[i].index != clk->id)
 			continue;
 
 		if (rdata[i].reg == UNIPHIER_CLK_RATE_IS_FIXED)
@@ -106,7 +105,7 @@ static ulong uniphier_clk_set_rate(struct udevice *dev, int index, ulong rate)
 
 	/* second, really set registers */
 	for (i = 0; i < nr_rdata; i++) {
-		if (rdata[i].index != index || rdata[i].rate != best_rate)
+		if (rdata[i].index != clk->id || rdata[i].rate != best_rate)
 			continue;
 
 		reg = priv->base + rdata[i].reg;
@@ -125,22 +124,20 @@ static ulong uniphier_clk_set_rate(struct udevice *dev, int index, ulong rate)
 
 const struct clk_ops uniphier_clk_ops = {
 	.enable = uniphier_clk_enable,
-	.get_periph_rate = uniphier_clk_get_rate,
-	.set_periph_rate = uniphier_clk_set_rate,
+	.get_rate = uniphier_clk_get_rate,
+	.set_rate = uniphier_clk_set_rate,
 };
 
 int uniphier_clk_probe(struct udevice *dev)
 {
 	struct uniphier_clk_priv *priv = dev_get_priv(dev);
 	fdt_addr_t addr;
-	fdt_size_t size;
 
-	addr = fdtdec_get_addr_size(gd->fdt_blob, dev->of_offset, "reg",
-				    &size);
+	addr = dev_get_addr(dev);
 	if (addr == FDT_ADDR_T_NONE)
 		return -EINVAL;
 
-	priv->base = map_sysmem(addr, size);
+	priv->base = map_sysmem(addr, SZ_4K);
 	if (!priv->base)
 		return -ENOMEM;
 

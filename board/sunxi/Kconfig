@@ -68,6 +68,12 @@ config MACH_SUN8I_A33
 	select SUPPORT_SPL
 	select ARMV7_BOOT_SEC_DEFAULT if OLD_SUNXI_KERNEL_COMPAT
 
+config MACH_SUN8I_A83T
+	bool "sun8i (Allwinner A83T)"
+	select CPU_V7
+	select SUNXI_GEN_SUN6I
+	select SUPPORT_SPL
+
 config MACH_SUN8I_H3
 	bool "sun8i (Allwinner H3)"
 	select CPU_V7
@@ -77,15 +83,14 @@ config MACH_SUN8I_H3
 	select SUPPORT_SPL
 	select ARMV7_BOOT_SEC_DEFAULT if OLD_SUNXI_KERNEL_COMPAT
 
-config MACH_SUN8I_A83T
-	bool "sun8i (Allwinner A83T)"
-	select CPU_V7
-	select SUNXI_GEN_SUN6I
-	select SUPPORT_SPL
-
 config MACH_SUN9I
 	bool "sun9i (Allwinner A80)"
 	select CPU_V7
+	select SUNXI_GEN_SUN6I
+
+config MACH_SUN50I
+	bool "sun50i (Allwinner A64)"
+	select ARM64
 	select SUNXI_GEN_SUN6I
 
 endchoice
@@ -213,6 +218,7 @@ config DRAM_ODT_CORRECTION
 endif
 
 config SYS_CLK_FREQ
+	default 816000000 if MACH_SUN50I
 	default 912000000 if MACH_SUN7I
 	default 1008000000 if MACH_SUN4I || MACH_SUN5I || MACH_SUN6I || MACH_SUN8I
 
@@ -223,6 +229,7 @@ config SYS_CONFIG_NAME
 	default "sun7i" if MACH_SUN7I
 	default "sun8i" if MACH_SUN8I
 	default "sun9i" if MACH_SUN9I
+	default "sun50i" if MACH_SUN50I
 
 config SYS_BOARD
 	default "sunxi"
@@ -254,6 +261,7 @@ config MMC
 
 config MMC0_CD_PIN
 	string "Card detect pin for mmc0"
+	default "PF6" if MACH_SUN8I_A83T || MACH_SUN8I_H3 || MACH_SUN50I
 	default ""
 	---help---
 	Set the card detect pin for mmc0, leave empty to not use cd. This
@@ -305,6 +313,15 @@ config MMC_SUNXI_SLOT_EXTRA
 	slot or emmc on mmc1 - mmc3. Setting this to 1, 2 or 3 will enable
 	support for this.
 
+config INITIAL_USB_SCAN_DELAY
+	int "delay initial usb scan by x ms to allow builtin devices to init"
+	default 0
+	---help---
+	Some boards have on board usb devices which need longer than the
+	USB spec's 1 second to connect from board powerup. Set this config
+	option to a non 0 value to add an extra delay before the first usb
+	bus scan.
+
 config USB0_VBUS_PIN
 	string "Vbus enable pin for usb0 (otg)"
 	default ""
@@ -342,10 +359,17 @@ config USB2_VBUS_PIN
 	---help---
 	See USB1_VBUS_PIN help text.
 
+config USB3_VBUS_PIN
+	string "Vbus enable pin for usb3 (ehci2)"
+	default ""
+	---help---
+	See USB1_VBUS_PIN help text.
+
 config I2C0_ENABLE
 	bool "Enable I2C/TWI controller 0"
 	default y if MACH_SUN4I || MACH_SUN5I || MACH_SUN7I
 	default n if MACH_SUN6I || MACH_SUN8I
+	select CMD_I2C
 	---help---
 	This allows enabling I2C/TWI controller 0 by muxing its pins, enabling
 	its clock and setting up the bus. This is especially useful on devices
@@ -355,12 +379,14 @@ config I2C0_ENABLE
 config I2C1_ENABLE
 	bool "Enable I2C/TWI controller 1"
 	default n
+	select CMD_I2C
 	---help---
 	See I2C0_ENABLE help text.
 
 config I2C2_ENABLE
 	bool "Enable I2C/TWI controller 2"
 	default n
+	select CMD_I2C
 	---help---
 	See I2C0_ENABLE help text.
 
@@ -368,6 +394,7 @@ if MACH_SUN6I || MACH_SUN7I
 config I2C3_ENABLE
 	bool "Enable I2C/TWI controller 3"
 	default n
+	select CMD_I2C
 	---help---
 	See I2C0_ENABLE help text.
 endif
@@ -377,6 +404,7 @@ config R_I2C_ENABLE
 	bool "Enable the PRCM I2C/TWI controller"
 	# This is used for the pmic on H3
 	default y if SY8106A_POWER
+	select CMD_I2C
 	---help---
 	Set this to y to enable the I2C controller which is part of the PRCM.
 endif
@@ -385,6 +413,7 @@ if MACH_SUN7I
 config I2C4_ENABLE
 	bool "Enable I2C/TWI controller 4"
 	default n
+	select CMD_I2C
 	---help---
 	See I2C0_ENABLE help text.
 endif
@@ -397,7 +426,7 @@ config AXP_GPIO
 
 config VIDEO
 	boolean "Enable graphical uboot console on HDMI, LCD or VGA"
-	depends on !MACH_SUN8I_A83T
+	depends on !MACH_SUN8I_A83T && !MACH_SUN8I_H3 && !MACH_SUN9I && !MACH_SUN50I_A64
 	default y
 	---help---
 	Say Y here to add support for using a cfb console on the HDMI, LCD
@@ -513,6 +542,7 @@ config VIDEO_LCD_PANEL_I2C
 	bool "LCD panel needs to be configured via i2c"
 	depends on VIDEO
 	default n
+	select CMD_I2C
 	---help---
 	Say y here if the LCD panel needs to be configured via i2c. This
 	will add a bitbang i2c controller using gpios to talk to the LCD.
@@ -598,7 +628,7 @@ config GMAC_TX_DELAY
 	Set the GMAC Transmit Clock Delay Chain value.
 
 config SPL_STACK_R_ADDR
-	default 0x4fe00000 if MACH_SUN4I || MACH_SUN5I || MACH_SUN6I || MACH_SUN7I || MACH_SUN8I
+	default 0x4fe00000 if MACH_SUN4I || MACH_SUN5I || MACH_SUN6I || MACH_SUN7I || MACH_SUN8I || MACH_SUN50I
 	default 0x2fe00000 if MACH_SUN9I
 
 endif

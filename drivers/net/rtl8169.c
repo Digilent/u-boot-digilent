@@ -666,12 +666,12 @@ static int rtl_send_common(pci_dev_t dev, unsigned long dev_iobase,
 		puts("tx timeout/error\n");
 		printf("%s elapsed time : %lu\n", __func__, currticks()-stime);
 #endif
-		ret = 0;
+		ret = -ETIMEDOUT;
 	} else {
 #ifdef DEBUG_RTL8169_TX
 		puts("tx done\n");
 #endif
-		ret = length;
+		ret = 0;
 	}
 	/* Delay to make net console (nc) work properly */
 	udelay(20);
@@ -850,9 +850,11 @@ static void rtl8169_init_ring(pci_dev_t dev)
 }
 
 #ifdef CONFIG_DM_ETH
-static void rtl8169_common_start(struct udevice *dev, unsigned char *enetaddr)
+static void rtl8169_common_start(struct udevice *dev, unsigned char *enetaddr,
+				 unsigned long dev_iobase)
 #else
-static void rtl8169_common_start(pci_dev_t dev, unsigned char *enetaddr)
+static void rtl8169_common_start(pci_dev_t dev, unsigned char *enetaddr,
+				 unsigned long dev_iobase)
 #endif
 {
 	int i;
@@ -861,6 +863,8 @@ static void rtl8169_common_start(pci_dev_t dev, unsigned char *enetaddr)
 	int stime = currticks();
 	printf ("%s\n", __FUNCTION__);
 #endif
+
+	ioaddr = dev_iobase;
 
 	rtl8169_init_ring(dev);
 	rtl8169_hw_start(dev);
@@ -885,8 +889,9 @@ static void rtl8169_common_start(pci_dev_t dev, unsigned char *enetaddr)
 static int rtl8169_eth_start(struct udevice *dev)
 {
 	struct eth_pdata *plat = dev_get_platdata(dev);
+	struct rtl8169_private *priv = dev_get_priv(dev);
 
-	rtl8169_common_start(dev, plat->enetaddr);
+	rtl8169_common_start(dev, plat->enetaddr, priv->iobase);
 
 	return 0;
 }
@@ -897,7 +902,7 @@ RESET - Finish setting up the ethernet interface
 static int rtl_reset(struct eth_device *dev, bd_t *bis)
 {
 	rtl8169_common_start((pci_dev_t)(unsigned long)dev->priv,
-			     dev->enetaddr);
+			     dev->enetaddr, dev->iobase);
 
 	return 0;
 }
@@ -995,7 +1000,7 @@ static int rtl_init(unsigned long dev_ioaddr, const char *name,
 		/* Force RTL8169 in 10/100/1000 Full/Half mode. */
 		if (option > 0) {
 #ifdef DEBUG_RTL8169
-			printf("%s: Force-mode Enabled.\n", dev->name);
+			printf("%s: Force-mode Enabled.\n", name);
 #endif
 			Cap10_100 = 0, Cap1000 = 0;
 			switch (option) {
@@ -1027,7 +1032,7 @@ static int rtl_init(unsigned long dev_ioaddr, const char *name,
 		} else {
 #ifdef DEBUG_RTL8169
 			printf("%s: Auto-negotiation Enabled.\n",
-			       dev->name);
+			       name);
 #endif
 			/* enable 10/100 Full/Half Mode, leave PHY_AUTO_NEGO_REG bit4:0 unchanged */
 			mdio_write(PHY_AUTO_NEGO_REG,
@@ -1054,12 +1059,12 @@ static int rtl_init(unsigned long dev_ioaddr, const char *name,
 				if (option & _1000bpsF) {
 #ifdef DEBUG_RTL8169
 					printf("%s: 1000Mbps Full-duplex operation.\n",
-					     dev->name);
+					       name);
 #endif
 				} else {
 #ifdef DEBUG_RTL8169
 					printf("%s: %sMbps %s-duplex operation.\n",
-					       dev->name,
+					       name,
 					       (option & _100bps) ? "100" :
 					       "10",
 					       (option & FullDup) ? "Full" :
@@ -1077,7 +1082,7 @@ static int rtl_init(unsigned long dev_ioaddr, const char *name,
 #ifdef DEBUG_RTL8169
 		printf
 		    ("%s: 1000Mbps Full-duplex operation, TBI Link %s!\n",
-		     dev->name,
+		     name,
 		     (RTL_R32(TBICSR) & TBILinkOK) ? "OK" : "Failed");
 #endif
 	}

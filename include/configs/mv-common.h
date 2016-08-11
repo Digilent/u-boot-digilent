@@ -57,10 +57,7 @@
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, \
 					  115200,230400, 460800, 921600 }
 /* auto boot */
-#define CONFIG_BOOTDELAY	3	/* default enable autoboot */
 #define CONFIG_PREBOOT
-
-#define CONFIG_OF_LIBFDT		/* Device tree support */
 
 /*
  * For booting Linux, the board info and command line data
@@ -140,9 +137,7 @@
  * File system
  */
 #ifdef CONFIG_SYS_MVFS
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
 #define CONFIG_RBTREE

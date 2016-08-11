@@ -31,7 +31,6 @@ CONFIG_BUILD_ENVCRC ?= $(ENVCRC-y)
 
 hostprogs-$(CONFIG_SPL_GENERATE_ATMEL_PMECC_HEADER) += atmel_pmecc_params
 
-# TODO: CONFIG_CMD_LICENSE does not work
 hostprogs-$(CONFIG_CMD_LICENSE) += bin2header
 hostprogs-$(CONFIG_LCD_LOGO) += bmp_logo
 hostprogs-$(CONFIG_VIDEO_LOGO) += bmp_logo
@@ -59,7 +58,7 @@ FIT_SIG_OBJS-$(CONFIG_FIT_SIGNATURE) := common/image-sig.o
 # Flattened device tree objects
 LIBFDT_OBJS := $(addprefix lib/libfdt/, \
 			fdt.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_wip.o \
-			fdt_region.o)
+			fdt_region.o fdt_sw.o)
 RSA_OBJS-$(CONFIG_FIT_SIGNATURE) := $(addprefix lib/rsa/, \
 					rsa-sign.o rsa-verify.o rsa-checksum.o \
 					rsa-mod-exp.o)
@@ -77,8 +76,6 @@ dumpimage-mkimage-objs := aisimage.o \
 			lib/fdtdec.o \
 			fit_common.o \
 			fit_image.o \
-			gpimage.o \
-			gpimage-common.o \
 			common/image-fit.o \
 			image-host.o \
 			common/image.o \
@@ -99,7 +96,10 @@ dumpimage-mkimage-objs := aisimage.o \
 			common/hash.o \
 			ublimage.o \
 			zynqimage.o \
+			zynqmpimage.o \
 			$(LIBFDT_OBJS) \
+			gpimage.o \
+			gpimage-common.o \
 			$(RSA_OBJS-y)
 
 dumpimage-objs := $(dumpimage-mkimage-objs) dumpimage.o
@@ -212,6 +212,10 @@ endif
 
 endif # !LOGO_BMP
 
+# Generated gziped GPL-2.0 license text
+LICENSE_H = $(objtree)/include/license.h
+LICENSE-$(CONFIG_CMD_LICENSE) += $(LICENSE_H)
+
 #
 # Use native tools and options
 # Define __KERNEL_STRICT_NAMES to prevent typedef overlaps
@@ -226,13 +230,17 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/libfdt_env.h \
 		-D__KERNEL_STRICT_NAMES \
 		-D_GNU_SOURCE
 
-__build:	$(LOGO-y)
+__build:	$(LOGO-y) $(LICENSE-y)
 
 $(LOGO_H):	$(obj)/bmp_logo $(LOGO_BMP)
 	$(obj)/bmp_logo --gen-info $(LOGO_BMP) > $@
 
 $(LOGO_DATA_H):	$(obj)/bmp_logo $(LOGO_BMP)
 	$(obj)/bmp_logo --gen-data $(LOGO_BMP) > $@
+
+$(LICENSE_H): $(obj)/bin2header $(srctree)/Licenses/gpl-2.0.txt
+	cat $(srctree)/Licenses/gpl-2.0.txt | gzip -9 -c | \
+		$(obj)/bin2header license_gzip > $(LICENSE_H)
 
 # Let clean descend into subdirs
 subdir- += env

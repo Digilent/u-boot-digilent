@@ -26,9 +26,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-int device_bind(struct udevice *parent, const struct driver *drv,
-		const char *name, void *platdata, int of_offset,
-		struct udevice **devp)
+static int device_bind_common(struct udevice *parent, const struct driver *drv,
+			      const char *name, void *platdata,
+			      ulong driver_data, int of_offset,
+			      struct udevice **devp)
 {
 	struct udevice *dev;
 	struct uclass *uc;
@@ -56,6 +57,7 @@ int device_bind(struct udevice *parent, const struct driver *drv,
 	INIT_LIST_HEAD(&dev->devres_head);
 #endif
 	dev->platdata = platdata;
+	dev->driver_data = driver_data;
 	dev->name = name;
 	dev->of_offset = of_offset;
 	dev->parent = parent;
@@ -66,12 +68,12 @@ int device_bind(struct udevice *parent, const struct driver *drv,
 	dev->req_seq = -1;
 	if (CONFIG_IS_ENABLED(OF_CONTROL) && CONFIG_IS_ENABLED(DM_SEQ_ALIAS)) {
 		/*
-		* Some devices, such as a SPI bus, I2C bus and serial ports
-		* are numbered using aliases.
-		*
-		* This is just a 'requested' sequence, and will be
-		* resolved (and ->seq updated) when the device is probed.
-		*/
+		 * Some devices, such as a SPI bus, I2C bus and serial ports
+		 * are numbered using aliases.
+		 *
+		 * This is just a 'requested' sequence, and will be
+		 * resolved (and ->seq updated) when the device is probed.
+		 */
 		if (uc->uc_drv->flags & DM_UC_FLAG_SEQ_ALIAS) {
 			if (uc->uc_drv->name && of_offset != -1) {
 				fdtdec_get_alias_seq(gd->fdt_blob,
@@ -191,6 +193,23 @@ fail_alloc1:
 	free(dev);
 
 	return ret;
+}
+
+int device_bind_with_driver_data(struct udevice *parent,
+				 const struct driver *drv, const char *name,
+				 ulong driver_data, int of_offset,
+				 struct udevice **devp)
+{
+	return device_bind_common(parent, drv, name, NULL, driver_data,
+				  of_offset, devp);
+}
+
+int device_bind(struct udevice *parent, const struct driver *drv,
+		const char *name, void *platdata, int of_offset,
+		struct udevice **devp)
+{
+	return device_bind_common(parent, drv, name, platdata, 0, of_offset,
+				  devp);
 }
 
 int device_bind_by_name(struct udevice *parent, bool pre_reloc_only,
@@ -331,6 +350,9 @@ int device_probe(struct udevice *dev)
 	ret = uclass_post_probe_device(dev);
 	if (ret)
 		goto fail_uclass;
+
+	if (dev->parent && device_get_uclass_id(dev) == UCLASS_PINCTRL)
+		pinctrl_select_state(dev, "default");
 
 	return 0;
 fail_uclass:
@@ -649,9 +671,30 @@ fdt_addr_t dev_get_addr_index(struct udevice *dev, int index)
 #endif
 }
 
+fdt_addr_t dev_get_addr_name(struct udevice *dev, const char *name)
+{
+#if CONFIG_IS_ENABLED(OF_CONTROL)
+	int index;
+
+	index = fdt_find_string(gd->fdt_blob, dev->of_offset, "reg-names",
+				name);
+	if (index < 0)
+		return index;
+
+	return dev_get_addr_index(dev, index);
+#else
+	return FDT_ADDR_T_NONE;
+#endif
+}
+
 fdt_addr_t dev_get_addr(struct udevice *dev)
 {
 	return dev_get_addr_index(dev, 0);
+}
+
+void *dev_get_addr_ptr(struct udevice *dev)
+{
+	return (void *)(uintptr_t)dev_get_addr_index(dev, 0);
 }
 
 bool device_has_children(struct udevice *dev)
@@ -682,12 +725,32 @@ bool device_is_last_sibling(struct udevice *dev)
 	return list_is_last(&dev->sibling_node, &parent->child_head);
 }
 
+void device_set_name_alloced(struct udevice *dev)
+{
+	dev->flags |= DM_NAME_ALLOCED;
+}
+
 int device_set_name(struct udevice *dev, const char *name)
 {
 	name = strdup(name);
 	if (!name)
 		return -ENOMEM;
 	dev->name = name;
+	device_set_name_alloced(dev);
 
 	return 0;
+}
+
+bool of_device_is_compatible(struct udevice *dev, const char *compat)
+{
+	const void *fdt = gd->fdt_blob;
+
+	return !fdt_node_check_compatible(fdt, dev->of_offset, compat);
+}
+
+bool of_machine_is_compatible(const char *compat)
+{
+	const void *fdt = gd->fdt_blob;
+
+	return !fdt_node_check_compatible(fdt, 0, compat);
 }

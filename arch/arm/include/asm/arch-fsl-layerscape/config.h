@@ -14,8 +14,11 @@
 #else
 #define CONFIG_SYS_FSL_DDRC_ARM_GEN3	/* Enable Freescale ARM DDR3 driver */
 #endif
+
+#ifndef CONFIG_LS1012A
 #define CONFIG_SYS_FSL_DDR		/* Freescale DDR driver */
 #define CONFIG_SYS_FSL_DDR_VER		FSL_DDR_VER_5_0
+#endif
 
 /*
  * Reserve secure memory
@@ -23,16 +26,11 @@
  */
 #define CONFIG_SYS_MEM_RESERVE_SECURE	(2048 * 1024)	/* 2MB */
 
-#if defined(CONFIG_LS2080A) || defined(CONFIG_LS2085A)
+#ifdef CONFIG_LS2080A
 #define CONFIG_MAX_CPUS				16
 #define CONFIG_SYS_FSL_IFC_BANK_COUNT		8
-#ifdef CONFIG_LS2080A
-#define CONFIG_NUM_DDR_CONTROLLERS		2
-#endif
-#ifdef CONFIG_LS2085A
 #define CONFIG_NUM_DDR_CONTROLLERS		3
-#define CONFIG_SYS_FSL_HAS_DP_DDR
-#endif
+#define CONFIG_SYS_FSL_HAS_DP_DDR		/* Runtime check to confirm */
 #define CONFIG_SYS_FSL_CLUSTER_CLOCKS		{ 1, 1, 4, 4 }
 #define	SRDS_MAX_LANES	8
 #define CONFIG_SYS_FSL_SRDS_1
@@ -67,6 +65,24 @@
 /* SMMU Defintions */
 #define SMMU_BASE			0x05000000 /* GR0 Base */
 
+/* SFP */
+#define CONFIG_SYS_FSL_SFP_VER_3_4
+#define CONFIG_SYS_FSL_SFP_LE
+#define CONFIG_SYS_FSL_SRK_LE
+
+/* SEC */
+#define CONFIG_SYS_FSL_SEC_LE
+#define CONFIG_SYS_FSL_SEC_COMPAT	5
+
+/* Security Monitor */
+#define CONFIG_SYS_FSL_SEC_MON_LE
+
+/* Secure Boot */
+#define CONFIG_ESBC_HDR_LS
+
+/* DCFG - GUR */
+#define CONFIG_SYS_FSL_CCSR_GUR_LE
+
 /* Cache Coherent Interconnect */
 #define CCI_MN_BASE			0x04000000
 #define CCI_MN_RNF_NODEID_LIST		0x180
@@ -90,6 +106,8 @@
 #define CCI_S0_QOS_CONTROL_BASE(x) ((CCI_RN_I_0_BASE + (x * 0x10000)) + 0x10)
 #define CCI_S1_QOS_CONTROL_BASE(x) ((CCI_RN_I_0_BASE + (x * 0x10000)) + 0x110)
 #define CCI_S2_QOS_CONTROL_BASE(x) ((CCI_RN_I_0_BASE + (x * 0x10000)) + 0x210)
+
+#define CCI_AUX_CONTROL_BASE(x) ((CCI_RN_I_0_BASE + (x * 0x10000)) + 0x0500)
 
 /* TZ Protection Controller Definitions */
 #define TZPC_BASE				0x02200000
@@ -119,7 +137,10 @@
 #define CONFIG_SYS_FSL_ERRATUM_A008751
 #define CONFIG_SYS_FSL_ERRATUM_A009635
 #define CONFIG_SYS_FSL_ERRATUM_A009663
+#define CONFIG_SYS_FSL_ERRATUM_A009801
+#define CONFIG_SYS_FSL_ERRATUM_A009803
 #define CONFIG_SYS_FSL_ERRATUM_A009942
+#define CONFIG_SYS_FSL_ERRATUM_A010165
 
 /* ARM A57 CORE ERRATA */
 #define CONFIG_ARM_ERRATA_826974
@@ -127,6 +148,7 @@
 #define CONFIG_ARM_ERRATA_829520
 #define CONFIG_ARM_ERRATA_833471
 
+#define CONFIG_SYS_FSL_MAX_NUM_OF_SEC		1
 #elif defined(CONFIG_LS1043A)
 #define CONFIG_MAX_CPUS				4
 #define CONFIG_SYS_CACHELINE_SIZE		64
@@ -175,10 +197,38 @@
 #define GICD_BASE		0x01401000
 #define GICC_BASE		0x01402000
 
+#define CONFIG_SYS_FSL_ERRATUM_A008850
 #define CONFIG_SYS_FSL_ERRATUM_A009663
 #define CONFIG_SYS_FSL_ERRATUM_A009929
 #define CONFIG_SYS_FSL_ERRATUM_A009942
 #define CONFIG_SYS_FSL_ERRATUM_A009660
+#define CONFIG_SYS_FSL_MAX_NUM_OF_SEC		1
+#elif defined(CONFIG_LS1012A)
+#define CONFIG_MAX_CPUS                         1
+#define CONFIG_SYS_CACHELINE_SIZE		64
+#define CONFIG_NUM_DDR_CONTROLLERS		1
+#define CONFIG_SYS_CCSRBAR_DEFAULT		0x01000000
+#define CONFIG_SYS_FSL_SEC_COMPAT		5
+#undef	CONFIG_SYS_FSL_DDRC_ARM_GEN3
+
+#define CONFIG_SYS_FSL_OCRAM_BASE		0x10000000 /* initial RAM */
+#define CONFIG_SYS_FSL_OCRAM_SIZE		0x200000 /* 2 MiB */
+
+#define GICD_BASE		0x01401000
+#define GICC_BASE		0x01402000
+
+#define CONFIG_SYS_FSL_CCSR_GUR_BE
+#define CONFIG_SYS_FSL_CCSR_SCFG_BE
+#define CONFIG_SYS_FSL_ESDHC_BE
+#define CONFIG_SYS_FSL_WDOG_BE
+#define CONFIG_SYS_FSL_DSPI_BE
+#define CONFIG_SYS_FSL_QSPI_BE
+#define CONFIG_SYS_FSL_PEX_LUT_BE
+
+#define SRDS_MAX_LANES		4
+#define CONFIG_SYS_FSL_SRDS_1
+#define CONFIG_SYS_FSL_PCIE_COMPAT		"fsl,qoriq-pcie-v2.4"
+#define CONFIG_SYS_FSL_SEC_BE
 #else
 #error SoC not defined
 #endif

@@ -11,66 +11,6 @@
 #include <mmc.h>
 
 static int curr_device = -1;
-#ifndef CONFIG_GENERIC_MMC
-int do_mmc (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	int dev;
-
-	if (argc < 2)
-		return CMD_RET_USAGE;
-
-	if (strcmp(argv[1], "init") == 0) {
-		if (argc == 2) {
-			if (curr_device < 0)
-				dev = 1;
-			else
-				dev = curr_device;
-		} else if (argc == 3) {
-			dev = (int)simple_strtoul(argv[2], NULL, 10);
-		} else {
-			return CMD_RET_USAGE;
-		}
-
-		if (mmc_legacy_init(dev) != 0) {
-			puts("No MMC card found\n");
-			return 1;
-		}
-
-		curr_device = dev;
-		printf("mmc%d is available\n", curr_device);
-	} else if (strcmp(argv[1], "device") == 0) {
-		if (argc == 2) {
-			if (curr_device < 0) {
-				puts("No MMC device available\n");
-				return 1;
-			}
-		} else if (argc == 3) {
-			dev = (int)simple_strtoul(argv[2], NULL, 10);
-
-#ifdef CONFIG_SYS_MMC_SET_DEV
-			if (mmc_set_dev(dev) != 0)
-				return 1;
-#endif
-			curr_device = dev;
-		} else {
-			return CMD_RET_USAGE;
-		}
-
-		printf("mmc%d is current device\n", curr_device);
-	} else {
-		return CMD_RET_USAGE;
-	}
-
-	return 0;
-}
-
-U_BOOT_CMD(
-	mmc, 3, 1, do_mmc,
-	"MMC sub-system",
-	"init [dev] - init MMC sub system\n"
-	"mmc device [dev] - show or set current device"
-);
-#else /* !CONFIG_GENERIC_MMC */
 
 static void print_mmcinfo(struct mmc *mmc)
 {
@@ -150,6 +90,7 @@ static struct mmc *init_mmc_device(int dev, bool force_init)
 		printf("no mmc device at slot %x\n", dev);
 		return NULL;
 	}
+
 	if (force_init)
 		mmc->has_init = 0;
 	if (mmc_init(mmc))
@@ -312,13 +253,15 @@ static int do_mmcrpmb(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 	/* Switch to the RPMB partition */
-	original_part = mmc->block_dev.part_num;
-	if (mmc_select_hwpart(curr_device, MMC_PART_RPMB) != 0)
+	original_part = mmc->block_dev.hwpart;
+	if (blk_select_hwpart_devnum(IF_TYPE_MMC, curr_device, MMC_PART_RPMB) !=
+	    0)
 		return CMD_RET_FAILURE;
 	ret = cp->cmd(cmdtp, flag, argc, argv);
 
 	/* Return to original partition */
-	if (mmc_select_hwpart(curr_device, original_part) != 0)
+	if (blk_select_hwpart_devnum(IF_TYPE_MMC, curr_device, original_part) !=
+	    0)
 		return CMD_RET_FAILURE;
 	return ret;
 }
@@ -345,7 +288,7 @@ static int do_mmc_read(cmd_tbl_t *cmdtp, int flag,
 	printf("\nMMC read: dev # %d, block # %d, count %d ... ",
 	       curr_device, blk, cnt);
 
-	n = mmc->block_dev.block_read(&mmc->block_dev, blk, cnt, addr);
+	n = blk_dread(mmc_get_blk_desc(mmc), blk, cnt, addr);
 	/* flush cache after read */
 	flush_cache((ulong)addr, cnt * 512); /* FIXME */
 	printf("%d blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");
@@ -377,7 +320,7 @@ static int do_mmc_write(cmd_tbl_t *cmdtp, int flag,
 		printf("Error: card is write protected!\n");
 		return CMD_RET_FAILURE;
 	}
-	n = mmc->block_dev.block_write(&mmc->block_dev, blk, cnt, addr);
+	n = blk_dwrite(mmc_get_blk_desc(mmc), blk, cnt, addr);
 	printf("%d blocks written: %s\n", n, (n == cnt) ? "OK" : "ERROR");
 
 	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
@@ -405,7 +348,7 @@ static int do_mmc_erase(cmd_tbl_t *cmdtp, int flag,
 		printf("Error: card is write protected!\n");
 		return CMD_RET_FAILURE;
 	}
-	n = mmc->block_dev.block_erase(&mmc->block_dev, blk, cnt);
+	n = blk_derase(mmc_get_blk_desc(mmc), blk, cnt);
 	printf("%d blocks erased: %s\n", n, (n == cnt) ? "OK" : "ERROR");
 
 	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
@@ -424,16 +367,16 @@ static int do_mmc_rescan(cmd_tbl_t *cmdtp, int flag,
 static int do_mmc_part(cmd_tbl_t *cmdtp, int flag,
 		       int argc, char * const argv[])
 {
-	block_dev_desc_t *mmc_dev;
+	struct blk_desc *mmc_dev;
 	struct mmc *mmc;
 
 	mmc = init_mmc_device(curr_device, false);
 	if (!mmc)
 		return CMD_RET_FAILURE;
 
-	mmc_dev = mmc_get_dev(curr_device);
+	mmc_dev = blk_get_devnum_by_type(IF_TYPE_MMC, curr_device);
 	if (mmc_dev != NULL && mmc_dev->type != DEV_TYPE_UNKNOWN) {
-		print_part(mmc_dev);
+		part_print(mmc_dev);
 		return CMD_RET_SUCCESS;
 	}
 
@@ -466,7 +409,7 @@ static int do_mmc_dev(cmd_tbl_t *cmdtp, int flag,
 	if (!mmc)
 		return CMD_RET_FAILURE;
 
-	ret = mmc_select_hwpart(dev, part);
+	ret = blk_select_hwpart_devnum(IF_TYPE_MMC, dev, part);
 	printf("switch to partitions #%d, %s\n",
 	       part, (!ret) ? "OK" : "ERROR");
 	if (ret)
@@ -477,7 +420,7 @@ static int do_mmc_dev(cmd_tbl_t *cmdtp, int flag,
 		printf("mmc%d is current device\n", curr_device);
 	else
 		printf("mmc%d(part %d) is current device\n",
-		       curr_device, mmc->block_dev.hwpart);
+		       curr_device, mmc_get_blk_desc(mmc)->hwpart);
 
 	return CMD_RET_SUCCESS;
 }
@@ -878,5 +821,3 @@ U_BOOT_CMD(
 	"display MMC info",
 	"- display info of the current MMC device"
 );
-
-#endif /* !CONFIG_GENERIC_MMC */

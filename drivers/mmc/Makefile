@@ -5,7 +5,13 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-$(CONFIG_DM_MMC) += mmc-uclass.o
+ifdef CONFIG_DM_MMC
+obj-$(CONFIG_GENERIC_MMC) += mmc-uclass.o
+endif
+
+ifndef CONFIG_BLK
+obj-$(CONFIG_GENERIC_MMC) += mmc_legacy.o
+endif
 
 obj-$(CONFIG_ARM_PL180_MMCI) += arm_pl180_mmci.o
 obj-$(CONFIG_ATMEL_SDHCI) += atmel_sdhci.o
@@ -34,7 +40,11 @@ obj-$(CONFIG_ROCKCHIP_DWMMC) += rockchip_dw_mmc.o
 obj-$(CONFIG_SUPPORT_EMMC_RPMB) += rpmb.o
 obj-$(CONFIG_S3C_SDI) += s3c_sdi.o
 obj-$(CONFIG_S5P_SDHCI) += s5p_sdhci.o
+ifdef CONFIG_BLK
+ifdef CONFIG_GENERIC_MMC
 obj-$(CONFIG_SANDBOX) += sandbox_mmc.o
+endif
+endif
 obj-$(CONFIG_SDHCI) += sdhci.o
 obj-$(CONFIG_SH_MMCIF) += sh_mmcif.o
 obj-$(CONFIG_SH_SDHI) += sh_sdhi.o
@@ -50,3 +60,4 @@ else
 obj-$(CONFIG_GENERIC_MMC) += mmc_write.o
 endif
 obj-$(CONFIG_PIC32_SDHCI) += pic32_sdhci.o
+obj-$(CONFIG_MSM_SDHCI) += msm_sdhci.o

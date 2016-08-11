@@ -7,10 +7,11 @@
 #ifndef	__ASM_ARC_GLOBAL_DATA_H
 #define __ASM_ARC_GLOBAL_DATA_H
 
+#ifndef __ASSEMBLY__
 /* Architecture-specific global data */
 struct arch_global_data {
-	int running_on_hw;
 };
+#endif /* __ASSEMBLY__ */
 
 #include <asm-generic/global_data.h>
 

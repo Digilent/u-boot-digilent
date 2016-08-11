@@ -720,16 +720,39 @@ enable_l2_cluster_l2:
 	ori	r4, r4, (L2CSR0_L2FI|L2CSR0_L2LFC)@l
 	sync
 	stw	r4, 0(r3)	/* invalidate L2 */
+	/* Poll till the bits are cleared */
 1:	sync
 	lwz	r0, 0(r3)
 	twi	0, r0, 0
 	isync
 	and.	r1, r0, r4
 	bne	1b
+
+	/* L2PE must be set before L2 cache is enabled */
+	lis	r4, (L2CSR0_L2PE)@h
+	ori	r4, r4, (L2CSR0_L2PE)@l
+	sync
+	stw	r4, 0(r3)	/* enable L2 parity/ECC error checking */
+	/* Poll till the bit is set */
+1:	sync
+	lwz	r0, 0(r3)
+	twi	0, r0, 0
+	isync
+	and.	r1, r0, r4
+	beq	1b
+
 	lis	r4, (L2CSR0_L2E|L2CSR0_L2PE)@h
 	ori	r4, r4, (L2CSR0_L2REP_MODE)@l
 	sync
 	stw	r4, 0(r3)	/* enable L2 */
+	/* Poll till the bit is set */
+1:	sync
+	lwz	r0, 0(r3)
+	twi	0, r0, 0
+	isync
+	and.	r1, r0, r4
+	beq	1b
+
 delete_ccsr_l2_tlb:
 	delete_tlb0_entry 0, CONFIG_SYS_CCSRBAR + 0xC20000, MAS2_I|MAS2_G, r3
 #endif
@@ -1152,6 +1175,36 @@ _start_cont:
 	/* Setup the stack in initial RAM,could be L2-as-SRAM or L1 dcache*/
 	lis	r3,(CONFIG_SYS_INIT_RAM_ADDR)@h
 	ori	r3,r3,((CONFIG_SYS_INIT_SP_OFFSET-16)&~0xf)@l /* Align to 16 */
+
+#ifdef CONFIG_SYS_MALLOC_F_LEN
+
+#if CONFIG_SYS_MALLOC_F_LEN + GENERATED_GBL_DATA_SIZE > CONFIG_SYS_INIT_RAM_SIZE
+#error "CONFIG_SYS_MALLOC_F_LEN too large to fit into initial RAM."
+#endif
+
+	/* Leave 16+ byte for back chain termination and NULL return address */
+	subi	r3,r3,((CONFIG_SYS_MALLOC_F_LEN+16+15)&~0xf)
+#endif
+
+	/* End of RAM */
+	lis	r4,(CONFIG_SYS_INIT_RAM_ADDR)@h
+	ori	r4,r4,(CONFIG_SYS_INIT_RAM_SIZE)@l
+
+	li	r0,0
+
+1: 	subi 	r4,r4,4
+	stw 	r0,0(r4)
+	cmplw 	r4,r3
+	bne	1b
+
+#ifdef CONFIG_SYS_MALLOC_F_LEN
+	lis	r4,(CONFIG_SYS_INIT_RAM_ADDR)@h
+	ori	r4,r4,(CONFIG_SYS_GBL_DATA_OFFSET)@l
+
+	addi	r3,r3,16	/* Pre-relocation malloc area */
+	stw	r3,GD_MALLOC_BASE(r4)
+	subi	r3,r3,16
+#endif
 	li	r0,0
 	stw	r0,0(r3)	/* Terminate Back Chain */
 	stw	r0,+4(r3)	/* NULL return address. */

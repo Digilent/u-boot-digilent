@@ -11,8 +11,6 @@
 #define CONFIG_SYS_THUMB_BUILD
 #define CONFIG_STM32F4DISCOVERY
 
-#define CONFIG_OF_LIBFDT
-
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_MISC_INIT_R
 
@@ -49,6 +47,7 @@
 #define CONFIG_GREEN_LED		109
 
 #define CONFIG_STM32_GPIO
+#define CONFIG_STM32_FLASH
 #define CONFIG_STM32_SERIAL
 
 #define CONFIG_STM32_HSE_HZ		8000000
@@ -83,18 +82,13 @@
 	"bootcmd_romfs=setenv bootargs ${bootargs} ${bootargs_romfs};" \
 	"bootm 0x08044000 - 0x08042000\0"
 
-#define CONFIG_BOOTDELAY		3
-#define CONFIG_AUTOBOOT
-
 /*
  * Command line configuration.
  */
 #define CONFIG_SYS_LONGHELP
-#define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_CMDLINE_EDITING
 
 #define CONFIG_CMD_MEM
-#define CONFIG_CMD_TIMER
 
 #endif /* __CONFIG_H */

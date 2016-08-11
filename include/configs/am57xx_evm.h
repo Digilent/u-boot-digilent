@@ -48,15 +48,12 @@
 #define CONFIG_EFI_PARTITION
 
 /* CPSW Ethernet */
-#define CONFIG_CMD_DHCP
 #define CONFIG_BOOTP_DNS		/* Configurable parts of CMD_DHCP */
 #define CONFIG_BOOTP_DNS2
 #define CONFIG_BOOTP_SEND_HOSTNAME
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_SUBNETMASK
 #define CONFIG_NET_RETRY_COUNT		10
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_MII
 #define CONFIG_DRIVER_TI_CPSW		/* Driver for IP block */
 #define CONFIG_MII			/* Required in net/eth.c */
 #define CONFIG_PHY_GIGE			/* per-board part of CPSW */
@@ -66,10 +63,7 @@
 #define CONFIG_SUPPORT_EMMC_BOOT
 
 /* USB xHCI HOST */
-#define CONFIG_CMD_USB
 #define CONFIG_USB_HOST
-#define CONFIG_USB_XHCI_DWC3
-#define CONFIG_USB_XHCI
 #define CONFIG_USB_XHCI_OMAP
 #define CONFIG_USB_STORAGE
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS 2
@@ -79,7 +73,7 @@
 
 /* SATA */
 #define CONFIG_BOARD_LATE_INIT
-#define CONFIG_CMD_SCSI
+#define CONFIG_SCSI
 #define CONFIG_LIBATA
 #define CONFIG_SCSI_AHCI
 #define CONFIG_SCSI_AHCI_PLAT
@@ -87,5 +81,9 @@
 #define CONFIG_SYS_SCSI_MAX_LUN		1
 #define CONFIG_SYS_SCSI_MAX_DEVICE	(CONFIG_SYS_SCSI_MAX_SCSI_ID * \
 						CONFIG_SYS_SCSI_MAX_LUN)
+
+/* EEPROM */
+#define CONFIG_EEPROM_CHIP_ADDRESS 0x50
+#define CONFIG_EEPROM_BUS_ADDRESS 0
 
 #endif /* __CONFIG_AM57XX_EVM_H */

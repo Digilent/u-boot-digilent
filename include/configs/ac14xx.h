@@ -289,9 +289,9 @@
 
 /* Use SRAM for initial stack */
 #define CONFIG_SYS_INIT_RAM_ADDR	CONFIG_SYS_SRAM_BASE
-#define CONFIG_SYS_INIT_RAM_END		CONFIG_SYS_SRAM_SIZE
+#define CONFIG_SYS_INIT_RAM_SIZE	CONFIG_SYS_SRAM_SIZE
 
-#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - \
+#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - \
 					 GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
@@ -341,7 +341,6 @@
 			 CLOCK_SCCR2_SPDIF_EN |		\
 			 CLOCK_SCCR2_DIU_EN |		\
 			 CLOCK_SCCR2_I2C_EN)
-
 
 #define CONFIG_CMDLINE_EDITING		1	/* command line history */
 
@@ -393,16 +392,10 @@
 #define CONFIG_LOADS_ECHO		1
 #define CONFIG_SYS_LOADS_BAUD_CHANGE	1
 
-#define CONFIG_CMD_ASKENV
-#define CONFIG_CMD_DHCP
 #define CONFIG_CMD_EEPROM
 #undef CONFIG_CMD_FUSE
-#define CONFIG_CMD_I2C
 #undef CONFIG_CMD_IDE
-#undef CONFIG_CMD_EXT2
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MII
-#define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO
 
 #if defined(CONFIG_PCI)
@@ -456,14 +449,6 @@
 
 #define CONFIG_HIGH_BATS		1	/* High BATs supported */
 
-/*
- * Internal Definitions
- *
- * Boot Flags
- */
-#define BOOTFLAG_COLD			0x01
-#define BOOTFLAG_WARM			0x02
-
 #ifdef CONFIG_CMD_KGDB
 #define CONFIG_KGDB_BAUDRATE		230400	/* speed of kgdb serial port */
 #endif
@@ -477,7 +462,6 @@
 /* default load addr for tftp and bootm */
 #define CONFIG_LOADADDR		400000
 
-#define CONFIG_BOOTDELAY	2	/* -1 disables auto-boot */
 
 /* the builtin environment and standard greeting */
 #define CONFIG_PREBOOT	"echo;"	\
@@ -557,9 +541,6 @@
 
 #define CONFIG_ARP_TIMEOUT	200UL
 
-#define CONFIG_FIT		1
-#define CONFIG_OF_LIBFDT	1
-#define CONFIG_OF_BOARD_SETUP	1
 #define CONFIG_OF_SUPPORT_OLD_DEVICE_TREES	1
 
 #define OF_CPU			"PowerPC,5121@0"

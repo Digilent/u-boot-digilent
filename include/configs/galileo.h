@@ -29,7 +29,7 @@
 
 /* SATA is not supported in Quark SoC */
 #undef CONFIG_SCSI_AHCI
-#undef CONFIG_CMD_SCSI
+#undef CONFIG_SCSI
 
 /* Video is not supported in Quark SoC */
 #undef CONFIG_VIDEO
@@ -40,7 +40,6 @@
 #define CONFIG_SDHCI
 #define CONFIG_GENERIC_MMC
 #define CONFIG_MMC_SDMA
-#define CONFIG_CMD_MMC
 
 /* 10/100M Ethernet support */
 #define CONFIG_DESIGNWARE_ETH

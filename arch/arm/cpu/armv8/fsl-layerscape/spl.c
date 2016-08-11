@@ -24,12 +24,12 @@ u32 spl_boot_device(void)
 	return 0;
 }
 
-u32 spl_boot_mode(void)
+u32 spl_boot_mode(const u32 boot_device)
 {
 	switch (spl_boot_device()) {
 	case BOOT_DEVICE_MMC1:
 #ifdef CONFIG_SPL_FAT_SUPPORT
-		return MMCSD_MODE_FAT;
+		return MMCSD_MODE_FS;
 #else
 		return MMCSD_MODE_RAW;
 #endif
@@ -46,15 +46,12 @@ void board_init_f(ulong dummy)
 {
 	/* Clear global data */
 	memset((void *)gd, 0, sizeof(gd_t));
-#if defined(CONFIG_LS2080A) || defined(CONFIG_LS2085A)
+#ifdef CONFIG_LS2080A
 	arch_cpu_init();
-#endif
-#ifdef CONFIG_FSL_IFC
-	init_early_memctl_regs();
 #endif
 	board_early_init_f();
 	timer_init();
-#if defined(CONFIG_LS2080A) || defined(CONFIG_LS2085A)
+#ifdef CONFIG_LS2080A
 	env_init();
 #endif
 	get_clocks();

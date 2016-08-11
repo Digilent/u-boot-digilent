@@ -35,6 +35,12 @@
 #define SYSCTL_RSTC		0x02000000
 #define SYSCTL_RSTD		0x04000000
 
+#define VENDORSPEC_CKEN		0x00004000
+#define VENDORSPEC_PEREN	0x00002000
+#define VENDORSPEC_HCKEN	0x00001000
+#define VENDORSPEC_IPGEN	0x00000800
+#define VENDORSPEC_INIT		0x20007809
+
 #define IRQSTAT			0x0002e030
 #define IRQSTAT_DMAE		(0x10000000)
 #define IRQSTAT_AC12E		(0x01000000)
@@ -168,13 +174,10 @@
 #define ESDHC_VENDORSPEC_VSELECT 0x00000002 /* Use 1.8V */
 
 struct fsl_esdhc_cfg {
-#ifdef CONFIG_FSL_LAYERSCAPE
-	u64	esdhc_base;
-#else
-	u32	esdhc_base;
-#endif
+	phys_addr_t esdhc_base;
 	u32	sdhc_clk;
 	u8	max_bus_width;
+	u8	wp_enable;
 	struct mmc_config cfg;
 };
 

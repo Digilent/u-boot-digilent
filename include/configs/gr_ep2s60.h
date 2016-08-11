@@ -15,7 +15,6 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define CONFIG_SYS_GENERIC_BOARD
 #define CONFIG_DISPLAY_BOARDINFO
 
 /*
@@ -54,16 +53,12 @@
  * Supported commands
  */
 #define CONFIG_CMD_REGINFO
-#define CONFIG_CMD_PING
 #define CONFIG_CMD_DIAG
 #define CONFIG_CMD_IRQ
 
 /* USB support */
 #if USE_GRUSB
 #define CONFIG_USB_UHCI
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_USB
 #define CONFIG_USB_STORAGE
 /* Enable needed helper functions */
 #define CONFIG_SYS_STDIO_DEREGISTER	/* needs stdio_deregister */
@@ -72,7 +67,6 @@
 /*
  * Autobooting
  */
-#define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds */
 
 #define CONFIG_PREBOOT	"echo;"	\
 	"echo Type \"run flash_nfs\" to mount root filesystem over NFS;" \

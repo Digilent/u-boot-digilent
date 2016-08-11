@@ -18,12 +18,9 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
-#define CONFIG_BOOTDELAY		1
 #define CONFIG_BOOTCOMMAND		"bootm ffc20000"
 
 #undef CONFIG_CMD_AES
-#define CONFIG_CMD_CACHE
-#define CONFIG_CMD_TIMER
 #define CONFIG_CMD_DIAG
 
 /* undef to save memory	*/
@@ -45,7 +42,6 @@
 
 #define CONFIG_SYS_CONSOLE_INFO_QUIET	1 /* no console @ startup	*/
 #define CONFIG_AUTO_COMPLETE		1 /* add autocompletion support	*/
-#define CONFIG_LOOPW			1 /* enable loopw command	*/
 #define CONFIG_MX_CYCLIC		1 /* enable mdc/mwc commands	*/
 
 #define CONFIG_SYS_LOAD_ADDR		0x20000	/* default load address */

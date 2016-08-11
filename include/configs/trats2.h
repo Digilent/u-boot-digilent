@@ -41,8 +41,6 @@
 #define CONFIG_SYS_CONSOLE_INFO_QUIET
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV
 
-#define CONFIG_FIT
-#define CONFIG_FIT_VERBOSE
 #define CONFIG_BOOTARGS			"Please use defined boot"
 #define CONFIG_BOOTCOMMAND		"run autoboot"
 #define CONFIG_DEFAULT_CONSOLE		"console=ttySAC2,115200n8\0"
@@ -162,8 +160,6 @@
 /* I2C */
 #include <asm/arch/gpio.h>
 
-#define CONFIG_CMD_I2C
-
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_S3C24X0
 #define CONFIG_SYS_I2C_S3C24X0_SPEED	100000
@@ -226,12 +222,8 @@ int get_soft_i2c_sda_pin(void);
 #define CONFIG_SYS_WHITE_ON_BLACK
 
 /* LCD */
-#define CONFIG_EXYNOS_FB
-#define CONFIG_LCD
-#define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
 #define CONFIG_FB_ADDR		0x52504000
-#define CONFIG_S6E8AX0
 #define CONFIG_EXYNOS_MIPI_DSIM
 #define CONFIG_VIDEO_BMP_GZIP
 #define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE ((500 * 160 * 4) + 54)

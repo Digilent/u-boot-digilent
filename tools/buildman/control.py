@@ -101,7 +101,8 @@ def DoBuildman(options, args, toolchains=None, make_func=None, boards=None,
         pager = os.getenv('PAGER')
         if not pager:
             pager = 'more'
-        fname = os.path.join(os.path.dirname(sys.argv[0]), 'README')
+        fname = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+                             'README')
         command.Run(pager, fname)
         return 0
 
@@ -249,7 +250,9 @@ def DoBuildman(options, args, toolchains=None, make_func=None, boards=None,
             options.threads, options.jobs, gnu_make=gnu_make, checkout=True,
             show_unknown=options.show_unknown, step=options.step,
             no_subdirs=options.no_subdirs, full_path=options.full_path,
-            verbose_build=options.verbose_build)
+            verbose_build=options.verbose_build,
+            incremental=options.incremental,
+            per_board_out_dir=options.per_board_out_dir,)
     builder.force_config_on_failure = not options.quick
     if make_func:
         builder.do_make = make_func

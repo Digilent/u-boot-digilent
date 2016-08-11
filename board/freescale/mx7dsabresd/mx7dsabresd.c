@@ -24,7 +24,7 @@
 #include <asm/imx-common/mxc_i2c.h>
 #include <asm/arch/crm_regs.h>
 #include <usb.h>
-#include <usb/ehci-fsl.h>
+#include <usb/ehci-ci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -171,7 +171,7 @@ static enum qn_level seq[3][2] = {
 
 static enum qn_func qn_output[8] = {
 	qn_disable, qn_reset, qn_reset, qn_reset, qn_reset, qn_reset, qn_enable,
-	qn_enable
+	qn_disable
 };
 
 static void iox74lv_init(void)

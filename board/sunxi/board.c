@@ -21,6 +21,9 @@
 #include <asm/arch/gpio.h>
 #include <asm/arch/mmc.h>
 #include <asm/arch/usb_phy.h>
+#ifndef CONFIG_ARM64
+#include <asm/armv7.h>
+#endif
 #include <asm/gpio.h>
 #include <asm/io.h>
 #include <nand.h>
@@ -73,22 +76,51 @@ DECLARE_GLOBAL_DATA_PTR;
 /* add board specific code here */
 int board_init(void)
 {
-	int id_pfr1, ret;
+	__maybe_unused int id_pfr1, ret;
 
 	gd->bd->bi_boot_params = (PHYS_SDRAM_0 + 0x100);
 
+#ifndef CONFIG_ARM64
 	asm volatile("mrc p15, 0, %0, c0, c1, 1" : "=r"(id_pfr1));
 	debug("id_pfr1: 0x%08x\n", id_pfr1);
 	/* Generic Timer Extension available? */
-	if ((id_pfr1 >> 16) & 0xf) {
+	if ((id_pfr1 >> CPUID_ARM_GENTIMER_SHIFT) & 0xf) {
+		uint32_t freq;
+
 		debug("Setting CNTFRQ\n");
-		/* CNTFRQ == 24 MHz */
-		asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r"(24000000));
+
+		/*
+		 * CNTFRQ is a secure register, so we will crash if we try to
+		 * write this from the non-secure world (read is OK, though).
+		 * In case some bootcode has already set the correct value,
+		 * we avoid the risk of writing to it.
+		 */
+		asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r"(freq));
+		if (freq != CONFIG_TIMER_CLK_FREQ) {
+			debug("arch timer frequency is %d Hz, should be %d, fixing ...\n",
+			      freq, CONFIG_TIMER_CLK_FREQ);
+#ifdef CONFIG_NON_SECURE
+			printf("arch timer frequency is wrong, but cannot adjust it\n");
+#else
+			asm volatile("mcr p15, 0, %0, c14, c0, 0"
+				     : : "r"(CONFIG_TIMER_CLK_FREQ));
+#endif
+		}
 	}
+#endif /* !CONFIG_ARM64 */
 
 	ret = axp_gpio_init();
 	if (ret)
 		return ret;
+
+#ifdef CONFIG_SATAPWR
+	gpio_request(CONFIG_SATAPWR, "satapwr");
+	gpio_direction_output(CONFIG_SATAPWR, 1);
+#endif
+#ifdef CONFIG_MACPWR
+	gpio_request(CONFIG_MACPWR, "macpwr");
+	gpio_direction_output(CONFIG_MACPWR, 1);
+#endif
 
 	/* Uses dm gpio code so do this here and not in i2c_init_board() */
 	return soft_i2c_board_init();
@@ -255,7 +287,7 @@ static void mmc_pinmux_setup(int sdc)
 			sunxi_gpio_set_pull(SUNXI_GPC(24), SUNXI_GPIO_PULL_UP);
 			sunxi_gpio_set_drv(SUNXI_GPC(24), 2);
 		}
-#elif defined(CONFIG_MACH_SUN8I)
+#elif defined(CONFIG_MACH_SUN8I) || defined(CONFIG_MACH_SUN50I)
 		/* SDC2: PC5-PC6, PC8-PC16 */
 		for (pin = SUNXI_GPC(5); pin <= SUNXI_GPC(6); pin++) {
 			sunxi_gpio_set_cfgpin(pin, SUNXI_GPC_SDC2);
@@ -337,8 +369,8 @@ int board_mmc_init(bd_t *bis)
 	if (!sunxi_mmc_has_egon_boot_signature(mmc0) &&
 	    sunxi_mmc_has_egon_boot_signature(mmc1)) {
 		/* Booting from emmc / mmc2, swap */
-		mmc0->block_dev.dev = 1;
-		mmc1->block_dev.dev = 0;
+		mmc0->block_dev.devnum = 1;
+		mmc1->block_dev.devnum = 0;
 	}
 #endif
 
@@ -442,10 +474,12 @@ void sunxi_board_init(void)
 #endif
 
 #if defined CONFIG_AXP152_POWER || defined CONFIG_AXP209_POWER || \
-	defined CONFIG_AXP221_POWER || defined CONFIG_AXP818_POWER
+	defined CONFIG_AXP221_POWER || defined CONFIG_AXP809_POWER || \
+	defined CONFIG_AXP818_POWER
 	power_failed = axp_init();
 
-#if defined CONFIG_AXP221_POWER || defined CONFIG_AXP818_POWER
+#if defined CONFIG_AXP221_POWER || defined CONFIG_AXP809_POWER || \
+	defined CONFIG_AXP818_POWER
 	power_failed |= axp_set_dcdc1(CONFIG_AXP_DCDC1_VOLT);
 #endif
 	power_failed |= axp_set_dcdc2(CONFIG_AXP_DCDC2_VOLT);
@@ -453,11 +487,13 @@ void sunxi_board_init(void)
 #if !defined(CONFIG_AXP209_POWER) && !defined(CONFIG_AXP818_POWER)
 	power_failed |= axp_set_dcdc4(CONFIG_AXP_DCDC4_VOLT);
 #endif
-#if defined CONFIG_AXP221_POWER || defined CONFIG_AXP818_POWER
+#if defined CONFIG_AXP221_POWER || defined CONFIG_AXP809_POWER || \
+	defined CONFIG_AXP818_POWER
 	power_failed |= axp_set_dcdc5(CONFIG_AXP_DCDC5_VOLT);
 #endif
 
-#if defined CONFIG_AXP221_POWER || defined CONFIG_AXP818_POWER
+#if defined CONFIG_AXP221_POWER || defined CONFIG_AXP809_POWER || \
+	defined CONFIG_AXP818_POWER
 	power_failed |= axp_set_aldo1(CONFIG_AXP_ALDO1_VOLT);
 #endif
 	power_failed |= axp_set_aldo2(CONFIG_AXP_ALDO2_VOLT);
@@ -468,19 +504,32 @@ void sunxi_board_init(void)
 	power_failed |= axp_set_aldo4(CONFIG_AXP_ALDO4_VOLT);
 #endif
 
-#if defined(CONFIG_AXP221_POWER) || defined(CONFIG_AXP818_POWER)
+#if defined(CONFIG_AXP221_POWER) || defined(CONFIG_AXP809_POWER) || \
+	defined(CONFIG_AXP818_POWER)
 	power_failed |= axp_set_dldo(1, CONFIG_AXP_DLDO1_VOLT);
 	power_failed |= axp_set_dldo(2, CONFIG_AXP_DLDO2_VOLT);
+#if !defined CONFIG_AXP809_POWER
 	power_failed |= axp_set_dldo(3, CONFIG_AXP_DLDO3_VOLT);
 	power_failed |= axp_set_dldo(4, CONFIG_AXP_DLDO4_VOLT);
+#endif
 	power_failed |= axp_set_eldo(1, CONFIG_AXP_ELDO1_VOLT);
 	power_failed |= axp_set_eldo(2, CONFIG_AXP_ELDO2_VOLT);
 	power_failed |= axp_set_eldo(3, CONFIG_AXP_ELDO3_VOLT);
 #endif
+
+#ifdef CONFIG_AXP818_POWER
+	power_failed |= axp_set_fldo(1, CONFIG_AXP_FLDO1_VOLT);
+	power_failed |= axp_set_fldo(2, CONFIG_AXP_FLDO2_VOLT);
+	power_failed |= axp_set_fldo(3, CONFIG_AXP_FLDO3_VOLT);
+#endif
+
+#if defined CONFIG_AXP809_POWER || defined CONFIG_AXP818_POWER
+	power_failed |= axp_set_sw(IS_ENABLED(CONFIG_AXP_SW_ON));
+#endif
 #endif
 	printf("DRAM:");
 	ramsize = sunxi_dram_init();
-	printf(" %lu MiB\n", ramsize >> 20);
+	printf(" %d MiB\n", (int)(ramsize >> 20));
 	if (!ramsize)
 		hang();
 
@@ -532,7 +581,7 @@ void get_board_serial(struct tag_serialnr *serialnr)
  */
 static void parse_spl_header(const uint32_t spl_addr)
 {
-	struct boot_file_head *spl = (void *)spl_addr;
+	struct boot_file_head *spl = (void *)(ulong)spl_addr;
 	if (memcmp(spl->spl_signature, SPL_SIGNATURE, 3) == 0) {
 		uint8_t spl_header_version = spl->spl_signature[3];
 		if (spl_header_version == SPL_HEADER_VERSION) {
@@ -598,11 +647,14 @@ int misc_init_r(void)
 }
 #endif
 
-#ifdef CONFIG_OF_BOARD_SETUP
 int ft_board_setup(void *blob, bd_t *bd)
 {
+	int __maybe_unused r;
+
 #ifdef CONFIG_VIDEO_DT_SIMPLEFB
-	return sunxi_simplefb_setup(blob);
+	r = sunxi_simplefb_setup(blob);
+	if (r)
+		return r;
 #endif
+	return 0;
 }
-#endif /* CONFIG_OF_BOARD_SETUP */

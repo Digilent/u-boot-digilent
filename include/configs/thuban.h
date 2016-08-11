@@ -29,7 +29,6 @@
 	"led1=64,0,1\0"
 
 #undef CONFIG_DOS_PARTITION
-#undef CONFIG_CMD_FAT
 
 #define CONFIG_BOARD_LATE_INIT
 
@@ -63,7 +62,6 @@
 #define CONFIG_ENV_SIZE_REDUND      0x2000
 #define CONFIG_ENV_RANGE        (4 * CONFIG_SYS_ENV_SECT_SIZE)
 
-
 #define MTDPARTS_DEFAULT	MTDPARTS_DEFAULT_V2
 
 #ifndef CONFIG_SPL_BUILD
@@ -71,6 +69,7 @@
 /* Default env settings */
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"hostname=thuban\0" \
+	"ubi_off=2048\0"\
 	"nand_img_size=0x400000\0" \
 	"optargs=\0" \
 	"preboot=draco_led 0\0" \
@@ -80,7 +79,6 @@
 
 #ifndef CONFIG_RESTORE_FLASH
 /* set to negative value for no autoboot */
-#define CONFIG_BOOTDELAY		3
 
 #define CONFIG_BOOTCOMMAND \
 "if dfubutton; then " \
@@ -91,9 +89,7 @@
 "run nand_boot_backup;" \
 "reset;"
 
-
 #else
-#define CONFIG_BOOTDELAY		0
 
 #define CONFIG_BOOTCOMMAND			\
 	"setenv autoload no; "			\

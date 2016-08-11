@@ -154,15 +154,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PADS_REFCLK_CFG_PREDI_SHIFT		8  /* 11:8 */
 #define PADS_REFCLK_CFG_DRVI_SHIFT		12 /* 15:12 */
 
-/* Default value provided by HW engineering is 0xfa5c */
-#define PADS_REFCLK_CFG_VALUE \
-	( \
-		(0x17 << PADS_REFCLK_CFG_TERM_SHIFT)   | \
-		(0    << PADS_REFCLK_CFG_E_TERM_SHIFT) | \
-		(0xa  << PADS_REFCLK_CFG_PREDI_SHIFT)  | \
-		(0xf  << PADS_REFCLK_CFG_DRVI_SHIFT)     \
-	)
-
 #define RP_VEND_XP	0x00000F00
 #define  RP_VEND_XP_DL_UP	(1 << 30)
 
@@ -198,6 +189,8 @@ struct tegra_pcie_soc {
 	unsigned int num_ports;
 	unsigned long pads_pll_ctl;
 	unsigned long tx_ref_sel;
+	u32 pads_refclk_cfg0;
+	u32 pads_refclk_cfg1;
 	bool has_pex_clkreq_en;
 	bool has_pex_bias_ctrl;
 	bool has_cml_clk;
@@ -275,12 +268,17 @@ static int tegra_pcie_conf_address(struct tegra_pcie *pcie, pci_dev_t bdf,
 				return 0;
 			}
 		}
+		return -EFAULT;
 	} else {
+#ifdef CONFIG_TEGRA20
+		unsigned int dev = PCI_DEV(bdf);
+		if (dev != 0)
+			return -EFAULT;
+#endif
+
 		*address = pcie->cs.start + tegra_pcie_conf_offset(bdf, where);
 		return 0;
 	}
-
-	return -EFAULT;
 }
 
 static int pci_tegra_read_config(struct udevice *bus, pci_dev_t bdf,
@@ -299,13 +297,15 @@ static int pci_tegra_read_config(struct udevice *bus, pci_dev_t bdf,
 
 	value = readl(address);
 
+#ifdef CONFIG_TEGRA20
 	/* fixup root port class */
 	if (PCI_BUS(bdf) == 0) {
-		if (offset == PCI_CLASS_REVISION) {
+		if ((offset & ~3) == PCI_CLASS_REVISION) {
 			value &= ~0x00ff0000;
 			value |= PCI_CLASS_BRIDGE_PCI << 16;
 		}
 	}
+#endif
 
 done:
 	*valuep = pci_conv_32_to_size(value, offset, size);
@@ -620,13 +620,6 @@ static int tegra_pcie_phy_enable(struct tegra_pcie *pcie)
 	value |= PADS_PLL_CTL_RST_B4SM;
 	pads_writel(pcie, value, soc->pads_pll_ctl);
 
-	/* configure the reference clock driver */
-	value = PADS_REFCLK_CFG_VALUE | (PADS_REFCLK_CFG_VALUE << 16);
-	pads_writel(pcie, value, PADS_REFCLK_CFG0);
-
-	if (soc->num_ports > 2)
-		pads_writel(pcie, PADS_REFCLK_CFG_VALUE, PADS_REFCLK_CFG1);
-
 	/* wait for the PLL to lock */
 	err = tegra_pcie_pll_wait(pcie, 500);
 	if (err < 0) {
@@ -820,20 +813,21 @@ static void tegra_pcie_port_reset(struct tegra_pcie_port *port)
 
 static void tegra_pcie_port_enable(struct tegra_pcie_port *port)
 {
-	const struct tegra_pcie_soc *soc = port->pcie->soc;
+	struct tegra_pcie *pcie = port->pcie;
+	const struct tegra_pcie_soc *soc = pcie->soc;
 	unsigned long ctrl = tegra_pcie_port_get_pex_ctrl(port);
 	unsigned long value;
 
 	/* enable reference clock */
-	value = afi_readl(port->pcie, ctrl);
+	value = afi_readl(pcie, ctrl);
 	value |= AFI_PEX_CTRL_REFCLK_EN;
 
-	if (port->pcie->soc->has_pex_clkreq_en)
+	if (pcie->soc->has_pex_clkreq_en)
 		value |= AFI_PEX_CTRL_CLKREQ_EN;
 
 	value |= AFI_PEX_CTRL_OVERRIDE_EN;
 
-	afi_writel(port->pcie, value, ctrl);
+	afi_writel(pcie, value, ctrl);
 
 	tegra_pcie_port_reset(port);
 
@@ -842,6 +836,11 @@ static void tegra_pcie_port_enable(struct tegra_pcie_port *port)
 		value |= RP_VEND_CTL2_PCA_ENABLE;
 		rp_writel(port, value, RP_VEND_CTL2);
 	}
+
+	/* configure the reference clock driver */
+	pads_writel(pcie, soc->pads_refclk_cfg0, PADS_REFCLK_CFG0);
+	if (soc->num_ports > 2)
+		pads_writel(pcie, soc->pads_refclk_cfg1, PADS_REFCLK_CFG1);
 }
 
 static bool tegra_pcie_port_check_link(struct tegra_pcie_port *port)
@@ -936,6 +935,7 @@ static const struct tegra_pcie_soc pci_tegra_soc[] = {
 		.num_ports = 2,
 		.pads_pll_ctl = PADS_PLL_CTL_TEGRA20,
 		.tx_ref_sel = PADS_PLL_CTL_TXCLKREF_DIV10,
+		.pads_refclk_cfg0 = 0xfa5cfa5c,
 		.has_pex_clkreq_en = false,
 		.has_pex_bias_ctrl = false,
 		.has_cml_clk = false,
@@ -945,6 +945,8 @@ static const struct tegra_pcie_soc pci_tegra_soc[] = {
 		.num_ports = 3,
 		.pads_pll_ctl = PADS_PLL_CTL_TEGRA30,
 		.tx_ref_sel = PADS_PLL_CTL_TXCLKREF_BUF_EN,
+		.pads_refclk_cfg0 = 0xfa5cfa5c,
+		.pads_refclk_cfg1 = 0xfa5cfa5c,
 		.has_pex_clkreq_en = true,
 		.has_pex_bias_ctrl = true,
 		.has_cml_clk = true,
@@ -954,6 +956,7 @@ static const struct tegra_pcie_soc pci_tegra_soc[] = {
 		.num_ports = 2,
 		.pads_pll_ctl = PADS_PLL_CTL_TEGRA30,
 		.tx_ref_sel = PADS_PLL_CTL_TXCLKREF_BUF_EN,
+		.pads_refclk_cfg0 = 0x44ac44ac,
 		.has_pex_clkreq_en = true,
 		.has_pex_bias_ctrl = true,
 		.has_cml_clk = true,
@@ -963,6 +966,7 @@ static const struct tegra_pcie_soc pci_tegra_soc[] = {
 		.num_ports = 2,
 		.pads_pll_ctl = PADS_PLL_CTL_TEGRA30,
 		.tx_ref_sel = PADS_PLL_CTL_TXCLKREF_BUF_EN,
+		.pads_refclk_cfg0 = 0x90b890b8,
 		.has_pex_clkreq_en = true,
 		.has_pex_bias_ctrl = true,
 		.has_cml_clk = true,
@@ -1041,11 +1045,3 @@ U_BOOT_DRIVER(pci_tegra) = {
 	.probe	= pci_tegra_probe,
 	.priv_auto_alloc_size = sizeof(struct tegra_pcie),
 };
-
-int pci_skip_dev(struct pci_controller *hose, pci_dev_t dev)
-{
-	if (PCI_BUS(dev) != 0 && PCI_DEV(dev) > 0)
-		return 1;
-
-	return 0;
-}

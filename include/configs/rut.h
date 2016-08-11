@@ -45,7 +45,6 @@
 
 #define CONFIG_FACTORYSET
 
-
 /* Watchdog */
 #define WATCHDOG_TRIGGER_GPIO	14
 
@@ -57,6 +56,7 @@
 /* Default env settings */
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"hostname=rut\0" \
+	"ubi_off=2048\0"\
 	"nand_img_size=0x500000\0" \
 	"splashpos=m,m\0" \
 	"optargs=fixrtc --no-log consoleblank=0 \0" \
@@ -86,7 +86,6 @@
 
 #ifndef CONFIG_RESTORE_FLASH
 /* set to negative value for no autoboot */
-#define CONFIG_BOOTDELAY		3
 
 #define CONFIG_BOOTCOMMAND \
 	"if mmc rescan; then " \
@@ -108,7 +107,6 @@
 	"reset;"
 
 #else
-#define CONFIG_BOOTDELAY		0
 
 #define CONFIG_BOOTCOMMAND			\
 	"setenv autoload no; "			\
@@ -146,10 +144,6 @@
 #define DISPL_PLL_SPREAD_SPECTRUM
 #define CONFIG_SYS_CONSOLE_BG_COL	0xff
 #define CONFIG_SYS_CONSOLE_FG_COL	0x00
-#endif
-
-#ifndef CONFIG_SPL_BUILD
-#define CONFIG_FIT
 #endif
 
 #endif	/* ! __CONFIG_RUT_H */

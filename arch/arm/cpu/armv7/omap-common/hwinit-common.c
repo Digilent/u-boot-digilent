@@ -35,13 +35,13 @@ static void set_mux_conf_regs(void)
 {
 	switch (omap_hw_init_context()) {
 	case OMAP_INIT_CONTEXT_SPL:
-		set_muxconf_regs_essential();
+		set_muxconf_regs();
 		break;
 	case OMAP_INIT_CONTEXT_UBOOT_AFTER_SPL:
 		break;
 	case OMAP_INIT_CONTEXT_UBOOT_FROM_NOR:
 	case OMAP_INIT_CONTEXT_UBOOT_AFTER_CH:
-		set_muxconf_regs_essential();
+		set_muxconf_regs();
 		break;
 	}
 }
@@ -65,12 +65,30 @@ static void omap_rev_string(void)
 	u32 major_rev = (omap_rev & 0x00000F00) >> 8;
 	u32 minor_rev = (omap_rev & 0x000000F0) >> 4;
 
+	const char *sec_s;
+
+	switch (get_device_type()) {
+	case TST_DEVICE:
+		sec_s = "TST";
+		break;
+	case EMU_DEVICE:
+		sec_s = "EMU";
+		break;
+	case HS_DEVICE:
+		sec_s = "HS";
+		break;
+	case GP_DEVICE:
+		sec_s = "GP";
+		break;
+	default:
+		sec_s = "?";
+	}
+
 	if (soc_variant)
 		printf("OMAP");
 	else
 		printf("DRA");
-	printf("%x ES%x.%x\n", omap_variant, major_rev,
-	       minor_rev);
+	printf("%x-%s ES%x.%x\n", omap_variant, sec_s, major_rev, minor_rev);
 }
 
 #ifdef CONFIG_SPL_BUILD
@@ -84,34 +102,46 @@ void __weak srcomp_enable(void)
 {
 }
 
-#ifdef CONFIG_ARCH_CPU_INIT
-/*
- * SOC specific cpu init
+/**
+ * do_board_detect() - Detect board description
+ *
+ * Function to detect board description. This is expected to be
+ * overridden in the SoC family board file where desired.
  */
-int arch_cpu_init(void)
+void __weak do_board_detect(void)
 {
-#ifdef CONFIG_SPL
-	save_omap_boot_params();
-#endif
-	return 0;
 }
-#endif /* CONFIG_ARCH_CPU_INIT */
 
-/*
- * Routine: s_init
- * Description: Does early system init of watchdog, muxing,  andclocks
+/**
+ * vcores_init() - Assign omap_vcores based on board
+ *
+ * Function to pick the vcores based on board. This is expected to be
+ * overridden in the SoC family board file where desired.
+ */
+void __weak vcores_init(void)
+{
+}
+
+void s_init(void)
+{
+}
+
+/**
+ * early_system_init - Does Early system initialization.
+ *
+ * Does early system init of watchdog, muxing,  andclocks
  * Watchdog disable is done always. For the rest what gets done
- * depends on the boot mode in which this function is executed
- *   1. s_init of SPL running from SRAM
- *   2. s_init of U-Boot running from FLASH
- *   3. s_init of U-Boot loaded to SDRAM by SPL
- *   4. s_init of U-Boot loaded to SDRAM by ROM code using the
+ * depends on the boot mode in which this function is executed when
+ *   1. SPL running from SRAM
+ *   2. U-Boot running from FLASH
+ *   3. U-Boot loaded to SDRAM by SPL
+ *   4. U-Boot loaded to SDRAM by ROM code using the
  *	Configuration Header feature
  * Please have a look at the respective functions to see what gets
  * done in each of these cases
  * This function is called with SRAM stack.
  */
-void s_init(void)
+void early_system_init(void)
 {
 	init_omap_revision();
 	hw_data_init();
@@ -125,16 +155,18 @@ void s_init(void)
 	set_mux_conf_regs();
 #ifdef CONFIG_SPL_BUILD
 	srcomp_enable();
-	setup_clocks_for_console();
-
 	do_io_settings();
 #endif
+	setup_early_clocks();
+	do_board_detect();
+	vcores_init();
 	prcm_init();
 }
 
 #ifdef CONFIG_SPL_BUILD
 void board_init_f(ulong dummy)
 {
+	early_system_init();
 #ifdef CONFIG_BOARD_EARLY_INIT_F
 	board_early_init_f();
 #endif
@@ -142,6 +174,12 @@ void board_init_f(ulong dummy)
 	sdram_init();
 }
 #endif
+
+int arch_cpu_init_dm(void)
+{
+	early_system_init();
+	return 0;
+}
 
 /*
  * Routine: wait_for_command_complete

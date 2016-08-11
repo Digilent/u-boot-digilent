@@ -40,7 +40,6 @@
 #define CONFIG_SYS_I2C_SPEED		400000
 #define CONFIG_SYS_I2C_EEPROM_ADDR	0x50
 
-
 #define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS	0x300
 
 #undef CONFIG_SPL_NET_SUPPORT
@@ -50,7 +49,6 @@
 #define CONFIG_PHY_ATHEROS
 
 #define CONFIG_FACTORYSET
-
 
 /* Watchdog */
 #define CONFIG_OMAP_WATCHDOG
@@ -63,6 +61,7 @@
 /* Default env settings */
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"hostname=pxm2\0" \
+	"ubi_off=2048\0"\
 	"nand_img_size=0x500000\0" \
 	"optargs=\0" \
 	"preboot=draco_led 0\0" \
@@ -94,7 +93,6 @@
 
 #ifndef CONFIG_RESTORE_FLASH
 /* set to negative value for no autoboot */
-#define CONFIG_BOOTDELAY		3
 
 #define CONFIG_BOOTCOMMAND \
 	"if dfubutton; then " \
@@ -120,7 +118,6 @@
 	"reset;"
 
 #else
-#define CONFIG_BOOTDELAY		0
 
 #define CONFIG_BOOTCOMMAND			\
 	"setenv autoload no; "			\
@@ -147,10 +144,6 @@
 #define PWM_DUTY	0x200
 #define CONFIG_SYS_CONSOLE_BG_COL	0xff
 #define CONFIG_SYS_CONSOLE_FG_COL	0x00
-#endif
-
-#ifndef CONFIG_SPL_BUILD
-#define CONFIG_FIT
 #endif
 
 #endif	/* ! __CONFIG_PXM2_H */

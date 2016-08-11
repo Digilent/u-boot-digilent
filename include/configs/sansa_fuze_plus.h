@@ -14,14 +14,7 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DOS_PARTITION
 
-#define CONFIG_CMD_CACHE
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_MMC
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_USB
 #define CONFIG_VIDEO
-#define CONFIG_CMD_MEMTEST
 
 /* Memory configuration */
 #define CONFIG_NR_DRAM_BANKS		1		/* 1 bank of DRAM */
@@ -35,7 +28,6 @@
 #define CONFIG_ENV_OVERWRITE
 
 /* Booting Linux */
-#define CONFIG_BOOTDELAY	3
 #define CONFIG_BOOTFILE		"uImage"
 #define CONFIG_BOOTARGS		"console=ttyAMA0,115200n8 "
 #define CONFIG_LOADADDR		0x42000000
@@ -53,9 +45,6 @@
 #ifdef CONFIG_CMD_USB
 #define CONFIG_EHCI_MXS_PORT0
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 1
-
-#define CONFIG_CI_UDC		/* ChipIdea CI13xxx UDC */
-#define CONFIG_USB_GADGET_DUALSPEED
 
 #define CONFIG_USB_ETHER
 #define CONFIG_USB_ETH_CDC

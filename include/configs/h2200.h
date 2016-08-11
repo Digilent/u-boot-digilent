@@ -115,15 +115,12 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 38400, 115200 }
 
-#define CONFIG_FIT
 #define CONFIG_FIT_DISABLE_SHA256
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_INITRD_TAG
 
 /* Monitor Command Prompt */
-#define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"$ "
 
 /* Console I/O Buffer Size */
 #define CONFIG_SYS_CBSIZE		256
@@ -138,9 +135,6 @@
 #define CONFIG_USB_DEV_PULLUP_GPIO	33
 /* USB VBUS GPIO 3 */
 
-#define CONFIG_CMD_PING
-
-#define CONFIG_BOOTDELAY		2
 #define CONFIG_BOOTCOMMAND		\
 	"setenv downloaded 0 ; while test $downloaded -eq 0 ; do " \
 	"if bootp ; then setenv downloaded 1 ; fi ; done ; " \

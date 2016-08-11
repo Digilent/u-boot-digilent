@@ -18,9 +18,11 @@
 #include <environment.h>
 #include <i2c.h>
 #include <asm/arch/soc.h>
+#include <fsl_sec.h>
 
 #include "../common/qixis.h"
 #include "ls2080ardb_qixis.h"
+#include "../common/vid.h"
 
 #define PIN_MUX_SEL_SDHC	0x00
 #define PIN_MUX_SEL_DSPI	0x0a
@@ -122,6 +124,11 @@ int select_i2c_ch_pca9547(u8 ch)
 	return 0;
 }
 
+int i2c_multiplexer_select_vid_channel(u8 channel)
+{
+	return select_i2c_ch_pca9547(channel);
+}
+
 int config_board_mux(int ctrl_type)
 {
 	u8 reg5;
@@ -149,6 +156,9 @@ int board_init(void)
 {
 	char *env_hwconfig;
 	u32 __iomem *dcfg_ccsr = (u32 __iomem *)DCFG_BASE;
+#ifdef CONFIG_FSL_MC_ENET
+	u32 __iomem *irq_ccsr = (u32 __iomem *)ISC_BASE;
+#endif
 	u32 val;
 
 	init_final_memctl_regs();
@@ -170,6 +180,11 @@ int board_init(void)
 
 	QIXIS_WRITE(rst_ctl, QIXIS_RST_CTL_RESET_EN);
 
+#ifdef CONFIG_FSL_MC_ENET
+	/* invert AQR405 IRQ pins polarity */
+	out_le32(irq_ccsr + IRQCR_OFFSET / 4, AQR405_IRQ_MASK);
+#endif
+
 	return 0;
 }
 
@@ -184,6 +199,9 @@ int misc_init_r(void)
 	if (hwconfig("sdhc"))
 		config_board_mux(MUX_TYPE_SDHC);
 
+	if (adjust_vdd(0))
+		printf("Warning: Adjusting core voltage failed.\n");
+
 	return 0;
 }
 
@@ -193,7 +211,7 @@ void detail_board_ddr_info(void)
 	print_size(gd->bd->bi_dram[0].size + gd->bd->bi_dram[1].size, "");
 	print_ddr_info(0);
 #ifdef CONFIG_SYS_FSL_HAS_DP_DDR
-	if (gd->bd->bi_dram[2].size) {
+	if (soc_has_dp_ddr() && gd->bd->bi_dram[2].size) {
 		puts("\nDP-DDR ");
 		print_size(gd->bd->bi_dram[2].size, "");
 		print_ddr_info(CONFIG_DP_DDR_CTRL);
@@ -214,7 +232,9 @@ int arch_misc_init(void)
 #ifdef CONFIG_FSL_DEBUG_SERVER
 	debug_server_init();
 #endif
-
+#ifdef CONFIG_FSL_CAAM
+	sec_init();
+#endif
 	return 0;
 }
 #endif
@@ -224,10 +244,10 @@ void fdt_fixup_board_enet(void *fdt)
 {
 	int offset;
 
-	offset = fdt_path_offset(fdt, "/fsl-mc");
+	offset = fdt_path_offset(fdt, "/soc/fsl-mc");
 
 	if (offset < 0)
-		offset = fdt_path_offset(fdt, "/fsl,dprc@0");
+		offset = fdt_path_offset(fdt, "/fsl-mc");
 
 	if (offset < 0) {
 		printf("%s: ERROR: fsl-mc node not found in device tree (error %d)\n",
@@ -245,7 +265,9 @@ void fdt_fixup_board_enet(void *fdt)
 #ifdef CONFIG_OF_BOARD_SETUP
 int ft_board_setup(void *blob, bd_t *bd)
 {
+#ifdef CONFIG_FSL_MC_ENET
 	int err;
+#endif
 	u64 base[CONFIG_NR_DRAM_BANKS];
 	u64 size[CONFIG_NR_DRAM_BANKS];
 
@@ -258,6 +280,8 @@ int ft_board_setup(void *blob, bd_t *bd)
 	size[1] = gd->bd->bi_dram[1].size;
 
 	fdt_fixup_memory_banks(blob, base, size, 2);
+
+	fdt_fixup_dr_usb(blob, bd);
 
 #ifdef CONFIG_FSL_MC_ENET
 	fdt_fixup_board_enet(blob);

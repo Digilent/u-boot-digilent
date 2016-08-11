@@ -18,12 +18,6 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DOS_PARTITION
 
-#define CONFIG_CMD_CACHE
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_MMC
-#define CONFIG_CMD_USB
-#define CONFIG_CMD_BOOTZ
 #define CONFIG_VIDEO
 
 /* Memory configuration */
@@ -62,7 +56,6 @@
 #endif
 
 /* Boot Linux */
-#define CONFIG_BOOTDELAY	1
 #define CONFIG_BOOTFILE		"uImage"
 #define CONFIG_LOADADDR		0x42000000
 #define CONFIG_SYS_LOAD_ADDR	CONFIG_LOADADDR

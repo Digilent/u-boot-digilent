@@ -90,6 +90,69 @@
 	BOOT_TARGET_DEVICES_references_UBIFS_without_CONFIG_CMD_UBIFS
 #endif
 
+#ifdef CONFIG_EFI_LOADER
+#if defined(CONFIG_ARM64)
+#define BOOTEFI_NAME "bootaa64.efi"
+#elif defined(CONFIG_ARM)
+#define BOOTEFI_NAME "bootarm.efi"
+#endif
+#endif
+
+#ifdef BOOTEFI_NAME
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+/*
+ * On 32bit ARM systems there is a reasonable number of systems that follow
+ * the $soc-$board$boardver.dtb name scheme for their device trees. Use that
+ * scheme if we don't have an explicit fdtfile variable.
+ */
+#define BOOTENV_EFI_SET_FDTFILE_FALLBACK                                  \
+	"if test -z \"${fdtfile}\" -a -n \"${soc}\"; then "               \
+	  "setenv efi_fdtfile ${soc}-${board}${boardver}.dtb; "           \
+	"fi; "
+#else
+#define BOOTENV_EFI_SET_FDTFILE_FALLBACK
+#endif
+
+
+#define BOOTENV_SHARED_EFI                                                \
+	"boot_efi_binary="                                                \
+		"load ${devtype} ${devnum}:${distro_bootpart} "           \
+			"${kernel_addr_r} efi/boot/"BOOTEFI_NAME"; "      \
+		"if fdt addr ${fdt_addr_r}; then "                        \
+			"bootefi ${kernel_addr_r} ${fdt_addr_r};"         \
+		"else "                                                    \
+			"bootefi ${kernel_addr_r} ${fdtcontroladdr};"     \
+		"fi\0"                                                    \
+	\
+	"load_efi_dtb="                                                   \
+		"load ${devtype} ${devnum}:${distro_bootpart} "           \
+			"${fdt_addr_r} ${prefix}${efi_fdtfile}\0"         \
+	\
+	"efi_dtb_prefixes=/ /dtb/ /dtb/current/\0"                        \
+	"scan_dev_for_efi="                                               \
+		"setenv efi_fdtfile ${fdtfile}; "                         \
+		BOOTENV_EFI_SET_FDTFILE_FALLBACK                          \
+		"for prefix in ${efi_dtb_prefixes}; do "                  \
+			"if test -e ${devtype} "                          \
+					"${devnum}:${distro_bootpart} "   \
+					"${prefix}${efi_fdtfile}; then "  \
+				"run load_efi_dtb; "                      \
+			"fi;"                                             \
+		"done;"                                                   \
+		"if test -e ${devtype} ${devnum}:${distro_bootpart} "     \
+					"efi/boot/"BOOTEFI_NAME"; then "  \
+				"echo Found EFI removable media binary "  \
+					"efi/boot/"BOOTEFI_NAME"; "       \
+				"run boot_efi_binary; "                   \
+				"echo EFI LOAD FAILED: continuing...; "   \
+		"fi; "                                                    \
+		"setenv efi_fdtfile\0"
+#define SCAN_DEV_FOR_EFI "run scan_dev_for_efi;"
+#else
+#define BOOTENV_SHARED_EFI
+#define SCAN_DEV_FOR_EFI
+#endif
+
 #ifdef CONFIG_CMD_SATA
 #define BOOTENV_SHARED_SATA	BOOTENV_SHARED_BLKDEV(sata)
 #define BOOTENV_DEV_SATA	BOOTENV_DEV_BLKDEV
@@ -102,7 +165,7 @@
 	BOOT_TARGET_DEVICES_references_SATA_without_CONFIG_CMD_SATA
 #endif
 
-#ifdef CONFIG_CMD_SCSI
+#ifdef CONFIG_SCSI
 #define BOOTENV_RUN_SCSI_INIT "run scsi_init; "
 #define BOOTENV_SET_SCSI_NEED_INIT "setenv scsi_need_init; "
 #define BOOTENV_SHARED_SCSI \
@@ -122,9 +185,9 @@
 #define BOOTENV_SET_SCSI_NEED_INIT
 #define BOOTENV_SHARED_SCSI
 #define BOOTENV_DEV_SCSI \
-	BOOT_TARGET_DEVICES_references_SCSI_without_CONFIG_CMD_SCSI
+	BOOT_TARGET_DEVICES_references_SCSI_without_CONFIG_SCSI
 #define BOOTENV_DEV_NAME_SCSI \
-	BOOT_TARGET_DEVICES_references_SCSI_without_CONFIG_CMD_SCSI
+	BOOT_TARGET_DEVICES_references_SCSI_without_CONFIG_SCSI
 #endif
 
 #ifdef CONFIG_CMD_IDE
@@ -167,13 +230,58 @@
 #endif
 
 #if defined(CONFIG_CMD_DHCP)
+#if defined(CONFIG_EFI_LOADER)
+#if defined(CONFIG_ARM64)
+#define BOOTENV_EFI_PXE_ARCH "0xb"
+#define BOOTENV_EFI_PXE_VCI "PXEClient:Arch:00011:UNDI:003000"
+#elif defined(CONFIG_ARM)
+#define BOOTENV_EFI_PXE_ARCH "0xa"
+#define BOOTENV_EFI_PXE_VCI "PXEClient:Arch:00010:UNDI:003000"
+#elif defined(CONFIG_X86)
+/* Always assume we're running 64bit */
+#define BOOTENV_EFI_PXE_ARCH "0x7"
+#define BOOTENV_EFI_PXE_VCI "PXEClient:Arch:00007:UNDI:003000"
+#else
+#error Please specify an EFI client identifier
+#endif
+
+/*
+ * Ask the dhcp server for an EFI binary. If we get one, check for a
+ * device tree in the same folder. Then boot everything. If the file was
+ * not an EFI binary, we just return from the bootefi command and continue.
+ */
+#define BOOTENV_EFI_RUN_DHCP \
+	"setenv efi_fdtfile ${fdtfile}; "                                 \
+	BOOTENV_EFI_SET_FDTFILE_FALLBACK                                  \
+	"setenv efi_old_vci ${bootp_vci};"                                \
+	"setenv efi_old_arch ${bootp_arch};"                              \
+	"setenv bootp_vci " BOOTENV_EFI_PXE_VCI ";"                       \
+	"setenv bootp_arch " BOOTENV_EFI_PXE_ARCH ";"                     \
+	"if dhcp ${kernel_addr_r}; then "                                 \
+		"tftpboot ${fdt_addr_r} dtb/${efi_fdtfile};"              \
+		"if fdt addr ${fdt_addr_r}; then "                        \
+			"bootefi ${kernel_addr_r} ${fdt_addr_r}; "        \
+		"else "                                                   \
+			"bootefi ${kernel_addr_r} ${fdtcontroladdr};"     \
+		"fi;"                                                     \
+	"fi;"                                                             \
+	"setenv bootp_vci ${efi_old_vci};"                                \
+	"setenv bootp_arch ${efi_old_arch};"                              \
+	"setenv efi_fdtfile;"                                             \
+	"setenv efi_old_arch;"                                            \
+	"setenv efi_old_vci;"
+#else
+#define BOOTENV_EFI_RUN_DHCP
+#endif
 #define BOOTENV_DEV_DHCP(devtypeu, devtypel, instance) \
 	"bootcmd_dhcp=" \
 		BOOTENV_RUN_NET_USB_START \
 		BOOTENV_RUN_NET_PCI_ENUM \
 		"if dhcp ${scriptaddr} ${boot_script_dhcp}; then " \
 			"source ${scriptaddr}; " \
-		"fi\0"
+		"fi;" \
+		BOOTENV_EFI_RUN_DHCP \
+		"\0"
 #define BOOTENV_DEV_NAME_DHCP(devtypeu, devtypel, instance) \
 	"dhcp "
 #else
@@ -217,6 +325,7 @@
 	BOOTENV_SHARED_SCSI \
 	BOOTENV_SHARED_IDE \
 	BOOTENV_SHARED_UBIFS \
+	BOOTENV_SHARED_EFI \
 	"boot_prefixes=/ /boot/\0" \
 	"boot_scripts=boot.scr.uimg boot.scr\0" \
 	"boot_script_dhcp=boot.scr.uimg\0" \
@@ -258,7 +367,9 @@
 		"for prefix in ${boot_prefixes}; do "                     \
 			"run scan_dev_for_extlinux; "                     \
 			"run scan_dev_for_scripts; "                      \
-		"done\0"                                                  \
+		"done;"                                                   \
+		SCAN_DEV_FOR_EFI                                          \
+		"\0"                                                      \
 	\
 	"scan_dev_for_boot_part="                                         \
 		"part list ${devtype} ${devnum} -bootable devplist; "     \

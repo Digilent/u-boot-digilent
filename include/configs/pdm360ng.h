@@ -380,13 +380,8 @@
 #define CONFIG_LOADS_ECHO	1	/* echo on for serial download */
 #define CONFIG_SYS_LOADS_BAUD_CHANGE	1	/* allow baudrate change */
 
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_DHCP
 #define CONFIG_CMD_EEPROM
-#define CONFIG_CMD_I2C
-#define CONFIG_CMD_MII
-#define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO
 
 #undef CONFIG_CMD_FUSE
@@ -453,7 +448,6 @@
 /* default location for tftp and bootm */
 #define CONFIG_LOADADDR		400000
 
-#define CONFIG_BOOTDELAY	5	/* -1 disables auto-boot */
 
 #define CONFIG_PREBOOT	"echo;"	\
 	"echo PDM360NG SAMPLE;" \
@@ -461,11 +455,7 @@
 
 #define CONFIG_BOOTCOMMAND	"run env_cont"
 
-#define CONFIG_OF_LIBFDT	1
-#define CONFIG_OF_BOARD_SETUP	1
 #define CONFIG_OF_SUPPORT_OLD_DEVICE_TREES	1
-#define CONFIG_FIT
-#define CONFIG_FIT_VERBOSE
 
 #define OF_CPU			"PowerPC,5121@0"
 #define OF_SOC_COMPAT		"fsl,mpc5121-immr"

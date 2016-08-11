@@ -31,10 +31,6 @@
 
 #define CONFIG_DISPLAY_CPUINFO
 
-#define CONFIG_CMD_BOOTZ
-#define CONFIG_OF_LIBFDT
-
-
 #define CONFIG_ATMEL_LEGACY
 #define CONFIG_AT91_GPIO		1
 #define CONFIG_AT91_GPIO_PULLUP		1
@@ -63,19 +59,16 @@
 #undef CONFIG_FB_ADDR
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
-
 /* LED */
 #define CONFIG_AT91_LED
 #define	CONFIG_RED_LED		AT91_PIN_PD14	/* this is the power led */
 #define	CONFIG_GREEN_LED	AT91_PIN_PD15	/* this is the user1 led */
 #define	CONFIG_YELLOW_LED	AT91_PIN_PD16	/* this is the user2 led */
 
-#define CONFIG_BOOTDELAY	3
 
 /*
  * Command line configuration.
  */
-#undef CONFIG_CMD_USB
 
 #define CONFIG_CMD_NAND			1
 
@@ -115,13 +108,11 @@
 #endif
 
 /* MMC */
-#define CONFIG_CMD_MMC
 
 #ifdef CONFIG_CMD_MMC
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_GENERIC_ATMEL_MCI
-#define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
 #endif
 

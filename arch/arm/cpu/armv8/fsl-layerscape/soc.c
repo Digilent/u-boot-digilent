@@ -12,13 +12,41 @@
 #include <asm/io.h>
 #include <asm/global_data.h>
 #include <asm/arch-fsl-layerscape/config.h>
+#ifdef CONFIG_SYS_FSL_DDR
+#include <fsl_ddr_sdram.h>
+#include <fsl_ddr.h>
+#endif
 #ifdef CONFIG_CHAIN_OF_TRUST
 #include <fsl_validate.h>
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_LS2080A) || defined(CONFIG_LS2085A)
+bool soc_has_dp_ddr(void)
+{
+	struct ccsr_gur __iomem *gur = (void *)(CONFIG_SYS_FSL_GUTS_ADDR);
+	u32 svr = gur_in32(&gur->svr);
+
+	/* LS2085A has DP_DDR */
+	if (SVR_SOC_VER(svr) == SVR_LS2085A)
+		return true;
+
+	return false;
+}
+
+bool soc_has_aiop(void)
+{
+	struct ccsr_gur __iomem *gur = (void *)(CONFIG_SYS_FSL_GUTS_ADDR);
+	u32 svr = gur_in32(&gur->svr);
+
+	/* LS2085A has AIOP */
+	if (SVR_SOC_VER(svr) == SVR_LS2085A)
+		return true;
+
+	return false;
+}
+
+#ifdef CONFIG_LS2080A
 /*
  * This erratum requires setting a value to eddrtqcr1 to
  * optimal the DDR performance.
@@ -96,15 +124,6 @@ void erratum_a009635(void)
 }
 #endif	/* CONFIG_SYS_FSL_ERRATUM_A009635 */
 
-static void erratum_a008751(void)
-{
-#ifdef CONFIG_SYS_FSL_ERRATUM_A008751
-	u32 __iomem *scfg = (u32 __iomem *)SCFG_BASE;
-
-	writel(0x27672b2a, scfg + SCFG_USB3PRM1CR / 4);
-#endif
-}
-
 static void erratum_rcw_src(void)
 {
 #if defined(CONFIG_SPL)
@@ -151,15 +170,30 @@ static void erratum_a009203(void)
 #endif
 #endif
 }
-
+void bypass_smmu(void)
+{
+	u32 val;
+	val = (in_le32(SMMU_SCR0) | SCR0_CLIENTPD_MASK) & ~(SCR0_USFCFG_MASK);
+	out_le32(SMMU_SCR0, val);
+	val = (in_le32(SMMU_NSCR0) | SCR0_CLIENTPD_MASK) & ~(SCR0_USFCFG_MASK);
+	out_le32(SMMU_NSCR0, val);
+}
 void fsl_lsch3_early_init_f(void)
 {
-	erratum_a008751();
 	erratum_rcw_src();
 	init_early_memctl_regs();	/* tighten IFC timing */
 	erratum_a009203();
 	erratum_a008514();
 	erratum_a008336();
+#ifdef CONFIG_CHAIN_OF_TRUST
+	/* In case of Secure Boot, the IBR configures the SMMU
+	* to allow only Secure transactions.
+	* SMMU must be reset in bypass mode.
+	* Set the ClientPD bit and Clear the USFCFG Bit
+	*/
+	if (fsl_check_boot_mode_secure() == 1)
+		bypass_smmu();
+#endif
 }
 
 #ifdef CONFIG_SCSI_AHCI_PLAT
@@ -182,7 +216,7 @@ int sata_init(void)
 }
 #endif
 
-#elif defined(CONFIG_LS1043A)
+#elif defined(CONFIG_FSL_LSCH2)
 #ifdef CONFIG_SCSI_AHCI_PLAT
 int sata_init(void)
 {
@@ -231,6 +265,39 @@ static void erratum_a009660(void)
 #endif
 }
 
+static void erratum_a008850_early(void)
+{
+#ifdef CONFIG_SYS_FSL_ERRATUM_A008850
+	/* part 1 of 2 */
+	struct ccsr_cci400 __iomem *cci = (void *)CONFIG_SYS_CCI400_ADDR;
+	struct ccsr_ddr __iomem *ddr = (void *)CONFIG_SYS_FSL_DDR_ADDR;
+
+	/* disables propagation of barrier transactions to DDRC from CCI400 */
+	out_le32(&cci->ctrl_ord, CCI400_CTRLORD_TERM_BARRIER);
+
+	/* disable the re-ordering in DDRC */
+	ddr_out32(&ddr->eor, DDR_EOR_RD_REOD_DIS | DDR_EOR_WD_REOD_DIS);
+#endif
+}
+
+void erratum_a008850_post(void)
+{
+#ifdef CONFIG_SYS_FSL_ERRATUM_A008850
+	/* part 2 of 2 */
+	struct ccsr_cci400 __iomem *cci = (void *)CONFIG_SYS_CCI400_ADDR;
+	struct ccsr_ddr __iomem *ddr = (void *)CONFIG_SYS_FSL_DDR_ADDR;
+	u32 tmp;
+
+	/* enable propagation of barrier transactions to DDRC from CCI400 */
+	out_le32(&cci->ctrl_ord, CCI400_CTRLORD_EN_BARRIER);
+
+	/* enable the re-ordering in DDRC */
+	tmp = ddr_in32(&ddr->eor);
+	tmp &= ~(DDR_EOR_RD_REOD_DIS | DDR_EOR_WD_REOD_DIS);
+	ddr_out32(&ddr->eor, tmp);
+#endif
+}
+
 void fsl_lsch2_early_init_f(void)
 {
 	struct ccsr_cci400 *cci = (struct ccsr_cci400 *)CONFIG_SYS_CCI400_ADDR;
@@ -240,7 +307,7 @@ void fsl_lsch2_early_init_f(void)
 	init_early_memctl_regs();	/* tighten IFC timing */
 #endif
 
-#ifdef CONFIG_FSL_QSPI
+#if defined(CONFIG_FSL_QSPI) && !defined(CONFIG_QSPI_BOOT)
 	out_be32(&scfg->qspi_cfg, SCFG_QSPI_CLKSEL);
 #endif
 	/* Make SEC reads and writes snoopable */
@@ -255,6 +322,7 @@ void fsl_lsch2_early_init_f(void)
 		 CCI400_DVM_MESSAGE_REQ_EN | CCI400_SNOOP_REQ_EN);
 
 	/* Erratum */
+	erratum_a008850_early(); /* part 1 of 2 */
 	erratum_a009929();
 	erratum_a009660();
 }

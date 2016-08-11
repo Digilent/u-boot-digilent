@@ -47,18 +47,6 @@
 #endif
 #define CONFIG_BOARD_LATE_INIT
 
-/* interrupt controller */
-#ifdef XILINX_INTC_BASEADDR
-# define CONFIG_SYS_INTC_0_ADDR		XILINX_INTC_BASEADDR
-# define CONFIG_SYS_INTC_0_NUM		XILINX_INTC_NUM_INTR_INPUTS
-#endif
-
-/* timer */
-#if defined(XILINX_TIMER_BASEADDR) && defined(XILINX_TIMER_IRQ)
-#  define CONFIG_SYS_TIMER_0_ADDR	XILINX_TIMER_BASEADDR
-#  define CONFIG_SYS_TIMER_0_IRQ	XILINX_TIMER_IRQ
-#endif
-
 /* watchdog */
 #if defined(XILINX_WATCHDOG_BASEADDR) && defined(XILINX_WATCHDOG_IRQ)
 # define CONFIG_WATCHDOG_BASEADDR	XILINX_WATCHDOG_BASEADDR
@@ -184,14 +172,11 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_IRQ
 #define CONFIG_CMD_MFSL
 
 #if defined(CONFIG_DCACHE) || defined(CONFIG_ICACHE)
-# define CONFIG_CMD_CACHE
 #else
-# undef CONFIG_CMD_CACHE
 #endif
 
 #if defined(FLASH)
@@ -205,7 +190,6 @@
 
 #else
 #if defined(SPIFLASH)
-# define CONFIG_CMD_SF
 
 # if !defined(RAMENV)
 #  define CONFIG_CMD_SAVES
@@ -255,7 +239,6 @@
 /* default load address */
 #define	CONFIG_SYS_LOAD_ADDR	0
 
-#define	CONFIG_BOOTDELAY	-1	/* -1 disables auto-boot */
 #define	CONFIG_BOOTARGS		"root=romfs"
 #define	CONFIG_HOSTNAME		XILINX_BOARD_NAME
 #define	CONFIG_BOOTCOMMAND	"base 0;tftp 11000000 image.img;bootm"
@@ -284,11 +267,9 @@
 
 /* Enable flat device tree support */
 #define CONFIG_LMB		1
-#define CONFIG_OF_LIBFDT	1
 
 #if defined(CONFIG_XILINX_AXIEMAC)
 # define CONFIG_MII		1
-# define CONFIG_CMD_MII		1
 # define CONFIG_PHY_GIGE	1
 # define CONFIG_SYS_FAULT_ECHO_LINK_DOWN	1
 # define CONFIG_PHY_ATHEROS	1
@@ -303,7 +284,6 @@
 # define CONFIG_PHY_VITESSE	1
 #else
 # undef CONFIG_MII
-# undef CONFIG_CMD_MII
 #endif
 
 /* SPL part */

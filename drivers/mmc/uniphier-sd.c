@@ -12,6 +12,7 @@
 #include <dm/device.h>
 #include <linux/compat.h>
 #include <linux/io.h>
+#include <linux/sizes.h>
 #include <asm/unaligned.h>
 #include <asm/dma-mapping.h>
 
@@ -650,32 +651,35 @@ int uniphier_sd_probe(struct udevice *dev)
 	struct uniphier_sd_priv *priv = dev_get_priv(dev);
 	struct mmc_uclass_priv *upriv = dev_get_uclass_priv(dev);
 	fdt_addr_t base;
-	fdt_size_t size;
-	struct udevice *clk_dev;
-	int clk_id;
+	struct clk clk;
 	int ret;
 
 	priv->dev = dev;
 
-	base = fdtdec_get_addr_size(gd->fdt_blob, dev->of_offset, "reg", &size);
-	priv->regbase = map_sysmem(base, size);
+	base = dev_get_addr(dev);
+	if (base == FDT_ADDR_T_NONE)
+		return -EINVAL;
+
+	priv->regbase = map_sysmem(base, SZ_2K);
 	if (!priv->regbase)
 		return -ENOMEM;
 
-	clk_id = clk_get_by_index(dev, 0, &clk_dev);
-	if (clk_id < 0) {
+	ret = clk_get_by_index(dev, 0, &clk);
+	if (ret < 0) {
 		dev_err(dev, "failed to get host clock\n");
-		return clk_id;
+		return ret;
 	}
 
 	/* set to max rate */
-	priv->mclk = clk_set_periph_rate(clk_dev, clk_id, ULONG_MAX);
+	priv->mclk = clk_set_rate(&clk, ULONG_MAX);
 	if (IS_ERR_VALUE(priv->mclk)) {
 		dev_err(dev, "failed to set rate for host clock\n");
+		clk_free(&clk);
 		return priv->mclk;
 	}
 
-	ret = clk_enable(clk_dev, clk_id);
+	ret = clk_enable(&clk);
+	clk_free(&clk);
 	if (ret) {
 		dev_err(dev, "failed to enable host clock\n");
 		return ret;
@@ -722,6 +726,7 @@ int uniphier_sd_probe(struct udevice *dev)
 		return -EIO;
 
 	upriv->mmc = priv->mmc;
+	priv->mmc->dev = dev;
 
 	return 0;
 }

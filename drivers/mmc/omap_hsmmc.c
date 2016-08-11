@@ -96,7 +96,7 @@ static int omap_mmc_setup_gpio_in(int gpio, const char *label)
 }
 #endif
 
-#if defined(CONFIG_OMAP44XX) && defined(CONFIG_TWL6030_POWER)
+#if defined(CONFIG_OMAP44XX)
 static void omap4_vmmc_pbias_config(struct mmc *mmc)
 {
 	u32 value = 0;
@@ -104,8 +104,6 @@ static void omap4_vmmc_pbias_config(struct mmc *mmc)
 	value = readl((*ctrl)->control_pbiaslite);
 	value &= ~(MMC1_PBIASLITE_PWRDNZ | MMC1_PWRDNZ);
 	writel(value, (*ctrl)->control_pbiaslite);
-	/* set VMMC to 3V */
-	twl6030_power_mmc_init();
 	value = readl((*ctrl)->control_pbiaslite);
 	value |= MMC1_PBIASLITE_VMODE | MMC1_PBIASLITE_PWRDNZ | MMC1_PWRDNZ;
 	writel(value, (*ctrl)->control_pbiaslite);
@@ -175,13 +173,13 @@ static unsigned char mmc_board_init(struct mmc *mmc)
 		&prcm_base->iclken1_core);
 #endif
 
-#if defined(CONFIG_OMAP44XX) && defined(CONFIG_TWL6030_POWER)
+#if defined(CONFIG_OMAP44XX)
 	/* PBIAS config needed for MMC1 only */
-	if (mmc->block_dev.dev == 0)
+	if (mmc->block_dev.devnum == 0)
 		omap4_vmmc_pbias_config(mmc);
 #endif
 #if defined(CONFIG_OMAP54XX) && defined(CONFIG_PALMAS_POWER)
-	if (mmc->block_dev.dev == 0)
+	if (mmc->block_dev.devnum == 0)
 		omap5_pbias_config(mmc);
 #endif
 
@@ -703,6 +701,7 @@ int omap_mmc_init(int dev_index, uint host_caps_mask, uint f_max, int cd_gpio,
 		priv_data->base_addr = (struct hsmmc *)OMAP_HSMMC2_BASE;
 #if (defined(CONFIG_OMAP44XX) || defined(CONFIG_OMAP54XX) || \
 	defined(CONFIG_DRA7XX) || defined(CONFIG_AM57XX) || \
+	defined(CONFIG_AM33XX) || \
 	defined(CONFIG_AM43XX) || defined(CONFIG_SOC_KEYSTONE)) && \
 		defined(CONFIG_HSMMC2_8BIT)
 		/* Enable 8-bit interface for eMMC on OMAP4/5 or DRA7XX */
@@ -775,7 +774,8 @@ static int omap_hsmmc_ofdata_to_platdata(struct udevice *dev)
 	struct mmc_config *cfg;
 	int val;
 
-	priv->base_addr = (struct hsmmc *)dev_get_addr(dev);
+	priv->base_addr = map_physmem(dev_get_addr(dev), sizeof(struct hsmmc *),
+				      MAP_NOCACHE);
 	cfg = &priv->cfg;
 
 	cfg->host_caps = MMC_MODE_HS_52MHz | MMC_MODE_HS;
@@ -821,6 +821,12 @@ static int omap_hsmmc_probe(struct udevice *dev)
 	if (mmc == NULL)
 		return -1;
 
+#ifdef OMAP_HSMMC_USE_GPIO
+	gpio_request_by_name(dev, "cd-gpios", 0, &priv->cd_gpio, GPIOD_IS_IN);
+	gpio_request_by_name(dev, "wp-gpios", 0, &priv->wp_gpio, GPIOD_IS_IN);
+#endif
+
+	mmc->dev = dev;
 	upriv->mmc = mmc;
 
 	return 0;

@@ -26,6 +26,7 @@
 #define CONFIG_SYS_FSL_TIMER_ADDR		0x023d0000
 #define CONFIG_SYS_FSL_PMU_CLTBENR		(CONFIG_SYS_FSL_PMU_ADDR + \
 						 0x18A0)
+#define FSL_PMU_PCTBENR_OFFSET (CONFIG_SYS_FSL_PMU_ADDR + 0x8A0)
 
 #define CONFIG_SYS_FSL_WRIOP1_ADDR		(CONFIG_SYS_IMMR + 0x7B80000)
 #define CONFIG_SYS_FSL_WRIOP1_MDIO1	(CONFIG_SYS_FSL_WRIOP1_ADDR + 0x16000)
@@ -73,6 +74,36 @@
 #define AHCI_BASE_ADDR1				(CONFIG_SYS_IMMR + 0x02200000)
 #define AHCI_BASE_ADDR2				(CONFIG_SYS_IMMR + 0x02210000)
 
+/* SFP */
+#define CONFIG_SYS_SFP_ADDR		(CONFIG_SYS_IMMR + 0x00e80200)
+
+/* SEC */
+#define CONFIG_SYS_FSL_SEC_OFFSET		0x07000000ull
+#define CONFIG_SYS_FSL_JR0_OFFSET		0x07010000ull
+#define CONFIG_SYS_FSL_SEC_ADDR \
+	(CONFIG_SYS_IMMR + CONFIG_SYS_FSL_SEC_OFFSET)
+#define CONFIG_SYS_FSL_JR0_ADDR \
+	(CONFIG_SYS_IMMR + CONFIG_SYS_FSL_JR0_OFFSET)
+
+/* Security Monitor */
+#define CONFIG_SYS_SEC_MON_ADDR		(CONFIG_SYS_IMMR + 0x00e90000)
+
+/* MMU 500 */
+#define SMMU_SCR0			(SMMU_BASE + 0x0)
+#define SMMU_SCR1			(SMMU_BASE + 0x4)
+#define SMMU_SCR2			(SMMU_BASE + 0x8)
+#define SMMU_SACR			(SMMU_BASE + 0x10)
+#define SMMU_IDR0			(SMMU_BASE + 0x20)
+#define SMMU_IDR1			(SMMU_BASE + 0x24)
+
+#define SMMU_NSCR0			(SMMU_BASE + 0x400)
+#define SMMU_NSCR2			(SMMU_BASE + 0x408)
+#define SMMU_NSACR			(SMMU_BASE + 0x410)
+
+#define SCR0_CLIENTPD_MASK		0x00000001
+#define SCR0_USFCFG_MASK		0x00000400
+
+
 /* PCIe */
 #define CONFIG_SYS_PCIE1_ADDR			(CONFIG_SYS_IMMR + 0x2400000)
 #define CONFIG_SYS_PCIE2_ADDR			(CONFIG_SYS_IMMR + 0x2500000)
@@ -86,6 +117,10 @@
 #define PCIE_LUT_BASE				0x80000
 #define PCIE_LUT_LCTRL0				0x7F8
 #define PCIE_LUT_DBG				0x7FC
+#define PCIE_LUT_UDR(n)         (0x800 + (n) * 8)
+#define PCIE_LUT_LDR(n)         (0x804 + (n) * 8)
+#define PCIE_LUT_ENABLE         (1 << 31)
+#define PCIE_LUT_ENTRY_COUNT    32
 
 /* Device Configuration */
 #define DCFG_BASE		0x01e00000
@@ -94,13 +129,21 @@
 #define DCFG_PORSR1_RCW_SRC_NOR		0x12f00000
 #define DCFG_RCWSR13			0x130
 #define DCFG_RCWSR13_DSPI		(0 << 8)
+#define DCFG_RCWSR15			0x138
+#define DCFG_RCWSR15_IFCGRPABASE_QSPI	0x3
 
 #define DCFG_DCSR_BASE		0X700100000ULL
 #define DCFG_DCSR_PORCR1		0x000
 
+/* Interrupt Sampling Control */
+#define ISC_BASE		0x01F70000
+#define IRQCR_OFFSET		0x14
+
 /* Supplemental Configuration */
 #define SCFG_BASE		0x01fc0000
 #define SCFG_USB3PRM1CR			0x000
+#define SCFG_USB3PRM1CR_INIT		0x27672b2a
+#define SCFG_QSPICLKCTLR	0x10
 
 #define TP_ITYP_AV		0x00000001	/* Initiator available */
 #define TP_ITYP_TYPE(x)	(((x) & 0x6) >> 1)	/* Initiator Type */
@@ -146,6 +189,10 @@ struct ccsr_gur {
 	u8	res_008[0x20-0x8];
 	u32	gpporcr1;	/* General-purpose POR configuration */
 	u32	gpporcr2;	/* General-purpose POR configuration 2 */
+#define FSL_CHASSIS3_DCFG_FUSESR_VID_SHIFT	25
+#define FSL_CHASSIS3_DCFG_FUSESR_VID_MASK	0x1F
+#define FSL_CHASSIS3_DCFG_FUSESR_ALTVID_SHIFT	20
+#define FSL_CHASSIS3_DCFG_FUSESR_ALTVID_MASK	0x1F
 	u32	dcfg_fusesr;	/* Fuse status register */
 	u32	gpporcr3;
 	u32	gpporcr4;
@@ -201,6 +248,8 @@ struct ccsr_gur {
 #define	FSL_CHASSIS3_RCWSR28_SRDS1_PRTCL_SHIFT	16
 #define	FSL_CHASSIS3_RCWSR28_SRDS2_PRTCL_MASK	0xFF000000
 #define	FSL_CHASSIS3_RCWSR28_SRDS2_PRTCL_SHIFT	24
+#define RCW_SB_EN_REG_INDEX	9
+#define RCW_SB_EN_MASK		0x00000400
 
 	u8	res_180[0x200-0x180];
 	u32	scratchrw[32];	/* Scratch Read/Write */
@@ -275,4 +324,7 @@ struct ccsr_reset {
 	u32 ip_rev1;			/* 0xbf8 */
 	u32 ip_rev2;			/* 0xbfc */
 };
+
+uint get_svr(void);
+
 #endif /* __ARCH_FSL_LSCH3_IMMAP_H_ */

@@ -210,6 +210,9 @@ static int ehci_shutdown(struct ehci_ctrl *ctrl)
 		return -EINVAL;
 
 	cmd = ehci_readl(&ctrl->hcor->or_usbcmd);
+	/* If not run, directly return */
+	if (!(cmd & CMD_RUN))
+		return 0;
 	cmd &= ~(CMD_PSE | CMD_ASE);
 	ehci_writel(&ctrl->hcor->or_usbcmd, cmd);
 	ret = handshake(&ctrl->hcor->or_usbsts, STS_ASS | STS_PSS, 0,
@@ -1614,6 +1617,12 @@ int ehci_register(struct udevice *dev, struct ehci_hccr *hccr,
 	ret = ehci_reset(ctrl);
 	if (ret)
 		goto err;
+
+	if (ctrl->ops.init_after_reset) {
+		ret = ctrl->ops.init_after_reset(ctrl);
+		if (ret)
+			goto err;
+	}
 
 	ret = ehci_common_init(ctrl, tweaks);
 	if (ret)

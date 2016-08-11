@@ -102,6 +102,7 @@ void rkvop_mode_set(struct rk3288_vop *regs,
 	u32 hfront_porch = edid->hfront_porch.typ;
 	u32 vfront_porch = edid->vfront_porch.typ;
 	uint flags;
+	int mode_flags;
 
 	switch (mode) {
 	case VOP_MODE_HDMI:
@@ -113,9 +114,20 @@ void rkvop_mode_set(struct rk3288_vop *regs,
 		clrsetbits_le32(&regs->sys_ctrl, M_ALL_OUT_EN,
 				V_EDP_OUT_EN(1));
 		break;
+	case VOP_MODE_LVDS:
+		clrsetbits_le32(&regs->sys_ctrl, M_ALL_OUT_EN,
+				V_RGB_OUT_EN(1));
+		break;
 	}
 
-	flags = V_DSP_OUT_MODE(15) |
+	if (mode == VOP_MODE_HDMI || mode == VOP_MODE_EDP)
+		/* RGBaaa */
+		mode_flags = 15;
+	else
+		/* RGB888 */
+		mode_flags = 0;
+
+	flags = V_DSP_OUT_MODE(mode_flags) |
 		V_DSP_HSYNC_POL(!!(edid->flags & DISPLAY_FLAGS_HSYNC_HIGH)) |
 		V_DSP_VSYNC_POL(!!(edid->flags & DISPLAY_FLAGS_VSYNC_HIGH));
 
@@ -183,7 +195,8 @@ int rk_display_init(struct udevice *dev, ulong fbbase,
 	struct udevice *disp;
 	int ret, remote, i, offset;
 	struct display_plat *disp_uc_plat;
-	struct udevice *clk;
+	struct udevice *dev_clk;
+	struct clk clk;
 
 	vop_id = fdtdec_get_int(blob, ep_node, "reg", -1);
 	debug("vop_id=%d\n", vop_id);
@@ -225,11 +238,13 @@ int rk_display_init(struct udevice *dev, ulong fbbase,
 		return ret;
 	}
 
-	ret = rkclk_get_clk(CLK_NEW, &clk);
+	ret = uclass_get_device(UCLASS_CLK, 0, &dev_clk);
 	if (!ret) {
-		ret = clk_set_periph_rate(clk, DCLK_VOP0 + vop_id,
-					  timing.pixelclock.typ);
+		clk.id = DCLK_VOP0 + remote_vop_id;
+		ret = clk_request(dev_clk, &clk);
 	}
+	if (!ret)
+		ret = clk_set_rate(&clk, timing.pixelclock.typ);
 	if (ret) {
 		debug("%s: Failed to set pixel clock: ret=%d\n", __func__, ret);
 		return ret;
@@ -314,6 +329,7 @@ static int rk_vop_probe(struct udevice *dev)
 		if (!ret)
 			break;
 	}
+	video_set_flush_dcache(dev, 1);
 
 	return ret;
 }

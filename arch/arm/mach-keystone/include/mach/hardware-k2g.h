@@ -10,7 +10,7 @@
 #ifndef __ASM_ARCH_HARDWARE_K2G_H
 #define __ASM_ARCH_HARDWARE_K2G_H
 
-#define KS2_NUM_DSPS	0
+#define KS2_NUM_DSPS			1
 
 /* Power and Sleep Controller (PSC) Domains */
 #define KS2_LPSC_ALWAYSON		0
@@ -30,7 +30,10 @@
 #define KS2_LPSC_MCASP			15
 #define KS2_LPSC_SR			16
 #define KS2_LPSC_MSMC			17
-#define KS2_LPSC_GEM			18
+#ifdef KS2_LPSC_GEM_0
+#undef KS2_LPSC_GEM_0
+#endif
+#define KS2_LPSC_GEM_0			18
 #define KS2_LPSC_ARM			19
 #define KS2_LPSC_ASRC			20
 #define KS2_LPSC_ICSS			21
@@ -70,5 +73,17 @@
 #define K2G_GPIO1_BANK2_BASE		K2G_GPIO1_BASE + 0x38
 #define K2G_GPIO_DIR_OFFSET		0x0
 #define K2G_GPIO_SETDATA_OFFSET		0x8
+
+/* BOOTCFG RESETMUX8 */
+#define KS2_RSTMUX8			(KS2_DEVICE_STATE_CTRL_BASE + 0x328)
+
+/* RESETMUX register definitions */
+#define RSTMUX_LOCK8_SHIFT		0x0
+#define RSTMUX_LOCK8_MASK		(0x1 << 0)
+#define RSTMUX_OMODE8_SHIFT		0x1
+#define RSTMUX_OMODE8_MASK		(0x7 << 1)
+#define RSTMUX_OMODE8_DEV_RESET		0x2
+#define RSTMUX_OMODE8_INT		0x3
+#define RSTMUX_OMODE8_INT_AND_DEV_RESET	0x4
 
 #endif /* __ASM_ARCH_HARDWARE_K2G_H */

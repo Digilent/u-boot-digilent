@@ -41,6 +41,9 @@ struct driver_info;
 /* Device is bound */
 #define DM_FLAG_BOUND			(1 << 6)
 
+/* Device name is allocated and should be freed on unbind() */
+#define DM_NAME_ALLOCED			(1 << 7)
+
 /**
  * struct udevice - An instance of a driver
  *
@@ -454,6 +457,16 @@ int device_find_next_child(struct udevice **devp);
 fdt_addr_t dev_get_addr(struct udevice *dev);
 
 /**
+ * dev_get_addr_ptr() - Return pointer to the address of the reg property
+ *                      of a device
+ *
+ * @dev: Pointer to a device
+ *
+ * @return Pointer to addr, or NULL if there is no such property
+ */
+void *dev_get_addr_ptr(struct udevice *dev);
+
+/**
  * dev_get_addr_index() - Get the indexed reg property of a device
  *
  * @dev: Pointer to a device
@@ -463,6 +476,18 @@ fdt_addr_t dev_get_addr(struct udevice *dev);
  * @return addr
  */
 fdt_addr_t dev_get_addr_index(struct udevice *dev, int index);
+
+/**
+ * dev_get_addr_name() - Get the reg property of a device, indexed by name
+ *
+ * @dev: Pointer to a device
+ * @name: the 'reg' property can hold a list of <addr, size> pairs, with the
+ *	  'reg-names' property providing named-based identification. @index
+ *	  indicates the value to search for in 'reg-names'.
+ *
+ * @return addr
+ */
+fdt_addr_t dev_get_addr_name(struct udevice *dev, const char *name);
 
 /**
  * device_has_children() - check if a device has any children
@@ -501,6 +526,9 @@ bool device_is_last_sibling(struct udevice *dev);
  * this is unnecessary but for probed devices which don't get a useful name
  * this function can be helpful.
  *
+ * The name is allocated and will be freed automatically when the device is
+ * unbound.
+ *
  * @dev:	Device to update
  * @name:	New name (this string is allocated new memory and attached to
  *		the device)
@@ -508,6 +536,39 @@ bool device_is_last_sibling(struct udevice *dev);
  * string
  */
 int device_set_name(struct udevice *dev, const char *name);
+
+/**
+ * device_set_name_alloced() - note that a device name is allocated
+ *
+ * This sets the DM_NAME_ALLOCED flag for the device, so that when it is
+ * unbound the name will be freed. This avoids memory leaks.
+ *
+ * @dev:	Device to update
+ */
+void device_set_name_alloced(struct udevice *dev);
+
+/**
+ * of_device_is_compatible() - check if the device is compatible with the compat
+ *
+ * This allows to check whether the device is comaptible with the compat.
+ *
+ * @dev:	udevice pointer for which compatible needs to be verified.
+ * @compat:	Compatible string which needs to verified in the given
+ *		device
+ * @return true if OK, false if the compatible is not found
+ */
+bool of_device_is_compatible(struct udevice *dev, const char *compat);
+
+/**
+ * of_machine_is_compatible() - check if the machine is compatible with
+ *				the compat
+ *
+ * This allows to check whether the machine is comaptible with the compat.
+ *
+ * @compat:	Compatible string which needs to verified
+ * @return true if OK, false if the compatible is not found
+ */
+bool of_machine_is_compatible(const char *compat);
 
 /**
  * device_is_on_pci_bus - Test if a device is on a PCI bus

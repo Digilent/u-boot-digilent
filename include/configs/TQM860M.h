@@ -30,7 +30,6 @@
 
 #define	CONFIG_BOOTCOUNT_LIMIT
 
-#define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
 
 #define CONFIG_BOARD_TYPES	1	/* support board types		*/
 
@@ -86,27 +85,19 @@
 #define CONFIG_BOOTP_BOOTPATH
 #define CONFIG_BOOTP_BOOTFILESIZE
 
-
 #define CONFIG_MAC_PARTITION
 #define CONFIG_DOS_PARTITION
 
 #define	CONFIG_RTC_MPC8xx		/* use internal RTC of MPC8xx	*/
 
-
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_DHCP
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_IDE
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_SNTP
-
 
 #define CONFIG_NETCONSOLE
-
 
 /*
  * Miscellaneous configurable options
@@ -114,7 +105,6 @@
 #define	CONFIG_SYS_LONGHELP			/* undef to save memory		*/
 
 #define CONFIG_CMDLINE_EDITING	1	/* add command line history	*/
-#define CONFIG_SYS_HUSH_PARSER		1	/* Use the HUSH parser		*/
 
 #if defined(CONFIG_CMD_KGDB)
 #define	CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size	*/
@@ -453,9 +443,6 @@
 #define CONFIG_FEC_ENET
 #define CONFIG_ETHPRIME		"SCC"
 
-/* pass open firmware flat tree */
-#define CONFIG_OF_LIBFDT	1
-#define CONFIG_OF_BOARD_SETUP	1
 #define CONFIG_HWCONFIG		1
 
 #endif	/* __CONFIG_H */

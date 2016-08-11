@@ -16,8 +16,8 @@ obj-$(CONFIG_CROS_EC_LPC) += cros_ec_lpc.o
 obj-$(CONFIG_CROS_EC_I2C) += cros_ec_i2c.o
 obj-$(CONFIG_CROS_EC_SANDBOX) += cros_ec_sandbox.o
 obj-$(CONFIG_CROS_EC_SPI) += cros_ec_spi.o
-endif
 obj-$(CONFIG_FSL_DEBUG_SERVER) += fsl_debug_server.o
+endif
 obj-$(CONFIG_FSL_IIM) += fsl_iim.o
 obj-$(CONFIG_GPIO_LED) += gpio_led.o
 obj-$(CONFIG_I2C_EEPROM) += i2c_eeprom.o
@@ -27,7 +27,7 @@ obj-$(CONFIG_MXS_OCOTP) += mxs_ocotp.o
 obj-$(CONFIG_NS87308) += ns87308.o
 obj-$(CONFIG_PDSP188x) += pdsp188x.o
 obj-$(CONFIG_$(SPL_)PWRSEQ) += pwrseq-uclass.o
-obj-$(CONFIG_SANDBOX) += reset_sandbox.o
+obj-$(CONFIG_SANDBOX) += sysreset_sandbox.o
 ifdef CONFIG_DM_I2C
 obj-$(CONFIG_SANDBOX) += i2c_eeprom_emul.o
 endif
@@ -40,6 +40,7 @@ obj-$(CONFIG_TWL4030_LED) += twl4030_led.o
 obj-$(CONFIG_FSL_IFC) += fsl_ifc.o
 obj-$(CONFIG_FSL_SEC_MON) += fsl_sec_mon.o
 obj-$(CONFIG_PCA9551_LED) += pca9551_led.o
-obj-$(CONFIG_RESET) += reset-uclass.o
+obj-$(CONFIG_SYSRESET) += sysreset-uclass.o
 obj-$(CONFIG_FSL_DEVICE_DISABLE) += fsl_devdis.o
 obj-$(CONFIG_WINBOND_W83627) += winbond_w83627.o
+obj-$(CONFIG_QFW) += qfw.o

@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <wait_bit.h>
 #include <linux/compiler.h>
-#include <usb/ehci-fsl.h>
+#include <usb/ehci-ci.h>
 #include <asm/io.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/clock.h>
@@ -194,8 +194,9 @@ struct usbnc_regs {
 	u32 reserve1[10];
 	u32 phy_cfg1;
 	u32 phy_cfg2;
+	u32 reserve2;
 	u32 phy_status;
-	u32 reserve2[4];
+	u32 reserve3[4];
 	u32 adp_cfg1;
 	u32 adp_cfg2;
 	u32 adp_status;
@@ -207,8 +208,11 @@ static void usb_power_config(int index)
 			(0x10000 * index) + USBNC_OFFSET);
 	void __iomem *phy_cfg2 = (void __iomem *)(&usbnc->phy_cfg2);
 
-	/* Enable usb_otg_id detection */
-	setbits_le32(phy_cfg2, USBNC_PHYCFG2_ACAENB);
+	/*
+	 * Clear the ACAENB to enable usb_otg_id detection,
+	 * otherwise it is the ACA detection enabled.
+	 */
+	clrbits_le32(phy_cfg2, USBNC_PHYCFG2_ACAENB);
 }
 
 int usb_phy_mode(int port)
@@ -254,7 +258,7 @@ static void usb_oc_config(int index)
 }
 
 /**
- * board_ehci_hcd_init - override usb phy mode
+ * board_usb_phy_mode - override usb phy mode
  * @port:	usb host/otg port
  *
  * Target board specific, override usb_phy_mode.
@@ -310,6 +314,7 @@ int ehci_hcd_init(int index, enum usb_init_type init,
 #endif
 	struct usb_ehci *ehci = (struct usb_ehci *)(USB_BASE_ADDR +
 		(controller_spacing * index));
+	int ret;
 
 	if (index > 3)
 		return -EINVAL;
@@ -317,7 +322,9 @@ int ehci_hcd_init(int index, enum usb_init_type init,
 	mdelay(1);
 
 	/* Do board specific initialization */
-	board_ehci_hcd_init(index);
+	ret = board_ehci_hcd_init(index);
+	if (ret)
+		return ret;
 
 	usb_power_config(index);
 	usb_oc_config(index);

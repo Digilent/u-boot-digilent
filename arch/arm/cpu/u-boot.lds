@@ -14,6 +14,9 @@ OUTPUT_ARCH(arm)
 ENTRY(_start)
 SECTIONS
 {
+#ifndef CONFIG_CMDLINE
+	/DISCARD/ : { *(.u_boot_list_2_cmd_*) }
+#endif
 #if defined(CONFIG_ARMV7_SECURE_BASE) && defined(CONFIG_ARMV7_NONSEC)
 	/*
 	 * If CONFIG_ARMV7_SECURE_BASE is true, secure code will not
@@ -47,6 +50,7 @@ SECTIONS
 
 #ifndef CONFIG_ARMV7_SECURE_BASE
 #define CONFIG_ARMV7_SECURE_BASE
+#define __ARMV7_PSCI_STACK_IN_RAM
 #endif
 
 	.__secure_start : {
@@ -63,6 +67,12 @@ SECTIONS
 	. = LOADADDR(.__secure_start) +
 		SIZEOF(.__secure_start) +
 		SIZEOF(.secure_text);
+
+#ifdef __ARMV7_PSCI_STACK_IN_RAM
+	/* Align to page boundary and skip 2 pages */
+	. = (. & ~ 0xfff) + 0x2000;
+#undef __ARMV7_PSCI_STACK_IN_RAM
+#endif
 
 	__secure_end_lma = .;
 	.__secure_end : AT(__secure_end_lma) {
@@ -86,6 +96,36 @@ SECTIONS
 	. = ALIGN(4);
 	.u_boot_list : {
 		KEEP(*(SORT(.u_boot_list*)));
+	}
+
+	. = ALIGN(4);
+
+	.__efi_runtime_start : {
+		*(.__efi_runtime_start)
+	}
+
+	.efi_runtime : {
+		*(efi_runtime_text)
+		*(efi_runtime_data)
+	}
+
+	.__efi_runtime_stop : {
+		*(.__efi_runtime_stop)
+	}
+
+	.efi_runtime_rel_start :
+	{
+		*(.__efi_runtime_rel_start)
+	}
+
+	.efi_runtime_rel : {
+		*(.relefi_runtime_text)
+		*(.relefi_runtime_data)
+	}
+
+	.efi_runtime_rel_stop :
+	{
+		*(.__efi_runtime_rel_stop)
 	}
 
 	. = ALIGN(4);

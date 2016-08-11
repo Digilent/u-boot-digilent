@@ -26,6 +26,14 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+static struct mm_region layerscape_mem_map[] = {
+	{
+		/* List terminator */
+		0,
+	}
+};
+struct mm_region *mem_map = layerscape_mem_map;
+
 void cpu_name(char *name)
 {
 	struct ccsr_gur __iomem *gur = (void *)(CONFIG_SYS_FSL_GUTS_ADDR);
@@ -48,6 +56,25 @@ void cpu_name(char *name)
 }
 
 #ifndef CONFIG_SYS_DCACHE_OFF
+static void set_pgtable_section(u64 *page_table, u64 index, u64 section,
+			u64 memory_type, u64 attribute)
+{
+       u64 value;
+
+       value = section | PTE_TYPE_BLOCK | PTE_BLOCK_AF;
+       value |= PMD_ATTRINDX(memory_type);
+       value |= attribute;
+       page_table[index] = value;
+}
+
+static void set_pgtable_table(u64 *page_table, u64 index, u64 *table_addr)
+{
+       u64 value;
+
+       value = (u64)table_addr | PTE_TYPE_TABLE;
+       page_table[index] = value;
+}
+
 /*
  * Set the block entries according to the information of the table.
  */
@@ -114,10 +141,10 @@ static int find_table(const struct sys_mmu_table *list,
 
 		temp_base -= block_size;
 
-		if ((level_table[index - 1] & PMD_TYPE_MASK) ==
-		    PMD_TYPE_TABLE) {
+		if ((level_table[index - 1] & PTE_TYPE_MASK) ==
+		    PTE_TYPE_TABLE) {
 			level_table = (u64 *)(level_table[index - 1] &
-				      ~PMD_TYPE_MASK);
+				      ~PTE_TYPE_MASK);
 			level++;
 			continue;
 		} else {
@@ -220,7 +247,7 @@ static inline int final_secure_ddr(u64 *level0_table,
 	struct table_info table = {};
 	struct sys_mmu_table ddr_entry = {
 		0, 0, BLOCK_SIZE_L1, MT_NORMAL,
-		PMD_SECT_OUTER_SHARE | PMD_SECT_NS
+		PTE_BLOCK_OUTER_SHARE | PTE_BLOCK_NS
 	};
 	u64 index;
 
@@ -243,7 +270,7 @@ static inline int final_secure_ddr(u64 *level0_table,
 	ddr_entry.virt_addr = phys_addr;
 	ddr_entry.phys_addr = phys_addr;
 	ddr_entry.size = CONFIG_SYS_MEM_RESERVE_SECURE;
-	ddr_entry.attribute = PMD_SECT_OUTER_SHARE;
+	ddr_entry.attribute = PTE_BLOCK_OUTER_SHARE;
 	ret = find_table(&ddr_entry, &table, level0_table);
 	if (ret) {
 		printf("MMU error: could not find secure ddr table\n");
@@ -369,9 +396,6 @@ static inline void final_mmu_setup(void)
 	flush_dcache_range((ulong)level0_table,
 			   (ulong)level0_table + gd->arch.tlb_size);
 
-#ifdef CONFIG_SYS_DPAA_FMAN
-	flush_dcache_all();
-#endif
 	/* point TTBR to the new table */
 	set_ttbr_tcr_mair(el, (u64)level0_table, LAYERSCAPE_TCR_FINAL,
 			  MEMORY_ATTRIBUTES);
@@ -381,6 +405,11 @@ static inline void final_mmu_setup(void)
 	 * MMU somehow walks through the new table before invalidation TLB,
 	 * it still works. So we don't need to turn off MMU here.
 	 */
+}
+
+u64 get_page_table_size(void)
+{
+	return 0x10000;
 }
 
 int arch_cpu_init(void)
@@ -499,6 +528,13 @@ u32 fsl_qoriq_core_to_type(unsigned int core)
 	return -1;      /* cannot identify the cluster */
 }
 
+uint get_svr(void)
+{
+	struct ccsr_gur __iomem *gur = (void *)(CONFIG_SYS_FSL_GUTS_ADDR);
+
+	return gur_in32(&gur->svr);
+}
+
 #ifdef CONFIG_DISPLAY_CPUINFO
 int print_cpuinfo(void)
 {
@@ -506,12 +542,12 @@ int print_cpuinfo(void)
 	struct sys_info sysinfo;
 	char buf[32];
 	unsigned int i, core;
-	u32 type, rcw;
+	u32 type, rcw, svr = gur_in32(&gur->svr);
 
 	puts("SoC: ");
 
 	cpu_name(buf);
-	printf(" %s (0x%x)\n", buf, gur_in32(&gur->svr));
+	printf(" %s (0x%x)\n", buf, svr);
 	memset((u8 *)buf, 0x00, ARRAY_SIZE(buf));
 	get_sys_info(&sysinfo);
 	puts("Clock Configuration:");
@@ -532,7 +568,10 @@ int print_cpuinfo(void)
 	printf("  FMAN:     %-4s MHz", strmhz(buf, sysinfo.freq_fman[0]));
 #endif
 #ifdef CONFIG_SYS_FSL_HAS_DP_DDR
-	printf("     DP-DDR:   %-4s MT/s", strmhz(buf, sysinfo.freq_ddrbus2));
+	if (soc_has_dp_ddr()) {
+		printf("     DP-DDR:   %-4s MT/s",
+		       strmhz(buf, sysinfo.freq_ddrbus2));
+	}
 #endif
 	puts("\n");
 
@@ -604,6 +643,9 @@ int timer_init(void)
 #ifdef CONFIG_FSL_LSCH3
 	u32 __iomem *cltbenr = (u32 *)CONFIG_SYS_FSL_PMU_CLTBENR;
 #endif
+#ifdef CONFIG_LS2080A
+	u32 __iomem *pctbenr = (u32 *)FSL_PMU_PCTBENR_OFFSET;
+#endif
 #ifdef COUNTER_FREQUENCY_REAL
 	unsigned long cntfrq = COUNTER_FREQUENCY_REAL;
 
@@ -616,6 +658,15 @@ int timer_init(void)
 	 * It is safe to do so even some clusters are not enabled.
 	 */
 	out_le32(cltbenr, 0xf);
+#endif
+
+#ifdef CONFIG_LS2080A
+	/*
+	 * In certain Layerscape SoCs, the clock for each core's
+	 * has an enable bit in the PMU Physical Core Time Base Enable
+	 * Register (PCTBENR), which allows the watchdog to operate.
+	 */
+	setbits_le32(pctbenr, 0xff);
 #endif
 
 	/* Enable clock for timer

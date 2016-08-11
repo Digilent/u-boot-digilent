@@ -46,8 +46,8 @@
 #define CONFIG_SRIO1			/* SRIO port 1 */
 
 #define CONFIG_PCI		1	/* Enable PCI/PCIE */
-#define CONFIG_PCIE1		1	/* PCIE controler 1 (ULI bridge) */
-#define CONFIG_PCIE2		1	/* PCIE controler 2 (slot) */
+#define CONFIG_PCIE1		1	/* PCIE controller 1 (ULI bridge) */
+#define CONFIG_PCIE2		1	/* PCIE controller 2 (slot) */
 #define CONFIG_FSL_PCI_INIT	1	/* Use common FSL init code */
 #define CONFIG_SYS_PCI_64BIT	1	/* enable 64-bit PCI resources */
 #define CONFIG_FSL_LAW		1	/* Use common FSL law init code */
@@ -133,7 +133,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define SPD_EEPROM_ADDRESS2	0x52	/* CTLR 0 DIMM 1 */
 #define SPD_EEPROM_ADDRESS3	0x53	/* CTLR 1 DIMM 0 */
 #define SPD_EEPROM_ADDRESS4	0x54	/* CTLR 1 DIMM 1 */
-
 
 /*
  * These are used when DDR doesn't use SPD.
@@ -269,16 +268,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_NS16550_COM1	(CONFIG_SYS_CCSRBAR+0x4500)
 #define CONFIG_SYS_NS16550_COM2	(CONFIG_SYS_CCSRBAR+0x4600)
 
-/* Use the HUSH parser */
-#define CONFIG_SYS_HUSH_PARSER
-
-/*
- * Pass open firmware flat tree to kernel
- */
-#define CONFIG_OF_LIBFDT		1
-#define CONFIG_OF_BOARD_SETUP		1
-#define CONFIG_OF_STDOUT_VIA_ALIAS	1
-
 /*
  * I2C
  */
@@ -365,11 +354,7 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 
 #define CONFIG_PCI_SCAN_SHOW		/* show pci devices on startup */
 
-#undef CONFIG_SYS_SCSI_SCAN_BUS_REVERSE
-
 #define CONFIG_PCI_PNP			/* do pci plug-and-play */
-
-#define CONFIG_RTL8139
 
 #undef CONFIG_EEPRO100
 #undef CONFIG_TULIP
@@ -450,7 +435,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_ETHPRIME		"eTSEC1"
 
 #endif	/* CONFIG_TSEC_ENET */
-
 
 #ifdef CONFIG_PHYS_64BIT
 #define PHYS_HIGH_TO_BXPN(x) ((x & 0x0000000e) << 8)
@@ -611,7 +595,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_LOADS_ECHO	1	/* echo on for serial download */
 #define CONFIG_SYS_LOADS_BAUD_CHANGE	1	/* allow baudrate change */
 
-
 /*
  * BOOTP options
  */
@@ -620,21 +603,15 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_HOSTNAME
 
-
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_I2C
 #define CONFIG_CMD_REGINFO
 
 #if defined(CONFIG_PCI)
     #define CONFIG_CMD_PCI
-    #define CONFIG_CMD_SCSI
-    #define CONFIG_CMD_EXT2
-    #define CONFIG_CMD_USB
+    #define CONFIG_SCSI
 #endif
-
 
 #undef CONFIG_WATCHDOG			/* watchdog disabled */
 
@@ -689,7 +666,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 /* default location for tftp and bootm */
 #define CONFIG_LOADADDR		1000000
 
-#define CONFIG_BOOTDELAY 10	/* -1 disables auto-boot */
 #undef	CONFIG_BOOTARGS		/* the boot command will set bootargs */
 
 #define CONFIG_BAUDRATE	115200
@@ -716,7 +692,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 	"en-wd=mw.b ffdf0010 0x08; echo -expect:- 08; md.b ffdf0010 1\0"			\
 	"dis-wd=mw.b ffdf0010 0x00; echo -expect:- 00; md.b ffdf0010 1\0" \
 	"maxcpus=2"
-
 
 #define CONFIG_NFSBOOTCOMMAND						\
 	"setenv bootargs root=/dev/nfs rw "				\

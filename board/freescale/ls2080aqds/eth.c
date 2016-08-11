@@ -20,6 +20,7 @@
 
 #include "ls2080aqds_qixis.h"
 
+#define MC_BOOT_ENV_VAR "mcinitcmd"
 
 #ifdef CONFIG_FSL_MC_ENET
  /* - In LS2080A there are only 16 SERDES lanes, spread across 2 SERDES banks.
@@ -548,12 +549,6 @@ void ls2080a_handle_phy_interface_sgmii(int dpmac_id)
 			dpmac_info[dpmac_id].board_mux = EMI1_SLOT1;
 			bus = mii_dev_for_muxval(EMI1_SLOT1);
 			wriop_set_mdio(dpmac_id, bus);
-			dpmac_info[dpmac_id].phydev = phy_connect(
-						dpmac_info[dpmac_id].bus,
-						dpmac_info[dpmac_id].phy_addr,
-						NULL,
-						dpmac_info[dpmac_id].enet_if);
-			phy_config(dpmac_info[dpmac_id].phydev);
 			break;
 		case 2:
 			/* Slot housing a SGMII riser card? */
@@ -562,12 +557,6 @@ void ls2080a_handle_phy_interface_sgmii(int dpmac_id)
 			dpmac_info[dpmac_id].board_mux = EMI1_SLOT2;
 			bus = mii_dev_for_muxval(EMI1_SLOT2);
 			wriop_set_mdio(dpmac_id, bus);
-			dpmac_info[dpmac_id].phydev = phy_connect(
-						dpmac_info[dpmac_id].bus,
-						dpmac_info[dpmac_id].phy_addr,
-						NULL,
-						dpmac_info[dpmac_id].enet_if);
-			phy_config(dpmac_info[dpmac_id].phydev);
 			break;
 		case 3:
 			break;
@@ -606,12 +595,6 @@ serdes2:
 			dpmac_info[dpmac_id].board_mux = EMI1_SLOT4;
 			bus = mii_dev_for_muxval(EMI1_SLOT4);
 			wriop_set_mdio(dpmac_id, bus);
-			dpmac_info[dpmac_id].phydev = phy_connect(
-						dpmac_info[dpmac_id].bus,
-						dpmac_info[dpmac_id].phy_addr,
-						NULL,
-						dpmac_info[dpmac_id].enet_if);
-			phy_config(dpmac_info[dpmac_id].phydev);
 		break;
 		case 5:
 		break;
@@ -679,13 +662,6 @@ void ls2080a_handle_phy_interface_qsgmii(int dpmac_id)
 			dpmac_info[dpmac_id].board_mux = EMI1_SLOT1;
 			bus = mii_dev_for_muxval(EMI1_SLOT1);
 			wriop_set_mdio(dpmac_id, bus);
-			dpmac_info[dpmac_id].phydev = phy_connect(
-						dpmac_info[dpmac_id].bus,
-						dpmac_info[dpmac_id].phy_addr,
-						NULL,
-						dpmac_info[dpmac_id].enet_if);
-
-			phy_config(dpmac_info[dpmac_id].phydev);
 			break;
 		case 3:
 			break;
@@ -739,6 +715,7 @@ void ls2080a_handle_phy_interface_xsgmii(int i)
 int board_eth_init(bd_t *bis)
 {
 	int error;
+	char *mc_boot_env_var;
 #ifdef CONFIG_FSL_MC_ENET
 	struct ccsr_gur __iomem *gur = (void *)CONFIG_SYS_FSL_GUTS_ADDR;
 	int serdes1_prtcl = (in_le32(&gur->rcwsr[28]) &
@@ -806,6 +783,9 @@ int board_eth_init(bd_t *bis)
 		}
 	}
 
+	mc_boot_env_var = getenv(MC_BOOT_ENV_VAR);
+	if (mc_boot_env_var)
+		run_command_list(mc_boot_env_var, -1, 0);
 	error = cpu_eth_init(bis);
 
 	if (hwconfig_f("xqsgmii", env_hwconfig)) {

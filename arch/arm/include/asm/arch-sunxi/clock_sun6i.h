@@ -222,7 +222,12 @@ struct sunxi_ccm_reg {
 #define CCM_PLL11_CTRL_UPD		(0x1 << 30)
 #define CCM_PLL11_CTRL_EN		(0x1 << 31)
 
+#if defined(CONFIG_MACH_SUN50I)
+/* AHB1=100MHz failsafe setup from the FEL mode, usable with PMIC defaults */
+#define AHB1_ABP1_DIV_DEFAULT		0x00003190 /* AHB1=PLL6/6,APB1=AHB1/2 */
+#else
 #define AHB1_ABP1_DIV_DEFAULT		0x00003180 /* AHB1=PLL6/3,APB1=AHB1/2 */
+#endif
 
 #define AXI_GATE_OFFSET_DRAM		0
 
@@ -350,10 +355,12 @@ struct sunxi_ccm_reg {
 #define CCM_HDMI_CTRL_DDC_GATE		(0x1 << 30)
 #define CCM_HDMI_CTRL_GATE		(0x1 << 31)
 
-#ifndef CONFIG_MACH_SUN8I
-#define MBUS_CLK_DEFAULT		0x81000001 /* PLL6 / 2 */
-#else
+#if defined(CONFIG_MACH_SUN50I)
+#define MBUS_CLK_DEFAULT		0x81000002 /* PLL6x2 / 3 */
+#elif defined(CONFIG_MACH_SUN8I)
 #define MBUS_CLK_DEFAULT		0x81000003 /* PLL6 / 4 */
+#else
+#define MBUS_CLK_DEFAULT		0x81000001 /* PLL6 / 2 */
 #endif
 #define MBUS_CLK_GATE			(0x1 << 31)
 

@@ -65,6 +65,7 @@
 #ifdef CONFIG_AVR32
 #include <asm/arch/mmu.h>
 #endif
+#include <efi_loader.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -176,6 +177,9 @@ static int initr_reloc_global_data(void)
 	* incase of FDT blob is embedded with in image
 	*/
 	gd->fdt_blob += gd->reloc_off;
+#endif
+#ifdef CONFIG_EFI_LOADER
+	efi_runtime_relocate(gd->relocaddr, NULL);
 #endif
 
 	return 0;
@@ -318,11 +322,13 @@ static int initr_dm(void)
 	/* Save the pre-reloc driver model and start a new one */
 	gd->dm_root_f = gd->dm_root;
 	gd->dm_root = NULL;
+#ifdef CONFIG_TIMER
+	gd->timer = NULL;
+#endif
 	ret = dm_init_and_scan(false);
 	if (ret)
 		return ret;
 #ifdef CONFIG_TIMER_EARLY
-	gd->timer = NULL;
 	ret = dm_timer_init();
 	if (ret)
 		return ret;
@@ -614,7 +620,7 @@ static int initr_ambapp_print(void)
 }
 #endif
 
-#if defined(CONFIG_CMD_SCSI)
+#if defined(CONFIG_SCSI)
 static int initr_scsi(void)
 {
 	puts("SCSI:  ");
@@ -791,6 +797,9 @@ init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_CLOCKS
 	set_cpu_clk_info, /* Setup clock information */
 #endif
+#ifdef CONFIG_EFI_LOADER
+	efi_memory_init,
+#endif
 	stdio_init_tables,
 	initr_serial,
 	initr_announce,
@@ -914,7 +923,7 @@ init_fnc_t init_sequence_r[] = {
 	initr_ambapp_print,
 #endif
 #endif
-#ifdef CONFIG_CMD_SCSI
+#ifdef CONFIG_SCSI
 	INIT_FUNC_WATCHDOG_RESET
 	initr_scsi,
 #endif

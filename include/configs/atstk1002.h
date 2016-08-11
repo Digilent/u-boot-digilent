@@ -79,7 +79,6 @@
 #define CONFIG_BOOTCOMMAND						\
 	"fsload; bootm $(fileaddr)"
 
-#define CONFIG_BOOTDELAY		1
 
 /*
  * After booting the board for the first time, new ethernet addresses
@@ -101,13 +100,7 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_ASKENV
-#define CONFIG_CMD_DHCP
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MMC
-
 
 #define CONFIG_ATMEL_USART
 #define CONFIG_MACB

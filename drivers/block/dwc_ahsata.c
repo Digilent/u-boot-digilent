@@ -563,7 +563,7 @@ int init_sata(int dev)
 	struct ahci_probe_ent *probe_ent = NULL;
 
 #if defined(CONFIG_MX6)
-	if (!is_cpu_type(MXC_CPU_MX6Q) && !is_cpu_type(MXC_CPU_MX6D))
+	if (!is_mx6dq() && !is_mx6dqp())
 		return 1;
 #endif
 	if (dev < 0 || dev > (CONFIG_SYS_SATA_MAX_DEVICE - 1)) {
@@ -620,7 +620,7 @@ int reset_sata(int dev)
 
 static void dwc_ahsata_print_info(int dev)
 {
-	block_dev_desc_t *pdev = &(sata_dev_desc[dev]);
+	struct blk_desc *pdev = &(sata_dev_desc[dev]);
 
 	printf("SATA Device Info:\n\r");
 #ifdef CONFIG_SYS_64BIT_LBA
@@ -956,7 +956,7 @@ int scan_sata(int dev)
 	struct ahci_probe_ent *probe_ent =
 		(struct ahci_probe_ent *)sata_dev_desc[dev].priv;
 	u8 port = probe_ent->hard_port_no;
-	block_dev_desc_t *pdev = &(sata_dev_desc[dev]);
+	struct blk_desc *pdev = &(sata_dev_desc[dev]);
 
 	id = (u16 *)memalign(ARCH_DMA_MINALIGN,
 				roundup(ARCH_DMA_MINALIGN,

@@ -123,6 +123,7 @@ typedef struct ddr4_spd_eeprom_s generic_spd_eeprom_t;
 
 #define SDRAM_CFG2_FRC_SR		0x80000000
 #define SDRAM_CFG2_D_INIT		0x00000010
+#define SDRAM_CFG2_AP_EN		0x00000020
 #define SDRAM_CFG2_ODT_CFG_MASK		0x00600000
 #define SDRAM_CFG2_ODT_NEVER		0
 #define SDRAM_CFG2_ODT_ONLY_WRITE	1
@@ -144,6 +145,10 @@ typedef struct ddr4_spd_eeprom_s generic_spd_eeprom_t;
 #define WR_DATA_DELAY_MASK	0x7
 #define WR_DATA_DELAY_SHIFT	10
 #endif
+
+/* DDR_EOR register */
+#define DDR_EOR_RD_REOD_DIS	0x07000000
+#define DDR_EOR_WD_REOD_DIS	0x00100000
 
 /* DDR_MD_CNTL */
 #define MD_CNTL_MD_EN		0x80000000
@@ -176,6 +181,21 @@ typedef struct ddr4_spd_eeprom_s generic_spd_eeprom_t;
 #define DDR_CDR2_VREF_OVRD(x)	(0x00008080 | ((((x) - 37) & 0x3F) << 8))
 #define DDR_CDR2_VREF_TRAIN_EN	0x00000080
 #define DDR_CDR2_VREF_RANGE_2	0x00000040
+
+/* DDR ERR_DISABLE */
+#define DDR_ERR_DISABLE_APED	(1 << 8)  /* Address parity error disable */
+
+/* Mode Registers */
+#define DDR_MR5_CA_PARITY_LAT_4_CLK	0x1 /* for DDR4-1600/1866/2133 */
+#define DDR_MR5_CA_PARITY_LAT_5_CLK	0x2 /* for DDR4-2400 */
+
+/* DEBUG_26 register */
+#define DDR_CAS_TO_PRE_SUB_MASK  0x0000f000 /* CAS to preamble subtract value */
+#define DDR_CAS_TO_PRE_SUB_SHIFT 12
+
+/* DEBUG_29 register */
+#define DDR_TX_BD_DIS	(1 << 10) /* Transmit Bit Deskew Disable */
+
 
 #if (defined(CONFIG_SYS_FSL_DDR_VER) && \
 	(CONFIG_SYS_FSL_DDR_VER >= FSL_DDR_VER_4_7))
@@ -343,7 +363,7 @@ typedef struct memctl_options_s {
 	/* mirrior DIMMs for DDR3 */
 	unsigned int mirrored_dimm;
 	unsigned int quad_rank_present;
-	unsigned int ap_en;	/* address parity enable for RDIMM */
+	unsigned int ap_en;	/* address parity enable for RDIMM/DDR4-UDIMM */
 	unsigned int x4_en;	/* enable x4 devices */
 
 	/* Global Timing Parameters */

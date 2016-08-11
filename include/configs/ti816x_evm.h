@@ -25,10 +25,8 @@
 #define CONFIG_ENV_SIZE			0x2000
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (32 * 1024))
 #define CONFIG_SYS_LONGHELP		/* undef save memory */
-#define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_MACH_TYPE		MACH_TYPE_TI8168EVM
 
-#define CONFIG_OF_LIBFDT
 #define CONFIG_CMDLINE_TAG		/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG		/* required for ramdisk support */
@@ -36,7 +34,6 @@
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_DISPLAY_CPUINFO
 
-#define CONFIG_BOOTDELAY		3 /* set negative for no autoboot */
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"loadaddr=0x81000000\0"		\
 
@@ -64,10 +61,7 @@
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_OMAP_HSMMC
-#define CONFIG_CMD_MMC
 #define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 
 #define CONFIG_FS_FAT
 
@@ -85,7 +79,6 @@
 
 #define CONFIG_TI816X_USE_EMIF0	1
 #define CONFIG_TI816X_USE_EMIF1	1
-
 
 #define CONFIG_NR_DRAM_BANKS	2		/* we have 2 banks of DRAM */
 #define PHYS_DRAM_1		0x80000000	/* DRAM Bank #1 */

@@ -51,11 +51,8 @@ Serial console configuration
  * Command line configuration.
  */
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_DHCP
 #define CONFIG_CMD_EEPROM
-#define CONFIG_CMD_I2C
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PCI
 
 #define	CONFIG_TIMESTAMP	1	/* Print image info with timestamp */
@@ -70,14 +67,7 @@ Serial console configuration
 #define MTDPARTS_DEFAULT   	"mtdparts=physmap-flash.0:256k(ubootl)," \
 	"1792k(kernel),13312k(jffs2),256k(uboot)ro,256k(oftree),-(space)"
 
-/*-----------------------------------------------------------------------------
-Autobooting
------------------------------------------------------------------------------*/
-#define CONFIG_BOOTDELAY	3	/* autoboot after 3 seconds */
-#define CONFIG_ZERO_BOOTDELAY_CHECK	/* allow stopping of boot process */
-					/* even with bootdelay=0 */
 #undef	CONFIG_BOOTARGS
-
 
 #define CONFIG_PREBOOT	"echo;"	\
 	"echo Type \"run bootcmd_net\" to load Kernel over TFTP and to "\
@@ -418,9 +408,6 @@ RTC configuration
 #define CONFIG_USB_STORAGE
 
 /* pass open firmware flat tree */
-#define CONFIG_OF_LIBFDT		1
-#define CONFIG_OF_BOARD_SETUP		1
-
 #define OF_CPU				"PowerPC,5200@0"
 #define OF_TBCLK			CONFIG_SYS_MPC5XXX_CLKIN
 #define OF_SOC				"soc5200@f0000000"

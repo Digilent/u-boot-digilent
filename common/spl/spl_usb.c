@@ -25,7 +25,7 @@ static int usb_stor_curr_dev = -1; /* current device */
 int spl_usb_load_image(void)
 {
 	int err;
-	block_dev_desc_t *stor_dev;
+	struct blk_desc *stor_dev;
 
 	usb_stop();
 	err = usb_init();
@@ -39,7 +39,7 @@ int spl_usb_load_image(void)
 #ifdef CONFIG_USB_STORAGE
 	/* try to recognize storage devices immediately */
 	usb_stor_curr_dev = usb_stor_scan(1);
-	stor_dev = usb_stor_get_dev(usb_stor_curr_dev);
+	stor_dev = blk_get_devnum_by_type(IF_TYPE_USB, usb_stor_curr_dev);
 	if (!stor_dev)
 		return -ENODEV;
 #endif

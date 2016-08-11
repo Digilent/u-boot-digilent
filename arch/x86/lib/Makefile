@@ -10,6 +10,7 @@ obj-y += bios_asm.o
 obj-y += bios_interrupts.o
 obj-$(CONFIG_CMD_BOOTM) += bootm.o
 obj-y	+= cmd_boot.o
+obj-$(CONFIG_SEABIOS) += coreboot_table.o
 obj-$(CONFIG_EFI) += efi/
 obj-y	+= e820.o
 obj-y	+= gcc.o
@@ -22,6 +23,7 @@ obj-y += cmd_mtrr.o
 obj-y	+= northbridge-uclass.o
 obj-$(CONFIG_I8259_PIC) += i8259.o
 obj-$(CONFIG_I8254_TIMER) += i8254.o
+obj-y	+= pinctrl_ich6.o
 obj-y	+= pirq_routing.o
 obj-y	+= relocate.o
 obj-y += physmem.o
@@ -29,7 +31,7 @@ obj-$(CONFIG_X86_RAMTEST) += ramtest.o
 obj-y += sfi.o
 obj-$(CONFIG_GENERATE_SMBIOS_TABLE) += smbios.o
 obj-y	+= string.o
-ifndef CONFIG_QEMU_ACPI_TABLE
+ifndef CONFIG_QEMU
 obj-$(CONFIG_GENERATE_ACPI_TABLE) += acpi_table.o
 endif
 obj-y	+= tables.o

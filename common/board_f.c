@@ -274,7 +274,7 @@ static int setup_mon_len(void)
 	gd->mon_len = CONFIG_SYS_MONITOR_LEN;
 #elif defined(CONFIG_NDS32)
 	gd->mon_len = (ulong)(&__bss_end) - (ulong)(&_start);
-#else
+#elif defined(CONFIG_SYS_MONITOR_BASE)
 	/* TODO: use (ulong)&__bss_end - (ulong)&__text_start; ? */
 	gd->mon_len = (ulong)&__bss_end - CONFIG_SYS_MONITOR_BASE;
 #endif
@@ -1094,6 +1094,13 @@ void board_init_f_r(void)
 {
 	if (initcall_run_list(init_sequence_f_r))
 		hang();
+
+	/*
+	 * The pre-relocation drivers may be using memory that has now gone
+	 * away. Mark serial as unavailable - this will fall back to the debug
+	 * UART if available.
+	 */
+	gd->flags &= ~GD_FLG_SERIAL_READY;
 
 	/*
 	 * U-Boot has been copied into SDRAM, the BSS has been cleared etc.

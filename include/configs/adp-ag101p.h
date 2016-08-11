@@ -97,27 +97,21 @@
  */
 #define CONFIG_FTMAC100
 
-#define CONFIG_BOOTDELAY	3
 
 /*
  * SD (MMC) controller
  */
 #define CONFIG_MMC
-#define CONFIG_CMD_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_DOS_PARTITION
 #define CONFIG_FTSDC010
 #define CONFIG_FTSDC010_NUMBER		1
 #define CONFIG_FTSDC010_SDIO
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_PING
 
 /*
  * Miscellaneous configurable options

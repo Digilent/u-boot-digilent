@@ -115,6 +115,7 @@
 #include <config.h>
 #include <malloc.h>
 #include <div64.h>
+#include <linux/compiler.h>
 #include <linux/stat.h>
 #include <linux/time.h>
 #include <watchdog.h>
@@ -194,7 +195,7 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 			}
 
 			retlen = NAND_CACHE_SIZE;
-			if (nand_read(&nand_info[id->num], nand_cache_off,
+			if (nand_read(nand_info[id->num], nand_cache_off,
 						&retlen, nand_cache) != 0 ||
 					retlen != NAND_CACHE_SIZE) {
 				printf("read_nand_cached: error reading nand off %#x size %d bytes\n",
@@ -1328,7 +1329,7 @@ int jffs2_sum_scan_sumnode(struct part_info *part, uint32_t offset,
 			   struct b_lists *pL)
 {
 	struct jffs2_unknown_node crcnode;
-	int ret, ofs;
+	int ret, __maybe_unused ofs;
 	uint32_t crc;
 
 	ofs = part->sector_size - sumsize;

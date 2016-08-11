@@ -10,18 +10,19 @@
 #include <asm-offsets.h>
 #include <config.h>
 #include <asm/macro.h>
+#include <asm/system.h>
 #include <linux/linkage.h>
 
 /*
- * void __asm_flush_dcache_level(level)
+ * void __asm_dcache_level(level)
  *
- * clean and invalidate one level cache.
+ * flush or invalidate one level cache.
  *
  * x0: cache level
- * x1: 0 flush & invalidate, 1 invalidate only
+ * x1: 0 clean & invalidate, 1 invalidate only
  * x2~x9: clobbered
  */
-ENTRY(__asm_flush_dcache_level)
+ENTRY(__asm_dcache_level)
 	lsl	x12, x0, #1
 	msr	csselr_el1, x12		/* select cache level */
 	isb				/* sync change of cssidr_el1 */
@@ -56,14 +57,14 @@ loop_way:
 	b.ge	loop_set
 
 	ret
-ENDPROC(__asm_flush_dcache_level)
+ENDPROC(__asm_dcache_level)
 
 /*
  * void __asm_flush_dcache_all(int invalidate_only)
  *
- * x0: 0 flush & invalidate, 1 invalidate only
+ * x0: 0 clean & invalidate, 1 invalidate only
  *
- * clean and invalidate all data cache by SET/WAY.
+ * flush or invalidate all data cache by SET/WAY.
  */
 ENTRY(__asm_dcache_all)
 	mov	x1, x0
@@ -86,7 +87,7 @@ loop_level:
 	and	x12, x12, #7		/* x12 <- cache type */
 	cmp	x12, #2
 	b.lt	skip			/* skip if no cache or icache */
-	bl	__asm_flush_dcache_level	/* x1 = 0 flush, 1 invalidate */
+	bl	__asm_dcache_level	/* x1 = 0 flush, 1 invalidate */
 skip:
 	add	x0, x0, #1		/* increment cache level */
 	cmp	x11, x0
@@ -103,19 +104,13 @@ finished:
 ENDPROC(__asm_dcache_all)
 
 ENTRY(__asm_flush_dcache_all)
-	mov	x16, lr
 	mov	x0, #0
-	bl	__asm_dcache_all
-	mov	lr, x16
-	ret
+	b	__asm_dcache_all
 ENDPROC(__asm_flush_dcache_all)
 
 ENTRY(__asm_invalidate_dcache_all)
-	mov	x16, lr
 	mov	x0, #0x1
-	bl	__asm_dcache_all
-	mov	lr, x16
-	ret
+	b	__asm_dcache_all
 ENDPROC(__asm_invalidate_dcache_all)
 
 /*
@@ -160,3 +155,56 @@ ENTRY(__asm_flush_l3_cache)
 	ret
 ENDPROC(__asm_flush_l3_cache)
 	.weak	__asm_flush_l3_cache
+
+/*
+ * void __asm_switch_ttbr(ulong new_ttbr)
+ *
+ * Safely switches to a new page table.
+ */
+ENTRY(__asm_switch_ttbr)
+	/* x2 = SCTLR (alive throghout the function) */
+	switch_el x4, 3f, 2f, 1f
+3:	mrs	x2, sctlr_el3
+	b	0f
+2:	mrs	x2, sctlr_el2
+	b	0f
+1:	mrs	x2, sctlr_el1
+0:
+
+	/* Unset CR_M | CR_C | CR_I from SCTLR to disable all caches */
+	movn	x1, #(CR_M | CR_C | CR_I)
+	and	x1, x2, x1
+	switch_el x4, 3f, 2f, 1f
+3:	msr	sctlr_el3, x1
+	b	0f
+2:	msr	sctlr_el2, x1
+	b	0f
+1:	msr	sctlr_el1, x1
+0:	isb
+
+	/* This call only clobbers x30 (lr) and x9 (unused) */
+	mov	x3, x30
+	bl	__asm_invalidate_tlb_all
+
+	/* From here on we're running safely with caches disabled */
+
+	/* Set TTBR to our first argument */
+	switch_el x4, 3f, 2f, 1f
+3:	msr	ttbr0_el3, x0
+	b	0f
+2:	msr	ttbr0_el2, x0
+	b	0f
+1:	msr	ttbr0_el1, x0
+0:	isb
+
+	/* Restore original SCTLR and thus enable caches again */
+	switch_el x4, 3f, 2f, 1f
+3:	msr	sctlr_el3, x2
+	b	0f
+2:	msr	sctlr_el2, x2
+	b	0f
+1:	msr	sctlr_el1, x2
+0:	isb
+
+	ret	x3
+ENDPROC(__asm_switch_ttbr)

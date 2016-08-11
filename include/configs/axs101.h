@@ -39,8 +39,6 @@
 #define CONFIG_BOARD_TYPES
 #define CONFIG_BOARD_EARLY_INIT_F
 
-#define CONFIG_OF_LIBFDT
-
 /*
  * NAND Flash configuration
  */
@@ -61,7 +59,6 @@
  * I2C configuration
  */
 #define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_DW
 #define CONFIG_I2C_ENV_EEPROM_BUS	2
 #define CONFIG_SYS_I2C_SPEED		100000
 #define CONFIG_SYS_I2C_SPEED1		100000
@@ -107,8 +104,6 @@
 /*
  * Commands still not supported in Kconfig
  */
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_MMC
 #define CONFIG_CMD_NAND
 
 #define CONFIG_AUTO_COMPLETE
@@ -124,7 +119,6 @@
 /*
  * Environment configuration
  */
-#define CONFIG_BOOTDELAY		3
 #define CONFIG_BOOTFILE			"uImage"
 #define CONFIG_BOOTARGS			"console=ttyS3,115200n8"
 #define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR

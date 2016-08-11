@@ -467,22 +467,30 @@ int fdt_fixup_memory(void *blob, u64 start, u64 size)
 
 void fdt_fixup_ethernet(void *fdt)
 {
-	int node, i, j;
+	int i, j, prop;
 	char *tmp, *end;
 	char mac[16];
 	const char *path;
 	unsigned char mac_addr[6];
 	int offset;
 
-	node = fdt_path_offset(fdt, "/aliases");
-	if (node < 0)
+	if (fdt_path_offset(fdt, "/aliases") < 0)
 		return;
 
-	for (offset = fdt_first_property_offset(fdt, node);
-	     offset > 0;
-	     offset = fdt_next_property_offset(fdt, offset)) {
+	/* Cycle through all aliases */
+	for (prop = 0; ; prop++) {
 		const char *name;
 		int len = strlen("ethernet");
+
+		/* FDT might have been edited, recompute the offset */
+		offset = fdt_first_property_offset(fdt,
+			fdt_path_offset(fdt, "/aliases"));
+		/* Select property number 'prop' */
+		for (i = 0; i < prop; i++)
+			offset = fdt_next_property_offset(fdt, offset);
+
+		if (offset < 0)
+			break;
 
 		path = fdt_getprop_by_offset(fdt, offset, &name, NULL);
 		if (!strncmp(name, "ethernet", len)) {
@@ -940,7 +948,8 @@ void fdt_del_node_and_alias(void *blob, const char *alias)
 /* Max address size we deal with */
 #define OF_MAX_ADDR_CELLS	4
 #define OF_BAD_ADDR	FDT_ADDR_T_NONE
-#define OF_CHECK_COUNTS(na)	((na) > 0 && (na) <= OF_MAX_ADDR_CELLS)
+#define OF_CHECK_COUNTS(na, ns)	((na) > 0 && (na) <= OF_MAX_ADDR_CELLS && \
+			(ns) > 0)
 
 /* Debug utility */
 #ifdef DEBUG
@@ -955,10 +964,40 @@ static void of_dump_addr(const char *s, const fdt32_t *addr, int na)
 static void of_dump_addr(const char *s, const fdt32_t *addr, int na) { }
 #endif
 
-/* Callbacks for bus specific translators */
+/**
+ * struct of_bus - Callbacks for bus specific translators
+ * @name:	A string used to identify this bus in debug output.
+ * @addresses:	The name of the DT property from which addresses are
+ *		to be read, typically "reg".
+ * @match:	Return non-zero if the node whose parent is at
+ *		parentoffset in the FDT blob corresponds to a bus
+ *		of this type, otherwise return zero. If NULL a match
+ *		is assumed.
+ * @count_cells:Count how many cells (be32 values) a node whose parent
+ *		is at parentoffset in the FDT blob will require to
+ *		represent its address (written to *addrc) & size
+ *		(written to *sizec).
+ * @map:	Map the address addr from the address space of this
+ *		bus to that of its parent, making use of the ranges
+ *		read from DT to an array at range. na and ns are the
+ *		number of cells (be32 values) used to hold and address
+ *		or size, respectively, for this bus. pna is the number
+ *		of cells used to hold an address for the parent bus.
+ *		Returns the address in the address space of the parent
+ *		bus.
+ * @translate:	Update the value of the address cells at addr within an
+ *		FDT by adding offset to it. na specifies the number of
+ *		cells used to hold the address being translated. Returns
+ *		zero on success, non-zero on error.
+ *
+ * Each bus type will include a struct of_bus in the of_busses array,
+ * providing implementations of some or all of the functions used to
+ * match the bus & handle address translation for its children.
+ */
 struct of_bus {
 	const char	*name;
 	const char	*addresses;
+	int		(*match)(void *blob, int parentoffset);
 	void		(*count_cells)(void *blob, int parentoffset,
 				int *addrc, int *sizec);
 	u64		(*map)(fdt32_t *addr, const fdt32_t *range,
@@ -1013,8 +1052,70 @@ static int of_bus_default_translate(fdt32_t *addr, u64 offset, int na)
 	return 0;
 }
 
+#ifdef CONFIG_OF_ISA_BUS
+
+/* ISA bus translator */
+static int of_bus_isa_match(void *blob, int parentoffset)
+{
+	const char *name;
+
+	name = fdt_get_name(blob, parentoffset, NULL);
+	if (!name)
+		return 0;
+
+	return !strcmp(name, "isa");
+}
+
+static void of_bus_isa_count_cells(void *blob, int parentoffset,
+				   int *addrc, int *sizec)
+{
+	if (addrc)
+		*addrc = 2;
+	if (sizec)
+		*sizec = 1;
+}
+
+static u64 of_bus_isa_map(fdt32_t *addr, const fdt32_t *range,
+			  int na, int ns, int pna)
+{
+	u64 cp, s, da;
+
+	/* Check address type match */
+	if ((addr[0] ^ range[0]) & cpu_to_be32(1))
+		return OF_BAD_ADDR;
+
+	cp = of_read_number(range + 1, na - 1);
+	s  = of_read_number(range + na + pna, ns);
+	da = of_read_number(addr + 1, na - 1);
+
+	debug("OF: ISA map, cp=%" PRIu64 ", s=%" PRIu64
+	      ", da=%" PRIu64 "\n", cp, s, da);
+
+	if (da < cp || da >= (cp + s))
+		return OF_BAD_ADDR;
+	return da - cp;
+}
+
+static int of_bus_isa_translate(fdt32_t *addr, u64 offset, int na)
+{
+	return of_bus_default_translate(addr + 1, offset, na - 1);
+}
+
+#endif /* CONFIG_OF_ISA_BUS */
+
 /* Array of bus specific translators */
 static struct of_bus of_busses[] = {
+#ifdef CONFIG_OF_ISA_BUS
+	/* ISA */
+	{
+		.name = "isa",
+		.addresses = "reg",
+		.match = of_bus_isa_match,
+		.count_cells = of_bus_isa_count_cells,
+		.map = of_bus_isa_map,
+		.translate = of_bus_isa_translate,
+	},
+#endif /* CONFIG_OF_ISA_BUS */
 	/* Default */
 	{
 		.name = "default",
@@ -1024,6 +1125,28 @@ static struct of_bus of_busses[] = {
 		.translate = of_bus_default_translate,
 	},
 };
+
+static struct of_bus *of_match_bus(void *blob, int parentoffset)
+{
+	struct of_bus *bus;
+
+	if (ARRAY_SIZE(of_busses) == 1)
+		return of_busses;
+
+	for (bus = of_busses; bus; bus++) {
+		if (!bus->match || bus->match(blob, parentoffset))
+			return bus;
+	}
+
+	/*
+	 * We should always have matched the default bus at least, since
+	 * it has a NULL match field. If we didn't then it somehow isn't
+	 * in the of_busses array or something equally catastrophic has
+	 * gone wrong.
+	 */
+	assert(0);
+	return NULL;
+}
 
 static int of_translate_one(void * blob, int parent, struct of_bus *bus,
 			    struct of_bus *pbus, fdt32_t *addr,
@@ -1104,11 +1227,11 @@ static u64 __of_translate_address(void *blob, int node_offset, const fdt32_t *in
 	parent = fdt_parent_offset(blob, node_offset);
 	if (parent < 0)
 		goto bail;
-	bus = &of_busses[0];
+	bus = of_match_bus(blob, parent);
 
 	/* Cound address cells & copy address locally */
 	bus->count_cells(blob, parent, &na, &ns);
-	if (!OF_CHECK_COUNTS(na)) {
+	if (!OF_CHECK_COUNTS(na, ns)) {
 		printf("%s: Bad cell count for %s\n", __FUNCTION__,
 		       fdt_get_name(blob, node_offset, NULL));
 		goto bail;
@@ -1133,9 +1256,9 @@ static u64 __of_translate_address(void *blob, int node_offset, const fdt32_t *in
 		}
 
 		/* Get new parent bus and counts */
-		pbus = &of_busses[0];
+		pbus = of_match_bus(blob, parent);
 		pbus->count_cells(blob, parent, &pna, &pns);
-		if (!OF_CHECK_COUNTS(pna)) {
+		if (!OF_CHECK_COUNTS(pna, pns)) {
 			printf("%s: Bad cell count for %s\n", __FUNCTION__,
 				fdt_get_name(blob, node_offset, NULL));
 			break;

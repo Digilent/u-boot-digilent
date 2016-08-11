@@ -11,8 +11,10 @@
 #include <pch.h>
 #include <syscon.h>
 #include <asm/cpu.h>
+#include <asm/intel_regs.h>
 #include <asm/io.h>
 #include <asm/lapic.h>
+#include <asm/lpc_common.h>
 #include <asm/pci.h>
 #include <asm/arch/bd82x6x.h>
 #include <asm/arch/model_206ax.h>
@@ -160,7 +162,7 @@ static int bd82x6x_probe(struct udevice *dev)
 		return 0;
 
 	/* Cause the SATA device to do its init */
-	uclass_first_device(UCLASS_DISK, &dev);
+	uclass_first_device(UCLASS_AHCI, &dev);
 
 	ret = syscon_get_by_driver_data(X86_SYSCON_GMA, &gma_dev);
 	if (ret)
@@ -187,20 +189,7 @@ static int bd82x6x_pch_get_spi_base(struct udevice *dev, ulong *sbasep)
 
 static int bd82x6x_set_spi_protect(struct udevice *dev, bool protect)
 {
-	uint8_t bios_cntl;
-
-	/* Adjust the BIOS write protect and SMM BIOS Write Protect Disable */
-	dm_pci_read_config8(dev, BIOS_CTRL, &bios_cntl);
-	if (protect) {
-		bios_cntl &= ~BIOS_CTRL_BIOSWE;
-		bios_cntl |= BIT(5);
-	} else {
-		bios_cntl |= BIOS_CTRL_BIOSWE;
-		bios_cntl &= ~BIT(5);
-	}
-	dm_pci_write_config8(dev, BIOS_CTRL, bios_cntl);
-
-	return 0;
+	return lpc_set_spi_protect(dev, BIOS_CTRL, protect);
 }
 
 static int bd82x6x_get_gpio_base(struct udevice *dev, u32 *gbasep)

@@ -6,7 +6,6 @@
 
 #include <common.h>
 #include <asm/arch/clock_manager.h>
-#include <asm/arch/dwmmc.h>
 #include <asm/arch/system_manager.h>
 #include <dm.h>
 #include <dwmmc.h>
@@ -109,6 +108,7 @@ static int socfpga_dwmmc_probe(struct udevice *dev)
 		return ret;
 
 	upriv->mmc = host->mmc;
+	host->mmc->dev = dev;
 
 	return 0;
 }

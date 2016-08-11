@@ -49,9 +49,13 @@ static struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-struct common_args common_args;
-struct printenv_args printenv_args;
-struct setenv_args setenv_args;
+static struct env_opts env_opts;
+
+/* setenv options */
+static int noheader;
+
+/* getenv options */
+static char *script_file;
 
 void usage_printenv(void)
 {
@@ -93,7 +97,7 @@ void usage_setenv(void)
 		"\n"
 		"Script Syntax:\n"
 		"  key [space] value\n"
-		"  lines starting with '#' are treated as commment\n"
+		"  lines starting with '#' are treated as comment\n"
 		"\n"
 		"  A variable without value will be deleted. Any number of spaces are\n"
 		"  allowed between key and value. Space inside of the value is treated\n"
@@ -112,22 +116,22 @@ static void parse_common_args(int argc, char *argv[])
 	int c;
 
 #ifdef CONFIG_FILE
-	common_args.config_file = CONFIG_FILE;
+	env_opts.config_file = CONFIG_FILE;
 #endif
 
 	while ((c = getopt_long(argc, argv, ":a:c:h", long_options, NULL)) !=
 	       EOF) {
 		switch (c) {
 		case 'a':
-			if (parse_aes_key(optarg, common_args.aes_key)) {
+			if (parse_aes_key(optarg, env_opts.aes_key)) {
 				fprintf(stderr, "AES key parse error\n");
 				exit(EXIT_FAILURE);
 			}
-			common_args.aes_flag = 1;
+			env_opts.aes_flag = 1;
 			break;
 #ifdef CONFIG_FILE
 		case 'c':
-			common_args.config_file = optarg;
+			env_opts.config_file = optarg;
 			break;
 #endif
 		case 'h':
@@ -155,7 +159,7 @@ int parse_printenv_args(int argc, char *argv[])
 	       EOF) {
 		switch (c) {
 		case 'n':
-			printenv_args.name_suppress = 1;
+			noheader = 1;
 			break;
 		case 'a':
 		case 'c':
@@ -181,7 +185,7 @@ int parse_setenv_args(int argc, char *argv[])
 	       EOF) {
 		switch (c) {
 		case 's':
-			setenv_args.script_file = optarg;
+			script_file = optarg;
 			break;
 		case 'a':
 		case 'c':
@@ -244,14 +248,14 @@ int main(int argc, char *argv[])
 	}
 
 	if (do_printenv) {
-		if (fw_printenv(argc, argv) != 0)
+		if (fw_printenv(argc, argv, noheader, &env_opts) != 0)
 			retval = EXIT_FAILURE;
 	} else {
-		if (!setenv_args.script_file) {
-			if (fw_setenv(argc, argv) != 0)
+		if (!script_file) {
+			if (fw_setenv(argc, argv, &env_opts) != 0)
 				retval = EXIT_FAILURE;
 		} else {
-			if (fw_parse_script(setenv_args.script_file) != 0)
+			if (fw_parse_script(script_file, &env_opts) != 0)
 				retval = EXIT_FAILURE;
 		}
 	}

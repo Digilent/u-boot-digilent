@@ -115,7 +115,6 @@
 #define CONFIG_SYS_FLASH_BASE		0xfff80000
 
 /* auto boot */
-#define CONFIG_BOOTDELAY	3	/* default enable autoboot */
 
 /*
  * For booting Linux, the board info and command line data
@@ -133,8 +132,6 @@
  * Commands configuration
  */
 #define CONFIG_CMD_IDE
-#define CONFIG_CMD_I2C
-#define CONFIG_CMD_USB
 
 /*
  * Network
@@ -159,7 +156,6 @@
 #define __io
 #define CONFIG_IDE_PREINIT
 #define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_EXT2
 /* ED Mini V has an IDE-compatible SATA connector for port 1 */
 #define CONFIG_MVSATA_IDE
 #define CONFIG_MVSATA_IDE_USE_PORT1
@@ -234,9 +230,6 @@
 #define CONFIG_SYS_MEMTEST_END		0x007fffff
 #define CONFIG_SYS_RESET_ADDRESS	0xffff0000
 #define CONFIG_SYS_MAXARGS		16
-
-/* Use the HUSH parser */
-#define CONFIG_SYS_HUSH_PARSER
 
 /* Enable command line editing */
 #define CONFIG_CMDLINE_EDITING

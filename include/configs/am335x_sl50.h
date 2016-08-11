@@ -10,12 +10,8 @@
 #define __CONFIG_AM335X_EVM_H
 
 #include <configs/ti_am335x_common.h>
-#undef CONFIG_BOOTDELAY
 
 #ifndef CONFIG_SPL_BUILD
-#ifndef CONFIG_FIT
-# define CONFIG_FIT
-#endif
 # define CONFIG_TIMESTAMP
 # define CONFIG_LZO
 #endif

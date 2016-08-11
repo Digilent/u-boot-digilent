@@ -7,13 +7,14 @@
 #ifndef __PINCTRL_UNIPHIER_H__
 #define __PINCTRL_UNIPHIER_H__
 
+#include <linux/bitops.h>
 #include <linux/bug.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 
-#define UNIPHIER_PINCTRL_PINMUX_BASE	0x0
-#define UNIPHIER_PINCTRL_LOAD_PINMUX	0x700
-#define UNIPHIER_PINCTRL_IECTRL		0xd00
+#define UNIPHIER_PINCTRL_PINMUX_BASE	0x1000
+#define UNIPHIER_PINCTRL_LOAD_PINMUX	0x1700
+#define UNIPHIER_PINCTRL_IECTRL		0x1d00
 
 #define UNIPHIER_PIN_ATTR_PACKED(iectrl)	(iectrl)
 
@@ -45,7 +46,7 @@ struct uniphier_pinctrl_group {
 	const char *name;
 	const unsigned *pins;
 	unsigned num_pins;
-	const unsigned *muxvals;
+	const int *muxvals;
 };
 
 /**
@@ -59,8 +60,7 @@ struct uniphier_pinctrl_group {
  * @functions_count: number of pinmux functions
  * @mux_bits: bit width of each pinmux register
  * @reg_stride: stride of pinmux register address
- * @load_pinctrl: if true, LOAD_PINMUX register must be set to one for new
- *		  values in pinmux registers to become really effective
+ * @caps: SoC-specific capability flag
  */
 struct uniphier_pinctrl_socdata {
 	const struct uniphier_pinctrl_pin *pins;
@@ -69,9 +69,9 @@ struct uniphier_pinctrl_socdata {
 	int groups_count;
 	const char * const *functions;
 	int functions_count;
-	unsigned mux_bits;
-	unsigned reg_stride;
-	bool load_pinctrl;
+	unsigned caps;
+#define UNIPHIER_PINCTRL_CAPS_PERPIN_IECTRL	BIT(1)
+#define UNIPHIER_PINCTRL_CAPS_DBGMUX_SEPARATE	BIT(0)
 };
 
 #define UNIPHIER_PINCTRL_PIN(a, b)					\
@@ -80,7 +80,7 @@ struct uniphier_pinctrl_socdata {
 	.data = UNIPHIER_PIN_ATTR_PACKED(b),				\
 }
 
-#define UNIPHIER_PINCTRL_GROUP(grp)					\
+#define __UNIPHIER_PINCTRL_GROUP(grp)					\
 	{								\
 		.name = #grp,						\
 		.pins = grp##_pins,					\
@@ -89,6 +89,19 @@ struct uniphier_pinctrl_socdata {
 			BUILD_BUG_ON_ZERO(ARRAY_SIZE(grp##_pins) !=	\
 					  ARRAY_SIZE(grp##_muxvals)),	\
 	}
+
+#define __UNIPHIER_PINMUX_FUNCTION(func)	#func
+
+#ifdef CONFIG_SPL_BUILD
+#define UNIPHIER_PINCTRL_GROUP(grp)		{ .name = NULL }
+#define UNIPHIER_PINMUX_FUNCTION(func)		NULL
+#else
+#define UNIPHIER_PINCTRL_GROUP(grp)		__UNIPHIER_PINCTRL_GROUP(grp)
+#define UNIPHIER_PINMUX_FUNCTION(func)		__UNIPHIER_PINMUX_FUNCTION(func)
+#endif
+
+#define UNIPHIER_PINCTRL_GROUP_SPL(grp)		__UNIPHIER_PINCTRL_GROUP(grp)
+#define UNIPHIER_PINMUX_FUNCTION_SPL(func)	__UNIPHIER_PINMUX_FUNCTION(func)
 
 /**
  * struct uniphier_pinctrl_priv - private data for UniPhier pinctrl driver

@@ -12,7 +12,8 @@
 #include <fsl_ddr.h>
 #include <fsl_errata.h>
 
-#ifdef CONFIG_SYS_FSL_ERRATUM_A008511
+#if defined(CONFIG_SYS_FSL_ERRATUM_A008511) | \
+	defined(CONFIG_SYS_FSL_ERRATUM_A009803)
 static void set_wait_for_bits_clear(void *ptr, u32 value, u32 bits)
 {
 	int timeout = 1000;
@@ -24,9 +25,9 @@ static void set_wait_for_bits_clear(void *ptr, u32 value, u32 bits)
 		timeout--;
 	}
 	if (timeout <= 0)
-		puts("Error: A007865 wait for clear timeout.\n");
+		puts("Error: wait for clear timeout.\n");
 }
-#endif /* CONFIG_SYS_FSL_ERRATUM_A008511 */
+#endif
 
 #if (CONFIG_CHIP_SELECTS_PER_CTRL > 4)
 #error Invalid setting for CONFIG_CHIP_SELECTS_PER_CTRL
@@ -55,7 +56,8 @@ void fsl_ddr_set_memctl_regs(const fsl_ddr_cfg_regs_t *regs,
 	u32 vref_seq2[3] = {0xc0, 0xf0, 0x70};	/* for range 2 */
 	u32 *vref_seq = vref_seq1;
 #endif
-#ifdef CONFIG_SYS_FSL_ERRATUM_A009942
+#if defined(CONFIG_SYS_FSL_ERRATUM_A009942) | \
+	defined(CONFIG_SYS_FSL_ERRATUM_A010165)
 	ulong ddr_freq;
 	u32 tmp;
 #endif
@@ -201,7 +203,20 @@ void fsl_ddr_set_memctl_regs(const fsl_ddr_cfg_regs_t *regs,
 		ddr_out32(&ddr->init_ext_addr, regs->ddr_init_ext_addr);
 		ddr_out32(&ddr->ddr_cdr2, regs->ddr_cdr2);
 	}
+
+#ifdef CONFIG_SYS_FSL_ERRATUM_A009803
+	/* part 1 of 2 */
+	if (regs->ddr_sdram_cfg_2 & SDRAM_CFG2_AP_EN) {
+		if (regs->ddr_sdram_cfg & SDRAM_CFG_RD_EN) { /* for RDIMM */
+			ddr_out32(&ddr->ddr_sdram_rcw_2,
+				  regs->ddr_sdram_rcw_2 & ~0x0f000000);
+		}
+		ddr_out32(&ddr->err_disable, regs->err_disable |
+			  DDR_ERR_DISABLE_APED);
+	}
+#else
 	ddr_out32(&ddr->err_disable, regs->err_disable);
+#endif
 	ddr_out32(&ddr->err_int_en, regs->err_int_en);
 	for (i = 0; i < 32; i++) {
 		if (regs->debug[i]) {
@@ -228,13 +243,22 @@ void fsl_ddr_set_memctl_regs(const fsl_ddr_cfg_regs_t *regs,
 		/* Disable DRAM VRef training */
 		ddr_out32(&ddr->ddr_cdr2,
 			  regs->ddr_cdr2 & ~DDR_CDR2_VREF_TRAIN_EN);
-		/* Disable deskew */
-		ddr_out32(&ddr->debug[28], 0x400);
+		/* disable transmit bit deskew */
+		temp32 = ddr_in32(&ddr->debug[28]);
+		temp32 |= DDR_TX_BD_DIS;
+		ddr_out32(&ddr->debug[28], temp32);
 		/* Disable D_INIT */
 		ddr_out32(&ddr->sdram_cfg_2,
 			  regs->ddr_sdram_cfg_2 & ~SDRAM_CFG2_D_INIT);
 		ddr_out32(&ddr->debug[25], 0x9000);
 	}
+#endif
+
+#ifdef CONFIG_SYS_FSL_ERRATUM_A009801
+	temp32 = ddr_in32(&ddr->debug[25]);
+	temp32 &= ~DDR_CAS_TO_PRE_SUB_MASK;
+	temp32 |= 9 << DDR_CAS_TO_PRE_SUB_SHIFT;
+	ddr_out32(&ddr->debug[25], temp32);
 #endif
 
 #ifdef CONFIG_SYS_FSL_ERRATUM_A009942
@@ -250,6 +274,13 @@ void fsl_ddr_set_memctl_regs(const fsl_ddr_cfg_regs_t *regs,
 		ddr_out32(&ddr->debug[28], tmp | 0x0060007b);
 #endif
 
+#ifdef CONFIG_SYS_FSL_ERRATUM_A010165
+	ddr_freq = get_ddr_freq(ctrl_num) / 1000000;
+	if ((ddr_freq > 1900) && (ddr_freq < 2300)) {
+		tmp = ddr_in32(&ddr->debug[28]);
+		ddr_out32(&ddr->debug[28], tmp | 0x000a0000);
+	}
+#endif
 	/*
 	 * For RDIMMs, JEDEC spec requires clocks to be stable before reset is
 	 * deasserted. Clocks start when any chip select is enabled and clock
@@ -297,7 +328,8 @@ step2:
 	mb();
 	isb();
 
-#ifdef CONFIG_SYS_FSL_ERRATUM_A008511
+#if defined(CONFIG_SYS_FSL_ERRATUM_A008511) || \
+	defined(CONFIG_SYS_FSL_ERRATUM_A009803)
 	/* Part 2 of 2 */
 	/* This erraum only applies to verion 5.2.0 */
 	if (fsl_ddr_get_version(ctrl_num) == 0x50200) {
@@ -313,6 +345,7 @@ step2:
 			       ctrl_num, ddr_in32(&ddr->debug[1]));
 		}
 
+#ifdef CONFIG_SYS_FSL_ERRATUM_A008511
 		/* The vref setting sequence is different for range 2 */
 		if (regs->ddr_cdr2 & DDR_CDR2_VREF_RANGE_2)
 			vref_seq = vref_seq2;
@@ -344,7 +377,9 @@ step2:
 			debug("MR6 = 0x%08x\n", temp32);
 		}
 		ddr_out32(&ddr->sdram_md_cntl, 0);
-		ddr_out32(&ddr->debug[28], 0);		/* Enable deskew */
+		temp32 = ddr_in32(&ddr->debug[28]);
+		temp32 &= ~DDR_TX_BD_DIS; /* Enable deskew */
+		ddr_out32(&ddr->debug[28], temp32);
 		ddr_out32(&ddr->debug[1], 0x400);	/* restart deskew */
 		/* wait for idle */
 		timeout = 40;
@@ -359,8 +394,30 @@ step2:
 		}
 		/* Restore D_INIT */
 		ddr_out32(&ddr->sdram_cfg_2, regs->ddr_sdram_cfg_2);
-	}
 #endif /* CONFIG_SYS_FSL_ERRATUM_A008511 */
+
+#ifdef CONFIG_SYS_FSL_ERRATUM_A009803
+		if (regs->ddr_sdram_cfg_2 & SDRAM_CFG2_AP_EN) {
+			/* if it's RDIMM */
+			if (regs->ddr_sdram_cfg & SDRAM_CFG_RD_EN) {
+				for (i = 0; i < CONFIG_CHIP_SELECTS_PER_CTRL; i++) {
+					if (!(regs->cs[i].config & SDRAM_CS_CONFIG_EN))
+						continue;
+					set_wait_for_bits_clear(&ddr->sdram_md_cntl,
+								MD_CNTL_MD_EN |
+								MD_CNTL_CS_SEL(i) |
+								0x070000ed,
+								MD_CNTL_MD_EN);
+					udelay(1);
+				}
+			}
+
+			ddr_out32(&ddr->err_disable,
+				  regs->err_disable & ~DDR_ERR_DISABLE_APED);
+		}
+#endif
+	}
+#endif
 
 	total_gb_size_per_controller = 0;
 	for (i = 0; i < CONFIG_CHIP_SELECTS_PER_CTRL; i++) {

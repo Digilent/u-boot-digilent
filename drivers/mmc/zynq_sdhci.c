@@ -35,6 +35,7 @@ static int arasan_sdhci_probe(struct udevice *dev)
 		  CONFIG_ZYNQ_SDHCI_MIN_FREQ);
 
 	upriv->mmc = host->mmc;
+	host->mmc->dev = dev;
 
 	return 0;
 }
@@ -43,7 +44,7 @@ static int arasan_sdhci_ofdata_to_platdata(struct udevice *dev)
 {
 	struct sdhci_host *host = dev_get_priv(dev);
 
-	host->name = (char *)dev->name;
+	host->name = dev->name;
 	host->ioaddr = (void *)dev_get_addr(dev);
 
 	return 0;

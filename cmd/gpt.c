@@ -168,7 +168,7 @@ static bool found_key(const char *str, const char *key)
  * @return - zero on success, otherwise error
  *
  */
-static int set_gpt_info(block_dev_desc_t *dev_desc,
+static int set_gpt_info(struct blk_desc *dev_desc,
 			const char *str_part,
 			char **str_disk_guid,
 			disk_partition_t **partitions,
@@ -181,6 +181,7 @@ static int set_gpt_info(block_dev_desc_t *dev_desc,
 	disk_partition_t *parts;
 	int errno = 0;
 	uint64_t size_ll, start_ll;
+	lbaint_t offset = 0;
 
 	debug("%s:  lba num: 0x%x %d\n", __func__,
 	      (unsigned int)dev_desc->lba, (unsigned int)dev_desc->lba);
@@ -296,8 +297,14 @@ static int set_gpt_info(block_dev_desc_t *dev_desc,
 		}
 		if (extract_env(val, &p))
 			p = val;
-		size_ll = ustrtoull(p, &p, 0);
-		parts[i].size = lldiv(size_ll, dev_desc->blksz);
+		if ((strcmp(p, "-") == 0)) {
+			/* remove first usable lba and last block */
+			parts[i].size = dev_desc->lba - 34  - 1 - offset;
+		} else {
+			size_ll = ustrtoull(p, &p, 0);
+			parts[i].size = lldiv(size_ll, dev_desc->blksz);
+		}
+
 		free(val);
 
 		/* start address */
@@ -309,6 +316,8 @@ static int set_gpt_info(block_dev_desc_t *dev_desc,
 			parts[i].start = lldiv(start_ll, dev_desc->blksz);
 			free(val);
 		}
+
+		offset += parts[i].size + parts[i].start;
 
 		/* bootable */
 		if (found_key(tok, "bootable"))
@@ -328,7 +337,7 @@ err:
 	return errno;
 }
 
-static int gpt_default(block_dev_desc_t *blk_dev_desc, const char *str_part)
+static int gpt_default(struct blk_desc *blk_dev_desc, const char *str_part)
 {
 	int ret;
 	char *str_disk_guid;
@@ -356,7 +365,7 @@ static int gpt_default(block_dev_desc_t *blk_dev_desc, const char *str_part)
 	return ret;
 }
 
-static int gpt_verify(block_dev_desc_t *blk_dev_desc, const char *str_part)
+static int gpt_verify(struct blk_desc *blk_dev_desc, const char *str_part)
 {
 	ALLOC_CACHE_ALIGN_BUFFER_PAD(gpt_header, gpt_head, 1,
 				     blk_dev_desc->blksz);
@@ -408,7 +417,7 @@ static int do_gpt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	int ret = CMD_RET_SUCCESS;
 	int dev = 0;
 	char *ep;
-	block_dev_desc_t *blk_dev_desc = NULL;
+	struct blk_desc *blk_dev_desc = NULL;
 
 	if (argc < 4 || argc > 5)
 		return CMD_RET_USAGE;
@@ -418,7 +427,7 @@ static int do_gpt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf("'%s' is not a number\n", argv[3]);
 		return CMD_RET_USAGE;
 	}
-	blk_dev_desc = get_dev(argv[2], dev);
+	blk_dev_desc = blk_get_dev(argv[2], dev);
 	if (!blk_dev_desc) {
 		printf("%s: %s dev %d NOT available\n",
 		       __func__, argv[2], dev);
