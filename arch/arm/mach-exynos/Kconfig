@@ -61,6 +61,15 @@ endif
 
 if ARCH_EXYNOS5
 
+config SPL_GPIO_SUPPORT
+	default y
+
+config SPL_LIBCOMMON_SUPPORT
+	default y
+
+config SPL_LIBGENERIC_SUPPORT
+	default y
+
 choice
 	prompt "EXYNOS5 board select"
 
@@ -117,6 +126,7 @@ choice
 config  TARGET_ESPRESSO7420
 	bool "ESPRESSO7420 board"
 	select ARM64
+	select ARMV8_MULTIENTRY
 	select SUPPORT_SPL
 	select OF_CONTROL
 	select SPL_DISABLE_OF_CONTROL

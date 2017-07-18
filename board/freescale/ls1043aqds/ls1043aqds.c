@@ -17,7 +17,6 @@
 #include <mmc.h>
 #include <scsi.h>
 #include <fm_eth.h>
-#include <fsl_csu.h>
 #include <fsl_esdhc.h>
 #include <fsl_ifc.h>
 #include <spl.h>
@@ -309,6 +308,10 @@ int misc_init_r(void)
 
 int board_init(void)
 {
+#ifdef CONFIG_SYS_FSL_ERRATUM_A010315
+	erratum_a010315();
+#endif
+
 	select_i2c_ch_pca9547(I2C_MUX_CH_DEFAULT);
 	board_retimer_init();
 
@@ -316,9 +319,6 @@ int board_init(void)
 	config_serdes_mux();
 #endif
 
-#ifdef CONFIG_LAYERSCAPE_NS_ACCESS
-	enable_layerscape_ns_access();
-#endif
 	return 0;
 }
 
@@ -327,6 +327,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 {
 	u64 base[CONFIG_NR_DRAM_BANKS];
 	u64 size[CONFIG_NR_DRAM_BANKS];
+	u8 reg;
 
 	/* fixup DT for the two DDR banks */
 	base[0] = gd->bd->bi_dram[0].start;
@@ -341,6 +342,15 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_fman_ethernet(blob);
 	fdt_fixup_board_enet(blob);
 #endif
+
+	reg = QIXIS_READ(brdcfg[0]);
+	reg = (reg & QIXIS_LBMAP_MASK) >> QIXIS_LBMAP_SHIFT;
+
+	/* Disable IFC if QSPI is enabled */
+	if (reg == 0xF)
+		do_fixup_by_compat(blob, "fsl,ifc",
+				   "status", "disabled", 8 + 1, 1);
+
 	return 0;
 }
 #endif

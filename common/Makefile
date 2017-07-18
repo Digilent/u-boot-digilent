@@ -26,6 +26,8 @@ obj-$(CONFIG_DISPLAY_BOARDINFO) += board_info.o
 obj-$(CONFIG_DISPLAY_BOARDINFO_LATE) += board_info.o
 
 obj-$(CONFIG_CMD_BOOTM) += bootm.o bootm_os.o
+obj-$(CONFIG_CMD_BOOTZ) += bootm.o bootm_os.o
+obj-$(CONFIG_CMD_BOOTI) += bootm.o bootm_os.o
 
 # environment
 obj-y += env_attr.o
@@ -87,6 +89,8 @@ obj-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
 endif # !CONFIG_SPL_BUILD
 
 ifdef CONFIG_SPL_BUILD
+obj-$(CONFIG_SPL_DFU_SUPPORT) += dfu.o
+obj-$(CONFIG_SPL_DFU_SUPPORT) += cli_hush.o
 obj-$(CONFIG_SPL_HASH_SUPPORT) += hash.o
 obj-$(CONFIG_ENV_IS_IN_FLASH) += env_flash.o
 obj-$(CONFIG_SPL_YMODEM_SUPPORT) += xyzModem.o
@@ -97,10 +101,16 @@ obj-$(CONFIG_SPL_USB_SUPPORT) += usb.o usb_hub.o
 obj-$(CONFIG_USB_STORAGE) += usb_storage.o
 endif
 # environment
-ifdef CONFIG_SPL_ENV_SUPPORT
+ifdef CONFIG_TPL_BUILD
+obj-$(CONFIG_TPL_ENV_SUPPORT) += env_attr.o
+obj-$(CONFIG_TPL_ENV_SUPPORT) += env_flags.o
+obj-$(CONFIG_TPL_ENV_SUPPORT) += env_callback.o
+else
 obj-$(CONFIG_SPL_ENV_SUPPORT) += env_attr.o
 obj-$(CONFIG_SPL_ENV_SUPPORT) += env_flags.o
 obj-$(CONFIG_SPL_ENV_SUPPORT) += env_callback.o
+endif
+ifneq ($(CONFIG_TPL_ENV_SUPPORT)$(CONFIG_SPL_ENV_SUPPORT),)
 obj-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 obj-$(CONFIG_ENV_IS_IN_MMC) += env_mmc.o
 obj-$(CONFIG_ENV_IS_IN_FAT) += env_fat.o
@@ -121,7 +131,11 @@ obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o
 obj-$(CONFIG_HWCONFIG) += hwconfig.o
 obj-$(CONFIG_BOUNCE_BUFFER) += bouncebuf.o
 ifdef CONFIG_SPL_BUILD
+ifdef CONFIG_TPL_BUILD
+obj-$(CONFIG_TPL_SERIAL_SUPPORT) += console.o
+else
 obj-$(CONFIG_SPL_SERIAL_SUPPORT) += console.o
+endif
 else
 obj-y += console.o
 endif
@@ -159,6 +173,7 @@ obj-$(CONFIG_CMDLINE) += cli_simple.o
 
 obj-y += cli.o
 obj-$(CONFIG_CMDLINE) += cli_readline.o
+obj-$(CONFIG_CMD_DFU) += dfu.o
 obj-y += command.o
 obj-y += s_record.o
 obj-y += xyzModem.o

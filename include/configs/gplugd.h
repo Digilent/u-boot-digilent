@@ -1,7 +1,7 @@
 /*
  * (C) Copyright 2011
  * eInfochips Ltd. <www.einfochips.com>
- * Written-by: Ajay Bhargav <ajay.bhargav@einfochips.com>
+ * Written-by: Ajay Bhargav <contact@8051projects.net>
  *
  * Based on Aspenite:
  * (C) Copyright 2010
@@ -24,11 +24,6 @@
 #else
 #define MACH_TYPE_SHEEVAD	2625
 #endif
-
-/*
- * Version number information
- */
-#define CONFIG_IDENT_STRING	"\nMarvell-gplugD"
 
 /*
  * High Level Configuration Options
@@ -77,11 +72,6 @@
 /* GPIO Configuration for PHY */
 #define CONFIG_SYS_GPIO_PHY_RST		104	/* GPIO104 */
 
-/* SPI Support */
-#define CONFIG_ARMADA100_SPI
-#define CONFIG_ENV_SPI_CS		110
-#define CONFIG_SYS_SSP_PORT		2
-
 /* Flash Support */
 
 /*
@@ -100,16 +90,13 @@
 /*
  * Environment variables configurations
  */
-#define CONFIG_ENV_IS_IN_SPI_FLASH
-#define CONFIG_ENV_SECT_SIZE		0x4000
+#define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_SIZE			0x4000
-#define CONFIG_ENV_OFFSET		0x07C000
 
 #ifdef CONFIG_CMD_USB
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_ARMADA100
 #define CONFIG_EHCI_IS_TDI
-#define CONFIG_USB_STORAGE
 #endif /* CONFIG_CMD_USB */
 
 #define CONFIG_DOS_PARTITION

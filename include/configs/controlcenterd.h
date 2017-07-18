@@ -26,10 +26,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#ifdef CONFIG_36BIT
-#define CONFIG_PHYS_64BIT
-#endif
-
 #ifdef CONFIG_SDCARD
 #define CONFIG_RAMBOOT_SDCARD
 #endif
@@ -39,21 +35,11 @@
 #endif
 
 /* High Level Configuration Options */
-#define CONFIG_BOOKE			/* BOOKE */
-#define CONFIG_E500			/* BOOKE e500 family */
-#define CONFIG_P1022
 #define CONFIG_CONTROLCENTERD
 #define CONFIG_MP			/* support multiple processors */
 
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_ENABLE_36BIT_PHYS
-#define CONFIG_FSL_LAW			/* Use common FSL init code */
-
-#ifdef CONFIG_TRAILBLAZER
-#define CONFIG_IDENT_STRING	" controlcenterd trailblazer 0.01"
-#else
-#define CONFIG_IDENT_STRING	" controlcenterd 0.01"
-#endif
 
 #ifdef CONFIG_PHYS_64BIT
 #define CONFIG_ADDR_MAP
@@ -136,8 +122,6 @@
 #define CONFIG_SYS_SDRAM_SIZE 1024
 #define CONFIG_VERY_BIG_RAM
 
-#define CONFIG_SYS_FSL_DDR3
-#define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
 #define CONFIG_CHIP_SELECTS_PER_CTRL	(2 * CONFIG_DIMM_SLOTS_PER_CTLR)
 
@@ -222,7 +206,6 @@
 /*
  * MMC
  */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 
 #define CONFIG_FSL_ESDHC
@@ -235,19 +218,14 @@
  */
 #define CONFIG_FSL_DIU_FB
 #define CONFIG_SYS_DIU_ADDR	(CONFIG_SYS_CCSRBAR + 0x10000)
-#define CONFIG_VIDEO
-#define CONFIG_CFB_CONSOLE
-#define CONFIG_VGA_AS_SINGLE_DEVICE
 #define CONFIG_CMD_BMP
 
 /*
  * General PCI
  * Memory space is mapped 1-1, but I/O space must start from 0.
  */
-#define CONFIG_PCI			/* Enable PCI/PCIE */
 #define CONFIG_PCIE1			/* PCIE controller 1 (slot 1) */
 #define CONFIG_PCI_INDIRECT_BRIDGE
-#define CONFIG_PCI_PNP			/* do pci plug-and-play */
 #define CONFIG_PCI_SCAN_SHOW		/* show pci devices on startup */
 #define CONFIG_SYS_PCI_64BIT		/* enable 64-bit PCI resources */
 #define CONFIG_CMD_PCI
@@ -319,7 +297,6 @@
  * USB
  */
 #define CONFIG_USB_EHCI
-#define CONFIG_USB_STORAGE
 
 #define CONFIG_HAS_FSL_DR_USB
 #define CONFIG_USB_EHCI_FSL
@@ -350,8 +327,6 @@
 #endif
 
 #define CONFIG_SYS_EXTRA_ENV_RELOC
-
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 
 /*
  * Command line configuration.
@@ -447,7 +422,7 @@
 	"consoledev=ttyS1\0"					\
 	"ramdiskaddr=2000000\0"					\
 	"ramdiskfile=rootfs.ext2.gz.uboot\0"			\
-	"fdtaddr=c00000\0"					\
+	"fdtaddr=1e00000\0"					\
 	"fdtfile=controlcenterd.dtb\0"				\
 	"bdev=sda3\0"
 

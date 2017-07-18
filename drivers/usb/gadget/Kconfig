@@ -43,6 +43,11 @@ config USB_GADGET_ATMEL_USBA
 	  USBA is the integrated high-speed USB Device controller on
 	  the AT32AP700x, some AT91SAM9 and AT91CAP9 processors from Atmel.
 
+config USB_GADGET_BCM_UDC_OTG_PHY
+	bool "Broadcom UDC OTG PHY"
+	help
+	  Enable the Broadcom UDC OTG physical device interface.
+
 config USB_GADGET_DWC2_OTG
 	bool "DesignWare USB2.0 HS OTG controller (gadget mode)"
 	select USB_GADGET_DUALSPEED
@@ -106,6 +111,10 @@ config G_DNL_VENDOR_NUM
 
 config G_DNL_PRODUCT_NUM
 	hex "Product ID of USB device"
+
+config USBNET_DEVADDR
+	string "USB Gadget Ethernet device mac address"
+	default "de:ad:be:ef:00:01"
 
 endif # USB_GADGET_DOWNLOAD
 

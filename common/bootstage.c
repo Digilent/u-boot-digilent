@@ -271,13 +271,13 @@ void bootstage_report(void)
 	/* Fake the first record - we could get it from early boot */
 	rec->name = "reset";
 	rec->time_us = 0;
-	prev = print_time_record(BOOTSTAGE_ID_AWAKE, rec, 0);
+	prev = 0;
 
 	/* Sort records by increasing time */
 	qsort(record, ARRAY_SIZE(record), sizeof(*rec), h_compare_record);
 
 	for (id = 0; id < BOOTSTAGE_ID_COUNT; id++, rec++) {
-		if (rec->time_us != 0 && !rec->start_us)
+		if ((rec->time_us != 0 && !rec->start_us) || rec->name)
 			prev = print_time_record(rec->id, rec, prev);
 	}
 	if (next_id > BOOTSTAGE_ID_COUNT)
@@ -294,16 +294,18 @@ void bootstage_report(void)
 
 ulong __timer_get_boot_us(void)
 {
-	static ulong base_time;
+	static ulong base_time = 1;
 
 	/*
 	 * We can't implement this properly. Return 0 on the first call and
 	 * larger values after that.
 	 */
-	if (base_time)
+	if (base_time != 1)
 		return get_timer(base_time) * 1000;
-	base_time = get_timer(0);
-	return 0;
+	else
+		base_time = get_timer(0);
+
+	return base_time;
 }
 
 ulong timer_get_boot_us(void)

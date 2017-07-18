@@ -11,9 +11,10 @@
 
 #ifdef USE_HOSTCC
 #include "mkimage.h"
-#include <image.h>
 #include <time.h>
 #else
+#include <linux/compiler.h>
+#include <linux/kconfig.h>
 #include <common.h>
 #include <errno.h>
 #include <mapmem.h>
@@ -21,6 +22,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 #endif /* !USE_HOSTCC*/
 
+#include <image.h>
 #include <bootstage.h>
 #include <u-boot/crc.h>
 #include <u-boot/md5.h>
@@ -1025,7 +1027,7 @@ int fit_image_verify(const void *fit, int image_noffset)
 	}
 
 	/* Process all hash subnodes of the component image node */
-	fdt_for_each_subnode(fit, noffset, image_noffset) {
+	fdt_for_each_subnode(noffset, fit, image_noffset) {
 		const char *name = fit_get_name(fit, noffset, NULL);
 
 		/*
@@ -1160,11 +1162,18 @@ int fit_image_check_os(const void *fit, int noffset, uint8_t os)
 int fit_image_check_arch(const void *fit, int noffset, uint8_t arch)
 {
 	uint8_t image_arch;
+	int aarch32_support = 0;
+
+#ifdef CONFIG_ARM64_SUPPORT_AARCH32
+	aarch32_support = 1;
+#endif
 
 	if (fit_image_get_arch(fit, noffset, &image_arch))
 		return 0;
 	return (arch == image_arch) ||
-		(arch == IH_ARCH_I386 && image_arch == IH_ARCH_X86_64);
+		(arch == IH_ARCH_I386 && image_arch == IH_ARCH_X86_64) ||
+		(arch == IH_ARCH_ARM64 && image_arch == IH_ARCH_ARM &&
+		 aarch32_support);
 }
 
 /**
@@ -1456,7 +1465,7 @@ int fit_conf_get_prop_node(const void *fit, int noffset,
 void fit_conf_print(const void *fit, int noffset, const char *p)
 {
 	char *desc;
-	char *uname;
+	const char *uname;
 	int ret;
 	int loadables_index;
 
@@ -1468,7 +1477,7 @@ void fit_conf_print(const void *fit, int noffset, const char *p)
 	else
 		printf("%s\n", desc);
 
-	uname = (char *)fdt_getprop(fit, noffset, FIT_KERNEL_PROP, NULL);
+	uname = fdt_getprop(fit, noffset, FIT_KERNEL_PROP, NULL);
 	printf("%s  Kernel:       ", p);
 	if (uname == NULL)
 		printf("unavailable\n");
@@ -1476,26 +1485,23 @@ void fit_conf_print(const void *fit, int noffset, const char *p)
 		printf("%s\n", uname);
 
 	/* Optional properties */
-	uname = (char *)fdt_getprop(fit, noffset, FIT_RAMDISK_PROP, NULL);
+	uname = fdt_getprop(fit, noffset, FIT_RAMDISK_PROP, NULL);
 	if (uname)
 		printf("%s  Init Ramdisk: %s\n", p, uname);
 
-	uname = (char *)fdt_getprop(fit, noffset, FIT_FDT_PROP, NULL);
+	uname = fdt_getprop(fit, noffset, FIT_FDT_PROP, NULL);
 	if (uname)
 		printf("%s  FDT:          %s\n", p, uname);
 
-	uname = (char *)fdt_getprop(fit, noffset, FIT_FPGA_PROP, NULL);
+	uname = fdt_getprop(fit, noffset, FIT_FPGA_PROP, NULL);
 	if (uname)
 		printf("%s  FPGA:         %s\n", p, uname);
 
 	/* Print out all of the specified loadables */
 	for (loadables_index = 0;
-	     fdt_get_string_index(fit, noffset,
-			FIT_LOADABLE_PROP,
-			loadables_index,
-			(const char **)&uname) == 0;
-	     loadables_index++)
-	{
+	     uname = fdt_stringlist_get(fit, noffset, FIT_LOADABLE_PROP,
+					loadables_index, NULL), uname;
+	     loadables_index++) {
 		if (loadables_index == 0) {
 			printf("%s  Loadables:    ", p);
 		} else {
@@ -1536,13 +1542,13 @@ int fit_get_node_from_config(bootm_headers_t *images, const char *prop_name,
 	cfg_noffset = fit_conf_get_node(fit_hdr, images->fit_uname_cfg);
 	if (cfg_noffset < 0) {
 		debug("*  %s: no such config\n", prop_name);
-		return -ENOENT;
+		return -EINVAL;
 	}
 
 	noffset = fit_conf_get_prop_node(fit_hdr, cfg_noffset, prop_name);
 	if (noffset < 0) {
 		debug("*  %s: no '%s' in config\n", prop_name, prop_name);
-		return -ENOLINK;
+		return -ENOENT;
 	}
 
 	return noffset;
@@ -1593,6 +1599,9 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 	int type_ok, os_ok;
 	ulong load, data, len;
 	uint8_t os;
+#ifndef USE_HOSTCC
+	uint8_t os_arch;
+#endif
 	const char *prop_name;
 	int ret;
 
@@ -1676,6 +1685,12 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 		return -ENOEXEC;
 	}
 #endif
+
+#ifndef USE_HOSTCC
+	fit_image_get_arch(fit, noffset, &os_arch);
+	images->os.arch = os_arch;
+#endif
+
 	if (image_type == IH_TYPE_FLATDT &&
 	    !fit_image_check_comp(fit, noffset, IH_COMP_NONE)) {
 		puts("FDT image is compressed");
@@ -1684,12 +1699,14 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 
 	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_CHECK_ALL);
 	type_ok = fit_image_check_type(fit, noffset, image_type) ||
-		(image_type == IH_TYPE_KERNEL &&
-			fit_image_check_type(fit, noffset,
-					     IH_TYPE_KERNEL_NOLOAD));
+		  fit_image_check_type(fit, noffset, IH_TYPE_FIRMWARE) ||
+		  (image_type == IH_TYPE_KERNEL &&
+		   fit_image_check_type(fit, noffset, IH_TYPE_KERNEL_NOLOAD));
 
-	os_ok = image_type == IH_TYPE_FLATDT || IH_TYPE_FPGA ||
+	os_ok = image_type == IH_TYPE_FLATDT ||
+		image_type == IH_TYPE_FPGA ||
 		fit_image_check_os(fit, noffset, IH_OS_LINUX) ||
+		fit_image_check_os(fit, noffset, IH_OS_U_BOOT) ||
 		fit_image_check_os(fit, noffset, IH_OS_OPENRTOS);
 
 	/*
@@ -1715,6 +1732,12 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 		bootstage_error(bootstage_id + BOOTSTAGE_SUB_GET_DATA);
 		return -ENOENT;
 	}
+
+#if !defined(USE_HOSTCC) && defined(CONFIG_FIT_IMAGE_POST_PROCESS)
+	/* perform any post-processing on the image data */
+	board_fit_image_post_process((void **)&buf, &size);
+#endif
+
 	len = (ulong)size;
 
 	/* verify that image data is a proper FDT blob */

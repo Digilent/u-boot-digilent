@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2015 Masahiro Yamada <yamada.masahiro@socionext.com>
+ * Copyright (C) 2015-2016 Socionext Inc.
+ *   Author: Masahiro Yamada <yamada.masahiro@socionext.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -50,6 +51,18 @@ static const unsigned nand_cs1_pins[] = {22, 23};
 static const int nand_cs1_muxvals[] = {0, 0};
 static const unsigned sd_pins[] = {44, 45, 46, 47, 48, 49, 50, 51, 52};
 static const int sd_muxvals[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const unsigned system_bus_pins[] = {16, 17, 18, 19, 20, 165, 166, 167,
+					   168, 169, 170, 171, 172, 173};
+static const int system_bus_muxvals[] = {0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1,
+					 -1, -1, -1};
+static const unsigned system_bus_cs0_pins[] = {155};
+static const int system_bus_cs0_muxvals[] = {1};
+static const unsigned system_bus_cs1_pins[] = {174};
+static const int system_bus_cs1_muxvals[] = {-1};
+static const unsigned system_bus_cs2_pins[] = {64};
+static const int system_bus_cs2_muxvals[] = {1};
+static const unsigned system_bus_cs3_pins[] = {156};
+static const int system_bus_cs3_muxvals[] = {1};
 static const unsigned uart0_pins[] = {85, 88};
 static const int uart0_muxvals[] = {1, 1};
 static const unsigned uart1_pins[] = {155, 156};
@@ -81,6 +94,11 @@ static const struct uniphier_pinctrl_group uniphier_ld4_groups[] = {
 	UNIPHIER_PINCTRL_GROUP(nand),
 	UNIPHIER_PINCTRL_GROUP(nand_cs1),
 	UNIPHIER_PINCTRL_GROUP(sd),
+	UNIPHIER_PINCTRL_GROUP(system_bus),
+	UNIPHIER_PINCTRL_GROUP(system_bus_cs0),
+	UNIPHIER_PINCTRL_GROUP(system_bus_cs1),
+	UNIPHIER_PINCTRL_GROUP(system_bus_cs2),
+	UNIPHIER_PINCTRL_GROUP(system_bus_cs3),
 	UNIPHIER_PINCTRL_GROUP_SPL(uart0),
 	UNIPHIER_PINCTRL_GROUP_SPL(uart1),
 	UNIPHIER_PINCTRL_GROUP_SPL(uart1b),
@@ -102,6 +120,7 @@ static const char * const uniphier_ld4_functions[] = {
 	UNIPHIER_PINMUX_FUNCTION(i2c3),
 	UNIPHIER_PINMUX_FUNCTION(nand),
 	UNIPHIER_PINMUX_FUNCTION(sd),
+	UNIPHIER_PINMUX_FUNCTION(system_bus),
 	UNIPHIER_PINMUX_FUNCTION_SPL(uart0),
 	UNIPHIER_PINMUX_FUNCTION_SPL(uart1),
 	UNIPHIER_PINMUX_FUNCTION_SPL(uart2),
@@ -135,7 +154,6 @@ U_BOOT_DRIVER(uniphier_ld4_pinctrl) = {
 	.id = UCLASS_PINCTRL,
 	.of_match = of_match_ptr(uniphier_ld4_pinctrl_match),
 	.probe = uniphier_ld4_pinctrl_probe,
-	.remove = uniphier_pinctrl_remove,
 	.priv_auto_alloc_size = sizeof(struct uniphier_pinctrl_priv),
 	.ops = &uniphier_pinctrl_ops,
 };

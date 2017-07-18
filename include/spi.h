@@ -27,15 +27,35 @@
 #define SPI_TX_DUAL	BIT(9)			/* transmit with 2 wires */
 #define SPI_TX_QUAD	BIT(10)			/* transmit with 4 wires */
 
+#define SPI_3BYTE_MODE	0x0
+#define SPI_4BYTE_MODE	0x1
+
+/* SPI transfer flags */
+#define SPI_XFER_STRIPE	(1 << 6)
+#define SPI_XFER_MASK	(3 << 8)
+#define SPI_XFER_LOWER	(1 << 8)
+#define SPI_XFER_UPPER	(2 << 8)
+
+/* SPI TX operation modes */
+#define SPI_OPM_TX_QPP		(1 << 0)
+#define SPI_OPM_TX_BP		(1 << 1)
+
+/* SPI RX operation modes */
+#define SPI_OPM_RX_AS		(1 << 0)
+#define SPI_OPM_RX_AF		(1 << 1)
+#define SPI_OPM_RX_DOUT		(1 << 2)
+#define SPI_OPM_RX_DIO		(1 << 3)
+#define SPI_OPM_RX_QOF		(1 << 4)
+#define SPI_OPM_RX_QIOF		(1 << 5)
+#define SPI_OPM_RX_EXTN	(SPI_OPM_RX_AS | SPI_OPM_RX_AF | SPI_OPM_RX_DOUT | \
+				SPI_OPM_RX_DIO | SPI_OPM_RX_QOF | \
+				SPI_OPM_RX_QIOF)
+
 /* SPI mode_rx flags */
 #define SPI_RX_SLOW	BIT(0)			/* receive with 1 wire slow */
 #define SPI_RX_FAST	BIT(1)			/* receive with 1 wire fast */
 #define SPI_RX_DUAL	BIT(2)			/* receive with 2 wires */
 #define SPI_RX_QUAD	BIT(3)			/* receive with 4 wires */
-
-/* SPI bus connection options - see enum spi_dual_flash */
-#define SPI_CONN_DUAL_SHARED		(1 << 0)
-#define SPI_CONN_DUAL_SEPARATED	(1 << 1)
 
 /* Header byte that marks the start of the message */
 #define SPI_PREAMBLE_END_BYTE	0xec
@@ -61,13 +81,11 @@ struct dm_spi_bus {
  * @cs:		Chip select number (0..n-1)
  * @max_hz:	Maximum bus speed that this slave can tolerate
  * @mode:	SPI mode to use for this device (see SPI mode flags)
- * @mode_rx:	SPI RX mode to use for this slave (see SPI mode_rx flags)
  */
 struct dm_spi_slave_platdata {
 	unsigned int cs;
 	uint max_hz;
 	uint mode;
-	u8 mode_rx;
 };
 
 #endif /* CONFIG_DM_SPI */
@@ -94,12 +112,10 @@ struct dm_spi_slave_platdata {
  *			bus (bus->seq) so does not need to be stored
  * @cs:			ID of the chip select connected to the slave.
  * @mode:		SPI mode to use for this slave (see SPI mode flags)
- * @mode_rx:		SPI RX mode to use for this slave (see SPI mode_rx flags)
  * @wordlen:		Size of SPI word in number of bits
  * @max_write_size:	If non-zero, the maximum number of bytes which can
  *			be written at once, excluding command bytes.
  * @memory_map:		Address of read-only SPI flash access.
- * @option:		Varies SPI bus options - separate, shared bus.
  * @flags:		Indication of SPI flags.
  */
 struct spi_slave {
@@ -112,13 +128,13 @@ struct spi_slave {
 	unsigned int cs;
 #endif
 	uint mode;
-	u8 mode_rx;
 	unsigned int wordlen;
 	unsigned int max_write_size;
 	void *memory_map;
 	u8 option;
-
-	u8 flags;
+	u8 dio;
+	u32 bytemode;
+	u32 flags;
 #define SPI_XFER_BEGIN		BIT(0)	/* Assert CS before transfer */
 #define SPI_XFER_END		BIT(1)	/* Deassert CS after transfer */
 #define SPI_XFER_ONCE		(SPI_XFER_BEGIN | SPI_XFER_END)

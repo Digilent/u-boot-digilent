@@ -40,12 +40,6 @@
 
 #include <configs/ti_omap3_common.h>
 
-/*
- * Display CPU and Board information
- */
-#define CONFIG_DISPLAY_CPUINFO		1
-#define CONFIG_DISPLAY_BOARDINFO	1
-
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_REVISION_TAG		1
@@ -191,8 +185,6 @@
 #define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
 
 #define CONFIG_OMAP3_SPI
-
-#define CONFIG_SYS_CACHELINE_SIZE	64
 
 /* Defines for SPL */
 #define CONFIG_SPL_OMAP3_ID_NAND

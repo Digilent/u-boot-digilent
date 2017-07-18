@@ -114,13 +114,6 @@
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	2
 
 /* SPL */
-#define CONFIG_SPL_POWER_SUPPORT
-#define CONFIG_SPL_YMODEM_SUPPORT
-
-/* General network SPL */
-#define CONFIG_SPL_NET_SUPPORT
-#define CONFIG_SPL_ENV_SUPPORT
-#define CONFIG_SPL_NET_VCI_STRING	"AM335x U-Boot SPL"
 
 /* NAND support */
 #define CONFIG_CMD_NAND
@@ -163,7 +156,6 @@
 
 #define CONFIG_CMD_MTDPARTS
 
-#define CONFIG_VERSION_VARIABLE /* monitor functions :  u-boot version */
 #define CONFIG_CMD_DIAG /* monitor functions : Diagnostics */
 
 #define MTDIDS_DEFAULT			"nand0=omap2-nand.0"
@@ -199,14 +191,9 @@
 #define CONFIG_AM335X_USB1
 #define CONFIG_AM335X_USB1_MODE MUSB_HOST
 
-#if defined(CONFIG_USB_MUSB_HOST)
-#define CONFIG_USB_STORAGE
-#endif
-
 #if defined(CONFIG_SPL_BUILD)
 /* disable host part of MUSB in SPL */
 /* Disable CPSW SPL support so we fit within the 101KiB limit. */
-#undef CONFIG_SPL_ETH_SUPPORT
 #endif
 
 /* CPSW ethernet */
@@ -219,8 +206,7 @@
 #define CONFIG_PHY_REALTEK
 
 /* CPSW support */
-#define CONFIG_SPL_ETH_SUPPORT
 
-#define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/am33xx/u-boot-spl.lds"
+#define CONFIG_SPL_LDSCRIPT		"arch/arm/mach-omap2/am33xx/u-boot-spl.lds"
 
 #endif	/* ! __CONFIG_PENGWYN_H */

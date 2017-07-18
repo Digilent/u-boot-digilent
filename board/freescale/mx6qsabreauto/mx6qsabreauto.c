@@ -12,7 +12,7 @@
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/iomux.h>
 #include <asm/arch/mx6-pins.h>
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <asm/gpio.h>
 #include <asm/imx-common/iomux-v3.h>
 #include <asm/imx-common/mxc_i2c.h>
@@ -64,7 +64,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int dram_init(void)
 {
-	gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
+	gd->ram_size = imx_ddr_size();
 
 	return 0;
 }
@@ -229,6 +229,33 @@ static void eimnor_cs_setup(void)
 	writel(0x00000120, &weim_regs->wcr);
 
 	set_chipselect_size(CS0_128);
+}
+
+static void eim_clk_setup(void)
+{
+	struct mxc_ccm_reg *imx_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+	int cscmr1, ccgr6;
+
+
+	/* Turn off EIM clock */
+	ccgr6 = readl(&imx_ccm->CCGR6);
+	ccgr6 &= ~(0x3 << 10);
+	writel(ccgr6, &imx_ccm->CCGR6);
+
+	/*
+	 * Configure clk_eim_slow_sel = 00 --> derive clock from AXI clk root
+	 * and aclk_eim_slow_podf = 01 --> divide by 2
+	 * so that we can have EIM at the maximum clock of 132MHz
+	 */
+	cscmr1 = readl(&imx_ccm->cscmr1);
+	cscmr1 &= ~(MXC_CCM_CSCMR1_ACLK_EMI_SLOW_MASK |
+		    MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK);
+	cscmr1 |= (1 << MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_OFFSET);
+	writel(cscmr1, &imx_ccm->cscmr1);
+
+	/* Turn on EIM clock */
+	ccgr6 |= (0x3 << 10);
+	writel(ccgr6, &imx_ccm->CCGR6);
 }
 
 static void setup_iomux_eimnor(void)
@@ -519,6 +546,7 @@ int board_early_init_f(void)
 #ifdef CONFIG_NAND_MXS
 	setup_gpmi_nand();
 #endif
+	eim_clk_setup();
 
 	return 0;
 }

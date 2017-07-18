@@ -12,14 +12,12 @@
 /*
  * BOARD/CPU
  */
-#define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO_LATE
 
 /*
  * SERIAL
  */
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_CONSOLE_INFO_QUIET	/* Suppress console info */
 
 /*
  * CFI Flash
@@ -99,7 +97,6 @@
 					 CONFIG_ENV_SIZE - \
 					 CONFIG_SYS_MALLOC_LEN -	\
 					 0x10000)
-#define CONFIG_VERSION_VARIABLE
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_CMDLINE_EDITING
 

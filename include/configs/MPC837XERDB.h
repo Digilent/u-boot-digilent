@@ -15,11 +15,8 @@
 #define CONFIG_E300		1 /* E300 family */
 #define CONFIG_MPC837x		1 /* MPC837x CPU specific */
 #define CONFIG_MPC837XERDB	1
-#define CONFIG_DISPLAY_BOARDINFO
 
 #define	CONFIG_SYS_TEXT_BASE	0xFE000000
-
-#define CONFIG_PCI	1
 
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_MISC_INIT_R
@@ -225,7 +222,7 @@
 #undef	CONFIG_SYS_RAMBOOT
 #endif
 
-#define CONFIG_SYS_MONITOR_LEN	(384 * 1024) /* Reserve 384 kB for Mon */
+#define CONFIG_SYS_MONITOR_LEN	(512 * 1024) /* Reserve 512 kB for Mon */
 #define CONFIG_SYS_MALLOC_LEN	(512 * 1024) /* Reserved for malloc */
 
 /*
@@ -398,7 +395,6 @@
 
 #ifdef CONFIG_PCI
 #define CONFIG_PCI_INDIRECT_BRIDGE
-#define CONFIG_PCI_PNP		/* do pci plug-and-play */
 
 #undef CONFIG_PCI_SCAN_SHOW	/* show pci devices on startup */
 #define CONFIG_SYS_PCI_SUBSYS_VENDORID 0x1957	/* Freescale */
@@ -499,8 +495,6 @@
 
 #undef CONFIG_WATCHDOG		/* watchdog disabled */
 
-#define CONFIG_MMC     1
-
 #ifdef CONFIG_MMC
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_ESDHC_PIN_MUX
@@ -533,6 +527,7 @@
  * the maximum mapped by the Linux kernel during initialization.
  */
 #define CONFIG_SYS_BOOTMAPSZ	(256 << 20) /* Initial Memory map for Linux */
+#define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* Increase max gunzip size */
 
 /*
  * Core HID Setup
@@ -662,7 +657,6 @@
 #define CONFIG_ENV_OVERWRITE
 
 #define CONFIG_HAS_FSL_DR_USB
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_FSL
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET

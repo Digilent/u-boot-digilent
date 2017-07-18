@@ -85,8 +85,15 @@ static int fit_calc_size(struct image_tool_params *params)
 	size = imagetool_get_filesize(params, params->datafile);
 	if (size < 0)
 		return -1;
-
 	total_size = size;
+
+	if (params->fit_ramdisk) {
+		size = imagetool_get_filesize(params, params->fit_ramdisk);
+		if (size < 0)
+			return -1;
+		total_size += size;
+	}
+
 	for (cont = params->content_head; cont; cont = cont->next) {
 		size = imagetool_get_filesize(params, cont->fname);
 		if (size < 0)
@@ -195,7 +202,8 @@ static int fit_write_images(struct image_tool_params *params, char *fdt)
 	fdt_begin_node(fdt, str);
 	fdt_property_string(fdt, "description", params->imagename);
 	fdt_property_string(fdt, "type", typename);
-	fdt_property_string(fdt, "arch", genimg_get_arch_name(params->arch));
+	fdt_property_string(fdt, "arch",
+			    genimg_get_arch_short_name(params->arch));
 	fdt_property_string(fdt, "os", genimg_get_os_short_name(params->os));
 	fdt_property_string(fdt, "compression",
 			    genimg_get_comp_short_name(params->comp));
@@ -229,6 +237,20 @@ static int fit_write_images(struct image_tool_params *params, char *fdt)
 				    genimg_get_arch_short_name(params->arch));
 		fdt_property_string(fdt, "compression",
 				    genimg_get_comp_short_name(IH_COMP_NONE));
+		fdt_end_node(fdt);
+	}
+
+	/* And a ramdisk file if available */
+	if (params->fit_ramdisk) {
+		fdt_begin_node(fdt, FIT_RAMDISK_PROP "@1");
+
+		fdt_property_string(fdt, "type", FIT_RAMDISK_PROP);
+		fdt_property_string(fdt, "os", genimg_get_os_short_name(params->os));
+
+		ret = fdt_property_file(params, fdt, "data", params->fit_ramdisk);
+		if (ret)
+			return ret;
+
 		fdt_end_node(fdt);
 	}
 
@@ -271,15 +293,25 @@ static void fit_write_configs(struct image_tool_params *params, char *fdt)
 		snprintf(str, sizeof(str), "%s@1", typename);
 		fdt_property_string(fdt, typename, str);
 
+		if (params->fit_ramdisk)
+			fdt_property_string(fdt, FIT_RAMDISK_PROP,
+					    FIT_RAMDISK_PROP "@1");
+
 		snprintf(str, sizeof(str), FIT_FDT_PROP "@%d", upto);
 		fdt_property_string(fdt, FIT_FDT_PROP, str);
 		fdt_end_node(fdt);
 	}
+
 	if (!upto) {
 		fdt_begin_node(fdt, "conf@1");
 		typename = genimg_get_type_short_name(params->fit_image_type);
 		snprintf(str, sizeof(str), "%s@1", typename);
 		fdt_property_string(fdt, typename, str);
+
+		if (params->fit_ramdisk)
+			fdt_property_string(fdt, FIT_RAMDISK_PROP,
+					    FIT_RAMDISK_PROP "@1");
+
 		fdt_end_node(fdt);
 	}
 
@@ -650,8 +682,8 @@ static int fit_handle_file(struct image_tool_params *params)
 	}
 
 	if (ret) {
-		fprintf(stderr, "%s Can't add hashes to FIT blob\n",
-			params->cmdname);
+		fprintf(stderr, "%s Can't add hashes to FIT blob: %d\n",
+			params->cmdname, ret);
 		goto err_system;
 	}
 

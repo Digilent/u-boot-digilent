@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <efi_loader.h>
 #include <libfdt.h>
 #include <fdt_support.h>
 #include <phy.h>
@@ -22,6 +23,9 @@
 #endif
 #include <fsl_sec.h>
 #include <asm/arch-fsl-layerscape/soc.h>
+#ifdef CONFIG_ARMV8_SEC_FIRMWARE_SUPPORT
+#include <asm/armv8/sec_firmware.h>
+#endif
 
 int fdt_fixup_phy_connection(void *blob, int offset, phy_interface_t phyc)
 {
@@ -38,7 +42,38 @@ void ft_fixup_cpu(void *blob)
 	int addr_cells;
 	u64 val, core_id;
 	size_t *boot_code_size = &(__secondary_boot_code_size);
+#if defined(CONFIG_ARMV8_SEC_FIRMWARE_SUPPORT) && \
+	defined(CONFIG_FSL_PPA_ARMV8_PSCI)
+	int node;
+	u32 psci_ver;
 
+	/* Check the psci version to determine if the psci is supported */
+	psci_ver = sec_firmware_support_psci_version();
+	if (psci_ver == 0xffffffff) {
+		/* remove psci DT node */
+		node = fdt_path_offset(blob, "/psci");
+		if (node >= 0)
+			goto remove_psci_node;
+
+		node = fdt_node_offset_by_compatible(blob, -1, "arm,psci");
+		if (node >= 0)
+			goto remove_psci_node;
+
+		node = fdt_node_offset_by_compatible(blob, -1, "arm,psci-0.2");
+		if (node >= 0)
+			goto remove_psci_node;
+
+		node = fdt_node_offset_by_compatible(blob, -1, "arm,psci-1.0");
+		if (node >= 0)
+			goto remove_psci_node;
+
+remove_psci_node:
+		if (node >= 0)
+			fdt_del_node(blob, node);
+	} else {
+		return;
+	}
+#endif
 	off = fdt_path_offset(blob, "/cpus");
 	if (off < 0) {
 		puts("couldn't find /cpus node\n");
@@ -72,8 +107,31 @@ void ft_fixup_cpu(void *blob)
 
 	fdt_add_mem_rsv(blob, (uintptr_t)&secondary_boot_code,
 			*boot_code_size);
+#if defined(CONFIG_EFI_LOADER) && !defined(CONFIG_SPL_BUILD)
+	efi_add_memory_map((uintptr_t)&secondary_boot_code,
+			   ALIGN(*boot_code_size, EFI_PAGE_SIZE) >> EFI_PAGE_SHIFT,
+			   EFI_RESERVED_MEMORY_TYPE, false);
+#endif
 }
 #endif
+
+void fsl_fdt_disable_usb(void *blob)
+{
+	int off;
+	/*
+	 * SYSCLK is used as a reference clock for USB. When the USB
+	 * controller is used, SYSCLK must meet the additional requirement
+	 * of 100 MHz.
+	 */
+	if (CONFIG_SYS_CLK_FREQ != 100000000) {
+		off = fdt_node_offset_by_compatible(blob, -1, "snps,dwc3");
+		while (off != -FDT_ERR_NOTFOUND) {
+			fdt_status_disabled(blob, off);
+			off = fdt_node_offset_by_compatible(blob, off,
+							    "snps,dwc3");
+		}
+	}
+}
 
 void ft_cpu_setup(void *blob, bd_t *bd)
 {
@@ -117,4 +175,6 @@ void ft_cpu_setup(void *blob, bd_t *bd)
 #ifdef CONFIG_SYS_DPAA_FMAN
 	fdt_fixup_fman_firmware(blob);
 #endif
+	fsl_fdt_disable_usb(blob);
+
 }

@@ -17,13 +17,8 @@
 #include <linux/sizes.h>
 
 #define CONFIG_ARCH_CPU_INIT
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_BOARD_EARLY_INIT_F
-
-#define CONFIG_USE_ARCH_MEMCPY
-#define CONFIG_USE_ARCH_MEMSET
 
 /* Keep L2 Cache Disabled */
 
@@ -44,9 +39,6 @@
 
 /* SD/MMC configuration */
 #define CONFIG_GENERIC_MMC
-#define CONFIG_MMC
-#define CONFIG_S5P_SDHCI
-#define CONFIG_SDHCI
 #define CONFIG_DWMMC
 #define CONFIG_EXYNOS_DWMMC
 #define CONFIG_BOUNCE_BUFFER

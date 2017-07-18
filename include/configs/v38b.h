@@ -14,7 +14,6 @@
  */
 #define CONFIG_MPC5200			1	/* This is an MPC5200 CPU */
 #define CONFIG_V38B			1	/* ...on V38B board */
-#define CONFIG_DISPLAY_BOARDINFO
 
 #define	CONFIG_SYS_TEXT_BASE		0xFF000000
 
@@ -55,9 +54,8 @@
 #define SDRAM_TAPDELAY		0x10000000
 
 /*
- * PCI - no suport
+ * PCI - no support
  */
-#undef CONFIG_PCI
 
 /*
  * Partitions
@@ -69,7 +67,6 @@
  * USB
  */
 #define CONFIG_USB_OHCI
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_CLOCK	0x0001BBBB
 #define CONFIG_USB_CONFIG	0x00001000
 

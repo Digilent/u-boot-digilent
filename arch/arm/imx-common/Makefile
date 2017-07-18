@@ -34,9 +34,28 @@ endif
 ifeq ($(SOC),$(filter $(SOC),vf610))
 obj-y += ddrmc-vf610.o
 endif
+ifneq ($(CONFIG_SPL_BUILD),y)
 obj-$(CONFIG_CMD_BMODE) += cmd_bmode.o
 obj-$(CONFIG_CMD_HDMIDETECT) += cmd_hdmidet.o
 obj-$(CONFIG_CMD_DEKBLOB) += cmd_dek.o
+endif
+
+PLUGIN = board/$(BOARDDIR)/plugin
+
+ifeq ($(CONFIG_USE_IMXIMG_PLUGIN),y)
+
+$(PLUGIN).o: $(PLUGIN).S FORCE
+	$(Q)mkdir -p $(dir $@)
+	$(call if_changed_dep,as_o_S)
+
+$(PLUGIN).bin: $(PLUGIN).o FORCE
+	$(Q)mkdir -p $(dir $@)
+	$(OBJCOPY) -O binary --gap-fill 0xff $< $@
+else
+
+$(PLUGIN).bin:
+
+endif
 
 quiet_cmd_cpp_cfg = CFGS    $@
       cmd_cpp_cfg = $(CPP) $(cpp_flags) -x c -o $@ $<
@@ -47,24 +66,28 @@ $(IMX_CONFIG): %.cfgtmp: % FORCE
 	$(Q)mkdir -p $(dir $@)
 	$(call if_changed_dep,cpp_cfg)
 
-MKIMAGEFLAGS_u-boot.imx = -n $(filter-out $< $(PHONY),$^) -T imximage \
+MKIMAGEFLAGS_u-boot.imx = -n $(filter-out $(PLUGIN).bin $< $(PHONY),$^) -T imximage \
 	-e $(CONFIG_SYS_TEXT_BASE)
+u-boot.imx: MKIMAGEOUTPUT = u-boot.imx.log
 
-u-boot.imx: u-boot.bin $(IMX_CONFIG) FORCE
+u-boot.imx: u-boot.bin $(IMX_CONFIG) $(PLUGIN).bin FORCE
 	$(call if_changed,mkimage)
 
 ifeq ($(CONFIG_OF_SEPARATE),y)
-MKIMAGEFLAGS_u-boot-dtb.imx = -n $(filter-out $< $(PHONY),$^) -T imximage \
+MKIMAGEFLAGS_u-boot-dtb.imx = -n $(filter-out $(PLUGIN).bin $< $(PHONY),$^) -T imximage \
 	-e $(CONFIG_SYS_TEXT_BASE)
+u-boot-dtb.imx: MKIMAGEOUTPUT = u-boot-dtb.imx.log
 
-u-boot-dtb.imx: u-boot-dtb.bin $(IMX_CONFIG) FORCE
+u-boot-dtb.imx: u-boot-dtb.bin $(IMX_CONFIG) $(PLUGIN).bin FORCE
 	$(call if_changed,mkimage)
 endif
 
-MKIMAGEFLAGS_SPL = -n $(filter-out $< $(PHONY),$^) -T imximage \
+MKIMAGEFLAGS_SPL = -n $(filter-out $(PLUGIN).bin $< $(PHONY),$^) -T imximage \
 	-e $(CONFIG_SPL_TEXT_BASE)
 
-SPL: spl/u-boot-spl.bin $(IMX_CONFIG) FORCE
+SPL: MKIMAGEOUTPUT = SPL.log
+
+SPL: spl/u-boot-spl.bin $(IMX_CONFIG) $(PLUGIN).bin FORCE
 	$(call if_changed,mkimage)
 
 MKIMAGEFLAGS_u-boot.uim = -A arm -O U-Boot -a $(CONFIG_SYS_TEXT_BASE) \

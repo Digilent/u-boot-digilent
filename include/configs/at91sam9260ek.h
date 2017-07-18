@@ -43,7 +43,6 @@
 #define CONFIG_INITRD_TAG
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_BOARD_EARLY_INIT_F
-#define CONFIG_DISPLAY_CPUINFO
 
 /* general purpose I/O */
 #define CONFIG_ATMEL_LEGACY		/* required until (g)pio is fixed */
@@ -147,7 +146,6 @@
 
 /* MMC */
 #ifdef CONFIG_CMD_MMC
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_GENERIC_ATMEL_MCI
 #endif
@@ -175,7 +173,6 @@
 #define CONFIG_SYS_USB_OHCI_REGS_BASE		0x00500000	/* AT91SAM9260_UHP_BASE */
 #define CONFIG_SYS_USB_OHCI_SLOT_NAME		"at91sam9260"
 #define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
-#define CONFIG_USB_STORAGE		1
 
 #define CONFIG_SYS_LOAD_ADDR			0x22000000	/* load address */
 

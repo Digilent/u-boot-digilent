@@ -13,6 +13,8 @@
 #include <dm.h>	/* Because we dereference struct udevice here */
 #include <linux/types.h>
 
+#define SF_DUALIO_FLASH	1
+
 #ifndef CONFIG_SF_DEFAULT_SPEED
 # define CONFIG_SF_DEFAULT_SPEED	1000000
 #endif
@@ -78,6 +80,7 @@ struct spi_flash {
 	u8 bank_read_cmd;
 	u8 bank_write_cmd;
 	u8 bank_curr;
+	u8 upage_prev;
 #endif
 	u8 erase_cmd;
 	u8 read_cmd;
@@ -238,8 +241,5 @@ static inline int spi_flash_protect(struct spi_flash *flash, u32 ofs, u32 len,
 	else
 		return flash->flash_unlock(flash, ofs, len);
 }
-
-void spi_boot(void) __noreturn;
-void spi_spl_load_image(uint32_t offs, unsigned int size, void *vdst);
 
 #endif /* _SPI_FLASH_H_ */

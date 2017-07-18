@@ -21,8 +21,6 @@
 /* ns16550 UART is memory-mapped in Quark SoC */
 #undef  CONFIG_SYS_NS16550_PORT_MAPPED
 
-#define CONFIG_PCI_PNP
-
 #define CONFIG_STD_DEVICES_SETTINGS	"stdin=serial\0" \
 					"stdout=serial\0" \
 					"stderr=serial\0"
@@ -31,15 +29,8 @@
 #undef CONFIG_SCSI_AHCI
 #undef CONFIG_SCSI
 
-/* Video is not supported in Quark SoC */
-#undef CONFIG_VIDEO
-#undef CONFIG_CFB_CONSOLE
-
 /* SD/MMC support */
-#define CONFIG_MMC
-#define CONFIG_SDHCI
 #define CONFIG_GENERIC_MMC
-#define CONFIG_MMC_SDMA
 
 /* 10/100M Ethernet support */
 #define CONFIG_DESIGNWARE_ETH

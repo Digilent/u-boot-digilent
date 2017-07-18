@@ -43,8 +43,6 @@
 
 #define CONFIG_BOARD_EARLY_INIT_F
 
-#define CONFIG_DISPLAY_CPUINFO
-
 /*
  * Hardware drivers
  */
@@ -59,7 +57,6 @@
 #define CONFIG_BAUDRATE			115200
 
 /* LCD */
-#define CONFIG_LCD			1
 #define LCD_BPP				LCD_COLOR8
 #define CONFIG_LCD_LOGO			1
 #undef LCD_TEST_PATTERN
@@ -68,7 +65,6 @@
 #define CONFIG_SYS_WHITE_ON_BLACK	1
 #define CONFIG_ATMEL_LCD		1
 #define CONFIG_ATMEL_LCD_BGR555		1
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
 /* LED */
 #define CONFIG_AT91_LED
@@ -109,7 +105,6 @@
 
 /* MMC */
 #ifdef CONFIG_CMD_MMC
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_GENERIC_ATMEL_MCI
 #endif
@@ -277,7 +272,6 @@
 #define CONFIG_SYS_USB_OHCI_REGS_BASE		0x00a00000	/* AT91SAM9263_UHP_BASE */
 #define CONFIG_SYS_USB_OHCI_SLOT_NAME		"at91sam9263"
 #define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
-#define CONFIG_USB_STORAGE		1
 
 #define CONFIG_SYS_LOAD_ADDR			0x22000000	/* load address */
 

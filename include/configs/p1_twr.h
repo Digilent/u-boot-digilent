@@ -10,10 +10,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define	CONFIG_DISPLAY_BOARDINFO
 #if defined(CONFIG_TWR_P1025)
 #define CONFIG_BOARDNAME "TWR-P1025"
-#define CONFIG_P1025
 #define CONFIG_PHY_ATHEROS
 #define CONFIG_QE
 #define CONFIG_SYS_LBC_LBCR	0x00080000	/* Conversion of LBC addr */
@@ -40,14 +38,9 @@
 #define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE	/* start of monitor */
 #endif
 
-/* High Level Configuration Options */
-#define CONFIG_BOOKE
-#define CONFIG_E500
-
 #define CONFIG_MP
 
 #define CONFIG_FSL_ELBC
-#define CONFIG_PCI
 #define CONFIG_PCIE1	/* PCIE controller 1 (slot 1) */
 #define CONFIG_PCIE2	/* PCIE controller 2 (slot 2) */
 #define CONFIG_FSL_PCI_INIT	/* Use common FSL init code */
@@ -55,7 +48,6 @@
 #define CONFIG_FSL_PCIE_RESET	/* need PCIe reset errata */
 #define CONFIG_SYS_PCI_64BIT	/* enable 64-bit PCI resources */
 
-#define CONFIG_FSL_LAW
 #define CONFIG_TSEC_ENET	/* tsec ethernet support */
 #define CONFIG_ENV_OVERWRITE
 
@@ -89,7 +81,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_CCSRBAR_PHYS_LOW	CONFIG_SYS_CCSRBAR
 
 /* DDR Setup */
-#define CONFIG_SYS_FSL_DDR3
 
 #define CONFIG_SYS_SDRAM_SIZE_LAW	LAW_SIZE_512M
 #define CONFIG_CHIP_SELECTS_PER_CTRL	1
@@ -98,7 +89,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_DDR_SDRAM_BASE	0x00000000
 #define CONFIG_SYS_SDRAM_BASE		CONFIG_SYS_DDR_SDRAM_BASE
 
-#define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
 
 /* Default settings for DDR3 */
@@ -281,7 +271,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_PCIE1_IO_PHYS	0xffc00000
 #define CONFIG_SYS_PCIE1_IO_SIZE	0x00010000	/* 64k */
 
-#define CONFIG_PCI_PNP	/* do pci plug-and-play */
 #define CONFIG_CMD_PCI
 
 #define CONFIG_PCI_SCAN_SHOW	/* show pci devices on startup */
@@ -414,11 +403,8 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #ifdef CONFIG_USB_EHCI
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_EHCI_FSL
-#define CONFIG_USB_STORAGE
 #endif
 #endif
-
-#define CONFIG_MMC
 
 #ifdef CONFIG_MMC
 #define CONFIG_FSL_ESDHC
@@ -513,7 +499,7 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 "consoledev=ttyS0\0"	\
 "ramdiskaddr=2000000\0"	\
 "ramdiskfile=rootfs.ext2.gz.uboot\0"	\
-"fdtaddr=c00000\0"	\
+"fdtaddr=1e00000\0"	\
 "bdev=sda1\0"	\
 "norbootaddr=ef080000\0"	\
 "norfdtaddr=ef040000\0"	\

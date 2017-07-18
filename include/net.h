@@ -238,7 +238,7 @@ int eth_getenv_enetaddr(const char *name, uchar *enetaddr);
 int eth_setenv_enetaddr(const char *name, const uchar *enetaddr);
 
 /**
- * eth_setenv_enetaddr_by_index() - set the MAC address envrionment variable
+ * eth_setenv_enetaddr_by_index() - set the MAC address environment variable
  *
  * This sets up an environment variable with the given MAC address (@enetaddr).
  * The environment variable to be set is defined by <@base_name><@index>addr.
@@ -253,6 +253,13 @@ int eth_setenv_enetaddr(const char *name, const uchar *enetaddr);
 int eth_setenv_enetaddr_by_index(const char *base_name, int index,
 				 uchar *enetaddr);
 
+
+/*
+ * Initialize USB ethernet device with CONFIG_DM_ETH
+ * Returns:
+ *	0 is success, non-zero is error status.
+ */
+int usb_ether_init(void);
 
 /*
  * Get the hardware address for an ethernet interface .

@@ -13,24 +13,15 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_DISPLAY_BOARDINFO
-
 /* High Level Configuration Options */
-#define CONFIG_BOOKE		1	/* BOOKE */
-#define CONFIG_E500		1	/* BOOKE e500 family */
 #define CONFIG_CPM2		1	/* has CPM2 */
-#define CONFIG_MPC8541		1	/* MPC8541 specific */
-#define CONFIG_MPC8541CDS	1	/* MPC8541CDS board specific */
 
 #define	CONFIG_SYS_TEXT_BASE	0xfff80000
 
-#define CONFIG_PCI
 #define CONFIG_PCI_INDIRECT_BRIDGE
 #define CONFIG_SYS_PCI_64BIT	1	/* enable 64-bit PCI resources */
 #define CONFIG_TSEC_ENET		/* tsec ethernet support */
 #define CONFIG_ENV_OVERWRITE
-
-#define CONFIG_FSL_LAW		1	/* Use common FSL init code */
 
 #define CONFIG_FSL_VIA
 
@@ -52,7 +43,6 @@ extern unsigned long get_clock_freq(void);
 #define CONFIG_SYS_CCSRBAR_PHYS_LOW	CONFIG_SYS_CCSRBAR
 
 /* DDR Setup */
-#define CONFIG_SYS_FSL_DDR1
 #define CONFIG_SPD_EEPROM		/* Use SPD EEPROM for DDR setup*/
 #define CONFIG_DDR_SPD
 #undef CONFIG_FSL_DDR_INTERACTIVE
@@ -62,7 +52,6 @@ extern unsigned long get_clock_freq(void);
 #define CONFIG_SYS_DDR_SDRAM_BASE	0x00000000	/* DDR is system memory*/
 #define CONFIG_SYS_SDRAM_BASE		CONFIG_SYS_DDR_SDRAM_BASE
 
-#define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
 #define CONFIG_CHIP_SELECTS_PER_CTRL	(2 * CONFIG_DIMM_SLOTS_PER_CTLR)
 
@@ -303,7 +292,6 @@ extern unsigned long get_clock_freq(void);
 #if defined(CONFIG_PCI)
 
 #define CONFIG_MPC85XX_PCI2
-#define CONFIG_PCI_PNP			/* do pci plug-and-play */
 
 #undef CONFIG_EEPRO100
 #undef CONFIG_TULIP

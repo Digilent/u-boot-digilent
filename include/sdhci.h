@@ -64,6 +64,8 @@
 #define  SDHCI_CARD_STATE_STABLE	0x00020000
 #define  SDHCI_CARD_DETECT_PIN_LEVEL	0x00040000
 #define  SDHCI_WRITE_PROTECT	0x00080000
+#define  SDHCI_DATA_BUSY	0xF00000
+#define  SDHCI_CMD_BUSY		0x1000000
 
 #define SDHCI_HOST_CONTROL	0x28
 #define  SDHCI_CTRL_LED		0x01
@@ -97,6 +99,7 @@
 #define  SDHCI_DIV_MASK	0xFF
 #define  SDHCI_DIV_MASK_LEN	8
 #define  SDHCI_DIV_HI_MASK	0x300
+#define  SDHCI_PROG_CLOCK_MODE  0x0020
 #define  SDHCI_CLOCK_CARD_EN	0x0004
 #define  SDHCI_CLOCK_INT_STABLE	0x0002
 #define  SDHCI_CLOCK_INT_EN	0x0001
@@ -145,6 +148,12 @@
 #define SDHCI_ACMD12_ERR	0x3C
 
 /* 3E-3F reserved */
+#define SDHCI_HOST_CTRL2	0x3E
+#define SDHCI_CTRL2_MODE_MASK	0x7
+
+#define SDHCI_18V_SIGNAL	0x8
+#define SDHCI_CTRL_EXEC_TUNING	0x0040
+#define SDHCI_CTRL_TUNED_CLK	0x80
 
 #define SDHCI_CAPABILITIES	0x40
 #define  SDHCI_TIMEOUT_CLK_MASK	0x0000003F
@@ -166,6 +175,14 @@
 #define  SDHCI_CAN_64BIT	0x10000000
 
 #define SDHCI_CAPABILITIES_1	0x44
+#define  SDHCI_SUPPORT_SDR50	0x00000001
+#define  SDHCI_SUPPORT_SDR104	0x00000002
+#define  SDHCI_SUPPORT_DDR50	0x00000004
+#define  SDHCI_USE_SDR50_TUNING		0x00002000
+#define  SDHCI_SUPPORT_HS400	0x80000000 /* Non-standard */
+
+#define  SDHCI_CLOCK_MUL_MASK	0x00FF0000
+#define  SDHCI_CLOCK_MUL_SHIFT	16
 
 #define SDHCI_MAX_CURRENT	0x48
 
@@ -214,6 +231,8 @@
 #define SDHCI_QUIRK_WAIT_SEND_CMD	(1 << 6)
 #define SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER (1 << 7)
 #define SDHCI_QUIRK_USE_WIDE8		(1 << 8)
+#define SDHCI_QUIRK_NO_1_8_V		(1 << 9)
+#define SDHCI_QUIRK_USE_ACMD12		(1 << 10)
 
 /* to make gcc happy */
 struct sdhci_host;
@@ -240,9 +259,10 @@ struct sdhci_host {
 	unsigned int quirks;
 	unsigned int host_caps;
 	unsigned int version;
+	unsigned int clk_mul;   /* Clock Multiplier value */
 	unsigned int clock;
 	struct mmc *mmc;
-	const struct sdhci_ops *ops;
+	struct sdhci_ops *ops;
 	int index;
 
 	int bus_width;
@@ -251,9 +271,12 @@ struct sdhci_host {
 
 	void (*set_control_reg)(struct sdhci_host *host);
 	void (*set_clock)(int dev_index, unsigned int div);
+	int (*platform_execute_tuning)(struct mmc *host, u8 opcode);
+	void (*set_delay)(struct sdhci_host *host);
 	uint	voltages;
 
 	struct mmc_config cfg;
+	unsigned int last_cmd;
 };
 
 #ifdef CONFIG_MMC_SDHCI_IO_ACCESSORS
@@ -338,5 +361,78 @@ static inline u8 sdhci_readb(struct sdhci_host *host, int reg)
 }
 #endif
 
+#ifdef CONFIG_BLK
+/**
+ * sdhci_setup_cfg() - Set up the configuration for DWMMC
+ *
+ * This is used to set up an SDHCI device when you are using CONFIG_BLK.
+ *
+ * This should be called from your MMC driver's probe() method once you have
+ * the information required.
+ *
+ * Generally your driver will have a platform data structure which holds both
+ * the configuration (struct mmc_config) and the MMC device info (struct mmc).
+ * For example:
+ *
+ * struct msm_sdhc_plat {
+ *	struct mmc_config cfg;
+ *	struct mmc mmc;
+ * };
+ *
+ * ...
+ *
+ * Inside U_BOOT_DRIVER():
+ *	.platdata_auto_alloc_size = sizeof(struct msm_sdhc_plat),
+ *
+ * To access platform data:
+ *	struct msm_sdhc_plat *plat = dev_get_platdata(dev);
+ *
+ * See msm_sdhci.c for an example.
+ *
+ * @cfg:	Configuration structure to fill in (generally &plat->mmc)
+ * @host:	SDHCI host structure
+ * @max_clk:	Maximum supported clock speed in HZ (0 for default)
+ * @min_clk:	Minimum supported clock speed in HZ (0 for default)
+ */
+int sdhci_setup_cfg(struct mmc_config *cfg, struct sdhci_host *host,
+		    u32 max_clk, u32 min_clk);
+
+/**
+ * sdhci_bind() - Set up a new MMC block device
+ *
+ * This is used to set up an SDHCI block device when you are using CONFIG_BLK.
+ * It should be called from your driver's bind() method.
+ *
+ * See msm_sdhci.c for an example.
+ *
+ * @dev:	Device to set up
+ * @mmc:	Pointer to mmc structure (normally &plat->mmc)
+ * @cfg:	Empty configuration structure (generally &plat->cfg). This is
+ *		normally all zeroes at this point. The only purpose of passing
+ *		this in is to set mmc->cfg to it.
+ * @return 0 if OK, -ve if the block device could not be created
+ */
+int sdhci_bind(struct udevice *dev, struct mmc *mmc, struct mmc_config *cfg);
+#else
+
+/**
+ * add_sdhci() - Add a new SDHCI interface
+ *
+ * This is used when you are not using CONFIG_BLK. Convert your driver over!
+ *
+ * @host:	SDHCI host structure
+ * @max_clk:	Maximum supported clock speed in HZ (0 for default)
+ * @min_clk:	Minimum supported clock speed in HZ (0 for default)
+ * @return 0 if OK, -ve on error
+ */
 int add_sdhci(struct sdhci_host *host, u32 max_clk, u32 min_clk);
+#endif /* !CONFIG_BLK */
+
+#ifdef CONFIG_DM_MMC_OPS
+/* Export the operations to drivers */
+int sdhci_probe(struct udevice *dev);
+extern const struct dm_mmc_ops sdhci_ops;
+#else
+#endif
+
 #endif /* __SDHCI_HW_H */

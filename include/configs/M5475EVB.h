@@ -19,8 +19,6 @@
  * (easy to change)
  */
 
-#define CONFIG_DISPLAY_BOARDINFO
-
 #define CONFIG_MCFUART
 #define CONFIG_SYS_UART_PORT		(0)
 #define CONFIG_BAUDRATE		115200
@@ -72,7 +70,6 @@
 
 #ifdef CONFIG_CMD_USB
 #	define CONFIG_USB_OHCI_NEW
-#	define CONFIG_USB_STORAGE
 
 #	ifndef CONFIG_CMD_PCI
 #		define CONFIG_CMD_PCI
@@ -97,8 +94,6 @@
 
 /* PCI */
 #ifdef CONFIG_CMD_PCI
-#define CONFIG_PCI		1
-#define CONFIG_PCI_PNP		1
 #define CONFIG_PCIAUTO_SKIP_HOST_BRIDGE	1
 
 #define CONFIG_SYS_PCI_CACHE_LINE_SIZE	8

@@ -28,7 +28,9 @@ obj-$(CONFIG_S5P) += serial_s5p.o
 obj-$(CONFIG_MXC_UART) += serial_mxc.o
 obj-$(CONFIG_PXA_SERIAL) += serial_pxa.o
 obj-$(CONFIG_MESON_SERIAL) += serial_meson.o
-obj-$(CONFIG_S3C24X0_SERIAL) += serial_s3c24x0.o
+ifdef CONFIG_SPL_BUILD
+obj-$(CONFIG_ROCKCHIP_SERIAL) += serial_rockchip.o
+endif
 obj-$(CONFIG_XILINX_UARTLITE) += serial_xuartlite.o
 obj-$(CONFIG_SANDBOX_SERIAL) += sandbox.o
 obj-$(CONFIG_SCIF_CONSOLE) += serial_sh.o
@@ -43,6 +45,7 @@ obj-$(CONFIG_PIC32_SERIAL) += serial_pic32.o
 obj-$(CONFIG_STM32X7_SERIAL) += serial_stm32x7.o
 obj-$(CONFIG_BCM283X_MU_SERIAL) += serial_bcm283x_mu.o
 obj-$(CONFIG_MSM_SERIAL) += serial_msm.o
+obj-$(CONFIG_MVEBU_A3700_UART) += serial_mvebu_a3700.o
 
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_USB_TTY) += usbtty.o

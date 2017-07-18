@@ -21,11 +21,6 @@
 
 #define CONFIG_SUPPORT_RAW_INITRD
 
-/* MMU Definitions */
-#define CONFIG_SYS_CACHELINE_SIZE	64
-
-#define CONFIG_IDENT_STRING		"hikey"
-
 #define CONFIG_BOARD_EARLY_INIT_F
 
 /* Physical Memory Map */
@@ -67,7 +62,6 @@
 /*#define CONFIG_DWC2_DFLT_SPEED_FULL*/
 #define CONFIG_DWC2_ENABLE_DYNAMIC_FIFO
 
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_ETHER_SMSC95XX
 #define CONFIG_USB_ETHER_ASIX
@@ -78,7 +72,6 @@
 
 /* SD/MMC configuration */
 #define CONFIG_GENERIC_MMC
-#define CONFIG_MMC
 #define CONFIG_DWMMC
 #define CONFIG_HIKEY_DWMMC
 #define CONFIG_BOUNCE_BUFFER
@@ -86,7 +79,6 @@
 #define CONFIG_FS_EXT4
 
 /* Command line configuration */
-#define CONFIG_MENU
 #define CONFIG_CMD_UNZIP
 #define CONFIG_CMD_ENV
 

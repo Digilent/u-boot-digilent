@@ -162,6 +162,16 @@ static void get_name(dir_entry *dirent, char *s_name)
 	downcase(s_name);
 }
 
+static int flush_dirty_fat_buffer(fsdata *mydata);
+#if !defined(CONFIG_FAT_WRITE)
+/* Stub for read only operation */
+int flush_dirty_fat_buffer(fsdata *mydata)
+{
+	(void)(mydata);
+	return 0;
+}
+#endif
+
 /*
  * Get the entry at index 'entry' in a FAT (12/16/32) table.
  * On failure 0x00 is returned.
@@ -171,7 +181,11 @@ static __u32 get_fatent(fsdata *mydata, __u32 entry)
 	__u32 bufnum;
 	__u32 off16, offset;
 	__u32 ret = 0x00;
-	__u16 val1, val2;
+
+	if (CHECK_CLUST(entry, mydata->fatsize)) {
+		printf("Error: Invalid FAT entry: 0x%08x\n", entry);
+		return ret;
+	}
 
 	switch (mydata->fatsize) {
 	case 32:
@@ -192,7 +206,7 @@ static __u32 get_fatent(fsdata *mydata, __u32 entry)
 		return ret;
 	}
 
-	debug("FAT%d: entry: 0x%04x = %d, offset: 0x%04x = %d\n",
+	debug("FAT%d: entry: 0x%08x = %d, offset: 0x%04x = %d\n",
 	       mydata->fatsize, entry, entry, offset, offset);
 
 	/* Read a new block of FAT entries into the cache. */
@@ -202,10 +216,15 @@ static __u32 get_fatent(fsdata *mydata, __u32 entry)
 		__u32 fatlength = mydata->fatlength;
 		__u32 startblock = bufnum * FATBUFBLOCKS;
 
+		/* Cap length if fatlength is not a multiple of FATBUFBLOCKS */
 		if (startblock + getsize > fatlength)
 			getsize = fatlength - startblock;
 
 		startblock += mydata->fat_sect;	/* Offset from start of disk */
+
+		/* Write back the fatbuf to the disk */
+		if (flush_dirty_fat_buffer(mydata) < 0)
+			return -1;
 
 		if (disk_read(startblock, getsize, bufptr) < 0) {
 			debug("Error reading FAT blocks\n");
@@ -223,38 +242,15 @@ static __u32 get_fatent(fsdata *mydata, __u32 entry)
 		ret = FAT2CPU16(((__u16 *) mydata->fatbuf)[offset]);
 		break;
 	case 12:
-		off16 = (offset * 3) / 4;
+		off16 = (offset * 3) / 2;
+		ret = FAT2CPU16(*(__u16 *)(mydata->fatbuf + off16));
 
-		switch (offset & 0x3) {
-		case 0:
-			ret = FAT2CPU16(((__u16 *) mydata->fatbuf)[off16]);
-			ret &= 0xfff;
-			break;
-		case 1:
-			val1 = FAT2CPU16(((__u16 *)mydata->fatbuf)[off16]);
-			val1 &= 0xf000;
-			val2 = FAT2CPU16(((__u16 *)mydata->fatbuf)[off16 + 1]);
-			val2 &= 0x00ff;
-			ret = (val2 << 4) | (val1 >> 12);
-			break;
-		case 2:
-			val1 = FAT2CPU16(((__u16 *)mydata->fatbuf)[off16]);
-			val1 &= 0xff00;
-			val2 = FAT2CPU16(((__u16 *)mydata->fatbuf)[off16 + 1]);
-			val2 &= 0x000f;
-			ret = (val2 << 8) | (val1 >> 8);
-			break;
-		case 3:
-			ret = FAT2CPU16(((__u16 *)mydata->fatbuf)[off16]);
-			ret = (ret & 0xfff0) >> 4;
-			break;
-		default:
-			break;
-		}
-		break;
+		if (offset & 0x1)
+			ret >>= 4;
+		ret &= 0xfff;
 	}
-	debug("FAT%d: ret: %08x, offset: %04x\n",
-	       mydata->fatsize, ret, offset);
+	debug("FAT%d: ret: 0x%08x, entry: 0x%08x, offset: 0x%04x\n",
+	       mydata->fatsize, ret, entry, offset);
 
 	return ret;
 }
@@ -327,8 +323,12 @@ get_cluster(fsdata *mydata, __u32 clustnum, __u8 *buffer, unsigned long size)
  * into 'buffer'.
  * Update the number of bytes read in *gotsize or return -1 on fatal errors.
  */
+#ifndef CONFIG_ZYNQ_OCM
 __u8 get_contents_vfatname_block[MAX_CLUSTSIZE]
 	__aligned(ARCH_DMA_MINALIGN);
+#else
+__u8 *get_contents_vfatname_block = (__u8 *)FAT_BUFF_PTR_OCM;
+#endif
 
 static int get_contents(fsdata *mydata, dir_entry *dentptr, loff_t pos,
 			__u8 *buffer, loff_t maxsize, loff_t *gotsize)
@@ -579,8 +579,10 @@ static __u8 mkcksum(const char name[8], const char ext[3])
  * Get the directory entry associated with 'filename' from the directory
  * starting at 'startsect'
  */
+#ifndef CONFIG_ZYNQ_OCM
 __u8 get_dentfromdir_block[MAX_CLUSTSIZE]
 	__aligned(ARCH_DMA_MINALIGN);
+#endif
 
 static dir_entry *get_dentfromdir(fsdata *mydata, int startsect,
 				  char *filename, dir_entry *retdent,
@@ -589,6 +591,10 @@ static dir_entry *get_dentfromdir(fsdata *mydata, int startsect,
 	__u16 prevcksum = 0xffff;
 	__u32 curclust = START(retdent);
 	int files = 0, dirs = 0;
+#ifdef CONFIG_ZYNQ_OCM
+	__u8 get_dentfromdir_block[MAX_CLUSTSIZE]
+		__aligned(ARCH_DMA_MINALIGN);
+#endif
 
 	debug("get_dentfromdir: %s\n", filename);
 
@@ -811,8 +817,10 @@ exit:
 	return ret;
 }
 
+#ifndef CONFIG_ZYNQ_OCM
 __u8 do_fat_read_at_block[MAX_CLUSTSIZE]
 	__aligned(ARCH_DMA_MINALIGN);
+#endif
 
 int do_fat_read_at(const char *filename, loff_t pos, void *buffer,
 		   loff_t maxsize, int dols, int dogetsize, loff_t *size)
@@ -833,6 +841,10 @@ int do_fat_read_at(const char *filename, loff_t pos, void *buffer,
 	__u32 root_cluster = 0;
 	__u32 read_blk;
 	int rootdir_size = 0;
+#ifdef CONFIG_ZYNQ_OCM
+	__u8 do_fat_read_at_block[MAX_CLUSTSIZE]
+		 __aligned(ARCH_DMA_MINALIGN);
+#endif
 	int buffer_blk_cnt;
 	int do_read;
 	__u8 *dir_ptr;
@@ -876,6 +888,7 @@ int do_fat_read_at(const char *filename, loff_t pos, void *buffer,
 	}
 
 	mydata->fatbufnum = -1;
+	mydata->fat_dirty = 0;
 	mydata->fatbuf = memalign(ARCH_DMA_MINALIGN, FATBUFSIZE);
 	if (mydata->fatbuf == NULL) {
 		debug("Error: allocating memory\n");

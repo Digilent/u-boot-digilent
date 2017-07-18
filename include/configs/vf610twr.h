@@ -9,14 +9,10 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_SYS_CACHELINE_SIZE	32
-
 #include <asm/arch/imx-regs.h>
 
 #define CONFIG_VF610
 
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
 #define CONFIG_SYS_FSL_CLK
 
 #define CONFIG_MACH_TYPE		4146
@@ -46,12 +42,10 @@
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
 #ifdef CONFIG_CMD_NAND
-#define CONFIG_USE_ARCH_MEMCPY
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		NFC_BASE_ADDR
 
 /* UBI */
-#define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
 #define CONFIG_RBTREE
 #define CONFIG_LZO
@@ -70,12 +64,9 @@
 					"-(rootfs)"
 #endif
 
-#define CONFIG_MMC
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
 #define CONFIG_SYS_FSL_ESDHC_NUM	1
-
-#define CONFIG_SYS_FSL_ERRATUM_ESDHC111
 
 #define CONFIG_GENERIC_MMC
 #define CONFIG_DOS_PARTITION

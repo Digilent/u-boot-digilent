@@ -10,9 +10,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_T4240QDS
-#define CONFIG_PHYS_64BIT
-
 #define CONFIG_FSL_SATA_V2
 #define CONFIG_PCIE4
 #define CONFIG_FSL_CAAM			/* Enable SEC/CAAM */
@@ -21,21 +18,12 @@
 
 #ifdef CONFIG_RAMBOOT_PBL
 #define CONFIG_SYS_FSL_PBL_PBI board/freescale/t4qds/t4_pbi.cfg
-#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t4qds/t4_rcw.cfg
 #if !defined(CONFIG_NAND) && !defined(CONFIG_SDCARD)
 #define CONFIG_RAMBOOT_TEXT_BASE        CONFIG_SYS_TEXT_BASE
 #define CONFIG_RESET_VECTOR_ADDRESS     0xfffffffc
 #else
-#define CONFIG_SPL_MPC8XXX_INIT_DDR_SUPPORT
-#define CONFIG_SPL_ENV_SUPPORT
-#define CONFIG_SPL_SERIAL_SUPPORT
 #define CONFIG_SPL_FLUSH_IMAGE
 #define CONFIG_SPL_TARGET		"u-boot-with-spl.bin"
-#define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_I2C_SUPPORT
-#define CONFIG_SPL_DRIVERS_MISC_SUPPORT
-#define CONFIG_FSL_LAW                 /* Use common FSL init code */
 #define CONFIG_SYS_TEXT_BASE		0x00201000
 #define CONFIG_SPL_TEXT_BASE		0xFFFD8000
 #define CONFIG_SPL_PAD_TO		0x40000
@@ -44,18 +32,17 @@
 #define BOOT_PAGE_OFFSET		0x27000
 
 #ifdef	CONFIG_NAND
-#define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SYS_NAND_U_BOOT_SIZE	(768 << 10)
 #define CONFIG_SYS_NAND_U_BOOT_DST	0x00200000
 #define CONFIG_SYS_NAND_U_BOOT_START	0x00200000
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	(256 << 10)
 #define CONFIG_SYS_LDSCRIPT	"arch/powerpc/cpu/mpc85xx/u-boot-nand.lds"
+#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t4qds/t4_nand_rcw.cfg
 #define CONFIG_SPL_NAND_BOOT
 #endif
 
 #ifdef	CONFIG_SDCARD
 #define	CONFIG_RESET_VECTOR_ADDRESS	0x200FFC
-#define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_MMC_MINIMAL
 #define CONFIG_SYS_MMC_U_BOOT_SIZE	(768 << 10)
 #define CONFIG_SYS_MMC_U_BOOT_DST	0x00200000
@@ -65,6 +52,7 @@
 #define	CONFIG_SYS_MPC85XX_NO_RESETVEC
 #endif
 #define CONFIG_SYS_LDSCRIPT	"arch/powerpc/cpu/mpc85xx/u-boot.lds"
+#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t4qds/t4_sd_rcw.cfg
 #define CONFIG_SPL_MMC_BOOT
 #endif
 
@@ -523,13 +511,10 @@ unsigned long get_board_ddr_clk(void);
 /*
 * USB
 */
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_FSL
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_HAS_FSL_DR_USB
-
-#define CONFIG_MMC
 
 #ifdef CONFIG_MMC
 #define CONFIG_FSL_ESDHC
@@ -554,7 +539,7 @@ unsigned long get_board_ddr_clk(void);
  * interleaving. It can be cacheline, page, bank, superbank.
  * See doc/README.fsl-ddr for details.
  */
-#ifdef CONFIG_PPC_T4240
+#ifdef CONFIG_ARCH_T4240
 #define CTRL_INTLV_PREFERED 3way_4KB
 #else
 #define CTRL_INTLV_PREFERED cacheline
@@ -577,7 +562,7 @@ unsigned long get_board_ddr_clk(void);
 	"consoledev=ttyS0\0"					\
 	"ramdiskaddr=2000000\0"					\
 	"ramdiskfile=t4240qds/ramdisk.uboot\0"			\
-	"fdtaddr=c00000\0"					\
+	"fdtaddr=1e00000\0"					\
 	"fdtfile=t4240qds/t4240qds.dtb\0"				\
 	"bdev=sda3\0"
 

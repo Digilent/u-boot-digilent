@@ -333,7 +333,6 @@
 /* Only Canyonlands (460EX) has USB */
 #ifdef CONFIG_460EX
 #define CONFIG_USB_OHCI_NEW
-#define CONFIG_USB_STORAGE
 #undef CONFIG_SYS_OHCI_BE_CONTROLLER		/* 460EX has little endian descriptors	*/
 #define CONFIG_SYS_OHCI_SWAP_REG_ACCESS	/* 460EX has little endian register	*/
 #define CONFIG_SYS_OHCI_USE_NPS		/* force NoPowerSwitching mode		*/
@@ -405,9 +404,7 @@
  * PCI stuff
  *----------------------------------------------------------------------*/
 /* General PCI */
-#define CONFIG_PCI			/* include pci support	        */
 #define CONFIG_PCI_INDIRECT_BRIDGE	/* indirect PCI bridge support */
-#define CONFIG_PCI_PNP			/* do pci plug-and-play   */
 #define CONFIG_PCI_SCAN_SHOW		/* show pci devices on startup  */
 #define CONFIG_PCI_CONFIG_HOST_BRIDGE
 

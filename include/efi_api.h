@@ -201,6 +201,10 @@ struct efi_runtime_services {
 	EFI_GUID(0xb1b621d5, 0xf19c, 0x41a5, \
 		 0x83, 0x0b, 0xd9, 0x15, 0x2c, 0x69, 0xaa, 0xe0)
 
+#define SMBIOS_TABLE_GUID \
+	EFI_GUID(0xeb9d2d31, 0x2d88, 0x11d3,  \
+		 0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d)
+
 struct efi_configuration_table
 {
 	efi_guid_t guid;
@@ -262,6 +266,19 @@ struct efi_device_path {
 	u8 type;
 	u8 sub_type;
 	u16 length;
+};
+
+struct efi_mac_addr {
+	u8 addr[32];
+};
+
+#define DEVICE_PATH_TYPE_MESSAGING_DEVICE	0x03
+#  define DEVICE_PATH_SUB_TYPE_MSG_MAC_ADDR	0x0b
+
+struct efi_device_path_mac_addr {
+	struct efi_device_path dp;
+	struct efi_mac_addr mac;
+	u8 if_type;
 };
 
 #define DEVICE_PATH_TYPE_MEDIA_DEVICE		0x04

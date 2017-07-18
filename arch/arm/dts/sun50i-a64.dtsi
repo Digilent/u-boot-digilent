@@ -506,6 +506,25 @@
 				allwinner,drive = <SUN4I_PINCTRL_10_MA>;
 				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
 			};
+
+			rmii_pins: rmii_pins {
+				allwinner,pins = "PD10", "PD11", "PD13", "PD14",
+						 "PD17", "PD18", "PD19", "PD20",
+						 "PD22", "PD23";
+				allwinner,function = "emac";
+				allwinner,drive = <SUN4I_PINCTRL_40_MA>;
+				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+			};
+
+			rgmii_pins: rgmii_pins {
+				allwinner,pins = "PD8", "PD9", "PD10", "PD11",
+						 "PD12", "PD13", "PD15",
+						 "PD16", "PD17", "PD18", "PD19",
+						 "PD20", "PD21", "PD22", "PD23";
+				allwinner,function = "emac";
+				allwinner,drive = <SUN4I_PINCTRL_40_MA>;
+				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+			};
 		};
 
 		ahb_rst: reset@1c202c0 {
@@ -619,6 +638,49 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		emac: ethernet@01c30000 {
+			compatible = "allwinner,sun50i-a64-emac";
+			reg = <0x01c30000 0x2000>, <0x01c00030 0x4>;
+			reg-names = "emac", "syscon";
+			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&ahb_rst 17>;
+			reset-names = "ahb";
+			clocks = <&bus_gates 17>;
+			clock-names = "ahb";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		usbphy: phy@1c1b810 {
+			compatible = "allwinner,sun50i-a64-usb-phy",
+				     "allwinner,sun8i-a33-usb-phy";
+			reg = <0x01c1b810 0x14>, <0x01c1b800 0x4>;
+			reg-names = "phy_ctrl", "pmu1";
+			status = "disabled";
+			#phy-cells = <1>;
+		};
+
+		ehci1: usb@01c1b000 {
+			compatible = "allwinner,sun50i-a64-ehci",
+				     "generic-ehci";
+			reg = <0x01c1b000 0x100>;
+			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+			phys = <&usbphy 1>;
+			phy-names = "usb";
+			status = "disabled";
+		};
+
+		ohci1: usb@01c1b400 {
+			compatible = "allwinner,sun50i-a64-ohci",
+				     "generic-ohci";
+			reg = <0x01c1b400 0x100>;
+			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
+			phys = <&usbphy 1>;
+			phy-names = "usb";
+			status = "enabled";
 		};
 	};
 };

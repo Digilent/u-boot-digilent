@@ -22,7 +22,6 @@
 
 #define CONFIG_MPC5200		1	/* This is an MPC5200 CPU */
 #define CONFIG_DIGSY_MTC	1	/* ... on InterControl digsyMTC board */
-#define CONFIG_DISPLAY_BOARDINFO
 
 /*
  * Valid values for CONFIG_SYS_TEXT_BASE are:
@@ -51,8 +50,6 @@
  * 0x40000000 - 0x4fffffff - PCI Memory
  * 0x50000000 - 0x50ffffff - PCI IO Space
  */
-#define CONFIG_PCI		1
-#define CONFIG_PCI_PNP		1
 #define CONFIG_PCI_SCAN_SHOW	1
 #define CONFIG_PCI_BOOTDELAY	250
 
@@ -73,18 +70,13 @@
 /*
  * Video
  */
-#define CONFIG_VIDEO
 
 #ifdef CONFIG_VIDEO
 #define CONFIG_VIDEO_MB862xx
 #define CONFIG_VIDEO_MB862xx_ACCEL
 #define CONFIG_VIDEO_CORALP
-#define CONFIG_CFB_CONSOLE
 #define CONFIG_VIDEO_LOGO
 #define CONFIG_VIDEO_BMP_LOGO
-#define CONFIG_VIDEO_SW_CURSOR
-#define CONFIG_VGA_AS_SINGLE_DEVICE
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_VIDEO_BMP_GZIP
 #define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	(2 << 20)	/* decompressed img */
@@ -222,12 +214,6 @@
 	""
 
 #define CONFIG_BOOTCOMMAND	"run mtcb_start"
-
-/*
- * SPI configuration
- */
-#define CONFIG_HARD_SPI		1
-#define CONFIG_MPC52XX_SPI	1
 
 /*
  * I2C configuration
@@ -435,7 +421,6 @@
  */
 #define CONFIG_USB_OHCI_NEW
 #define CONFIG_SYS_OHCI_BE_CONTROLLER
-#define CONFIG_USB_STORAGE
 
 #define CONFIG_USB_CLOCK	0x00013333
 #define CONFIG_USB_CONFIG	0x00002000

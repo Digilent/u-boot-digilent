@@ -13,15 +13,12 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_SYS_CACHELINE_SIZE	64
-
 /*
  * High Level Configuration Options
  */
 #define CONFIG_OMAP			/* in a TI OMAP core */
 
 #define CONFIG_OMAP_GPIO
-#define CONFIG_OMAP_COMMON
 /* Common ARM Erratas */
 #define CONFIG_ARM_ERRATA_454179
 #define CONFIG_ARM_ERRATA_430973
@@ -33,12 +30,6 @@
 
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 #include <asm/arch/omap.h>
-
-/*
- * Display CPU and Board information
- */
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
 
 /* Clock Defines */
 #define V_OSCK			26000000	/* Clock output from T2 */
@@ -80,7 +71,6 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_GENERIC_MMC
-#define CONFIG_MMC
 #define CONFIG_OMAP_HSMMC
 #define CONFIG_DOS_PARTITION
 
@@ -278,34 +268,21 @@
 
 #define CONFIG_USB_ETHER
 #define CONFIG_USB_ETHER_RNDIS
-#define CONFIG_USB_STORAGE
 #define CONGIG_CMD_STORAGE
 
 /* Defines for SPL */
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_NAND_SIMPLE
 
-#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300 /* address 0x60000 */
-#define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS	0x200 /* 256 KB */
 #define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION	1
 #define CONFIG_SPL_FS_LOAD_PAYLOAD_NAME	"u-boot.img"
 
 #define CONFIG_SPL_BOARD_INIT
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_LIBDISK_SUPPORT
-#define CONFIG_SPL_I2C_SUPPORT
-#define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_MMC_SUPPORT
-#define CONFIG_SPL_FAT_SUPPORT
-#define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SPL_NAND_BASE
 #define CONFIG_SPL_NAND_DRIVERS
 #define CONFIG_SPL_NAND_ECC
-#define CONFIG_SPL_GPIO_SUPPORT
-#define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_OMAP3_ID_NAND
-#define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
+#define CONFIG_SPL_LDSCRIPT		"arch/arm/mach-omap2/u-boot-spl.lds"
 
 /* NAND boot config */
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
@@ -328,7 +305,8 @@
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
 
 #define CONFIG_SPL_TEXT_BASE		0x40200800
-#define CONFIG_SPL_MAX_SIZE		(54 * 1024)	/* 8 KB for stack */
+#define CONFIG_SPL_MAX_SIZE		(SRAM_SCRATCH_SPACE_ADDR - \
+					 CONFIG_SPL_TEXT_BASE)
 
 /*
  * Use 0x80008000 as TEXT_BASE here for compatibility reasons with the

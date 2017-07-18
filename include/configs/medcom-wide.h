@@ -20,7 +20,6 @@
 #define CONFIG_SYS_NS16550_COM1		NV_PA_APB_UARTD_BASE
 
 /* SD/MMC */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_TEGRA_MMC
 
@@ -36,7 +35,6 @@
 /* USB host support */
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_TEGRA
-#define CONFIG_USB_STORAGE
 
 /* USB networking support */
 #define CONFIG_USB_HOST_ETHER

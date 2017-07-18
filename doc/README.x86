@@ -314,6 +314,10 @@ Offset   Description         Controlling config
 
 Overall ROM image size is controlled by CONFIG_ROM_SIZE.
 
+Note that the debug version of the FSP is bigger in size. If this version
+is used, CONFIG_FSP_ADDR needs to be configured to 0xfffb0000 instead of
+the default value 0xfffc0000.
+
 ---
 
 Intel Galileo instructions for bare mode:
@@ -377,9 +381,16 @@ To enable video you must enable these options in coreboot:
    - Set framebuffer graphics resolution (1280x1024 32k-color (1:5:5))
    - Keep VESA framebuffer
 
+And include coreboot_fb.dtsi in your board's device tree source file, like:
+
+   /include/ "coreboot_fb.dtsi"
+
 At present it seems that for Minnowboard Max, coreboot does not pass through
 the video information correctly (it always says the resolution is 0x0). This
 works correctly for link though.
+
+Note: coreboot framebuffer driver does not work on QEMU. The reason is unknown
+at this point. Patches are welcome if you figure out anything wrong.
 
 Test with QEMU for bare mode
 ----------------------------
@@ -442,7 +453,7 @@ loading kernel to address 01000000 size 5d9d30 initrd 04000000 size 1b1ab50
 Here the kernel (bzImage) is loaded to 01000000 and initrd is to 04000000. Then,
 'zboot' can be used to boot the kernel:
 
-=> zboot 02000000 - 04000000 1b1ab50
+=> zboot 01000000 - 04000000 1b1ab50
 
 CPU Microcode
 -------------
@@ -1020,8 +1031,6 @@ Features not supported so far (to make it a complete ACPI solution):
  * S3 (Suspend to RAM), S4 (Suspend to Disk).
 
 Features that are optional:
- * ACPI global NVS support. We may need it to simplify ASL code logic if
-   utilizing NVS variables. Most likely we will need this sooner or later.
  * Dynamic AML bytecodes insertion at run-time. We may need this to support
    SSDT table generation and DSDT fix up.
  * SMI support. Since U-Boot is a modern bootloader, we don't want to bring
@@ -1037,10 +1046,38 @@ command from the OS.
 For other platform boards, ACPI support status can be checked by examining their
 board defconfig files to see if CONFIG_GENERATE_ACPI_TABLE is set to y.
 
+EFI Support
+-----------
+U-Boot supports booting as a 32-bit or 64-bit EFI payload, e.g. with UEFI.
+This is enabled with CONFIG_EFI_STUB. U-Boot can also run as an EFI
+application, with CONFIG_EFI_APP. The CONFIG_EFI_LOADER option, where U-Booot
+provides an EFI environment to the kernel (i.e. replaces UEFI completely but
+provides the same EFI run-time services) is not currently supported on x86.
+
+See README.efi for details of EFI support in U-Boot.
+
+64-bit Support
+--------------
+U-Boot supports booting a 64-bit kernel directly and is able to change to
+64-bit mode to do so. It also supports (with CONFIG_EFI_STUB) booting from
+both 32-bit and 64-bit UEFI. However, U-Boot itself is currently always built
+in 32-bit mode. Some access to the full memory range is provided with
+arch_phys_memset().
+
+The development work to make U-Boot itself run in 64-bit mode has not yet
+been attempted. The best approach would likely be to build a 32-bit SPL
+image for U-Boot, with CONFIG_SPL_BUILD. This could then handle the early CPU
+init in 16-bit and 32-bit mode, running the FSP and any other binaries that
+are needed. Then it could change to 64-bit model and jump to U-Boot proper.
+
+Given U-Boot's extensive 64-bit support this has not been a high priority,
+but it would be a nice addition.
+
 TODO List
 ---------
 - Audio
 - Chrome OS verified boot
+- Building U-Boot to run in 64-bit mode
 
 References
 ----------

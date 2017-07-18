@@ -14,7 +14,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/funcmux.h>
 #include <asm/arch-tegra/clk_rst.h>
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <asm/gpio.h>
 #include <fdtdec.h>
 #include <bouncebuf.h>
@@ -884,7 +884,7 @@ static void setup_timing(unsigned timing[FDT_NAND_TIMING_COUNT],
  * Decode NAND parameters from the device tree
  *
  * @param blob	Device tree blob
- * @param node	Node containing "nand-flash" compatble node
+ * @param node	Node containing "nand-flash" compatible node
  * @return 0 if ok, -ve on error (FDT_ERR_...)
  */
 static int fdt_decode_nand(const void *blob, int node, struct fdt_nand *config)

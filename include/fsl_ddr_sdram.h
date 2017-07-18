@@ -299,7 +299,7 @@ typedef struct fsl_ddr_cfg_regs_s {
 	unsigned int ddr_cdr2;
 	unsigned int err_disable;
 	unsigned int err_int_en;
-	unsigned int debug[32];
+	unsigned int debug[64];
 } fsl_ddr_cfg_regs_t;
 
 typedef struct memctl_options_partial_s {
@@ -374,7 +374,8 @@ typedef struct memctl_options_s {
 	unsigned int additive_latency_override_value;
 
 	unsigned int clk_adjust;		/* */
-	unsigned int cpo_override;
+	unsigned int cpo_override;		/* override timing_cfg_2[CPO]*/
+	unsigned int cpo_sample;		/* optimize debug_29[24:31] */
 	unsigned int write_data_delay;		/* DQS adjust */
 
 	unsigned int cswl_override;

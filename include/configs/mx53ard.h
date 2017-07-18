@@ -11,9 +11,6 @@
 
 #define CONFIG_MX53
 
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
-
 #define CONFIG_MACH_TYPE	MACH_TYPE_MX53_ARD
 
 #include <asm/arch/imx-regs.h>
@@ -56,7 +53,6 @@
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
 #define CONFIG_SYS_FSL_ESDHC_NUM	2
 
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_DOS_PARTITION
 
@@ -80,8 +76,6 @@
 
 #define CONFIG_LOADADDR		0x72000000	/* loadaddr env var */
 #define CONFIG_SYS_TEXT_BASE    0x77800000
-
-#define CONFIG_DEFAULT_FDT_FILE		"imx53-ard.dtb"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"script=boot.scr\0" \

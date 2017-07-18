@@ -9,8 +9,15 @@
 
 #include "ls1043a_common.h"
 
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
+#if defined(CONFIG_FSL_LS_PPA)
+#define CONFIG_ARMV8_SEC_FIRMWARE_SUPPORT
+#define SEC_FIRMWARE_ERET_ADDR_REVERT
+
+#define CONFIG_SYS_LS_PPA_FW_IN_XIP
+#ifdef CONFIG_SYS_LS_PPA_FW_IN_XIP
+#define	CONFIG_SYS_LS_PPA_FW_ADDR	0x60500000
+#endif
+#endif
 
 #if defined(CONFIG_NAND_BOOT) || defined(CONFIG_SD_BOOT)
 #define CONFIG_SYS_TEXT_BASE		0x82000000
@@ -281,7 +288,6 @@
 #define CONFIG_USB_XHCI_FSL
 #define CONFIG_USB_MAX_CONTROLLER_COUNT		3
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS	2
-#define CONFIG_USB_STORAGE
 #endif
 
 /* SATA */
@@ -303,7 +309,6 @@
 #define SCSI_VEND_ID 0x1b4b
 #define SCSI_DEV_ID  0x9170
 #define CONFIG_SCSI_DEV_LIST {SCSI_VEND_ID, SCSI_DEV_ID}
-#define CONFIG_PCI
 
 #include <asm/fsl_secure_boot.h>
 

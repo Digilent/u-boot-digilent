@@ -72,4 +72,6 @@ struct mod_exp_ops {
 			   uint8_t *outp);
 };
 
+int zynq_pow_mod(uint32_t *keyptr, uint32_t *inout);
+
 #endif

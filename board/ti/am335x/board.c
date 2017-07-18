@@ -25,6 +25,7 @@
 #include <asm/io.h>
 #include <asm/emif.h>
 #include <asm/gpio.h>
+#include <asm/omap_sec_common.h>
 #include <i2c.h>
 #include <miiphy.h>
 #include <cpsw.h>
@@ -46,19 +47,33 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO_MUX_MII_CTRL	GPIO_TO_PIN(3, 10)
 #define GPIO_FET_SWITCH_CTRL	GPIO_TO_PIN(0, 7)
 #define GPIO_PHY_RESET		GPIO_TO_PIN(2, 5)
+#define GPIO_ETH0_MODE		GPIO_TO_PIN(0, 11)
+#define GPIO_ETH1_MODE		GPIO_TO_PIN(1, 26)
 
-#if defined(CONFIG_SPL_BUILD) || \
-	(defined(CONFIG_DRIVER_TI_CPSW) && !defined(CONFIG_DM_ETH))
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
-#endif
+
+#define GPIO0_RISINGDETECT	(AM33XX_GPIO0_BASE + OMAP_GPIO_RISINGDETECT)
+#define GPIO1_RISINGDETECT	(AM33XX_GPIO1_BASE + OMAP_GPIO_RISINGDETECT)
+
+#define GPIO0_IRQSTATUS1	(AM33XX_GPIO0_BASE + OMAP_GPIO_IRQSTATUS1)
+#define GPIO1_IRQSTATUS1	(AM33XX_GPIO1_BASE + OMAP_GPIO_IRQSTATUS1)
+
+#define GPIO0_IRQSTATUSRAW	(AM33XX_GPIO0_BASE + 0x024)
+#define GPIO1_IRQSTATUSRAW	(AM33XX_GPIO1_BASE + 0x024)
 
 /*
  * Read header information from EEPROM into global structure.
  */
-static inline int __maybe_unused read_eeprom(void)
+#ifdef CONFIG_TI_I2C_BOARD_DETECT
+void do_board_detect(void)
 {
-	return ti_i2c_eeprom_am_get(-1, CONFIG_SYS_I2C_EEPROM_ADDR);
+	enable_i2c0_pin_mux();
+	i2c_init(CONFIG_SYS_OMAP24_I2C_SPEED, CONFIG_SYS_OMAP24_I2C_SLAVE);
+
+	if (ti_i2c_eeprom_am_get(-1, CONFIG_SYS_I2C_EEPROM_ADDR))
+		printf("ti_i2c_eeprom_init failed\n");
 }
+#endif
 
 #ifndef CONFIG_DM_SERIAL
 struct serial_device *default_serial_console(void)
@@ -91,6 +106,16 @@ static const struct emif_regs ddr2_emif_reg_data = {
 	.sdram_tim1 = MT47H128M16RT25E_EMIF_TIM1,
 	.sdram_tim2 = MT47H128M16RT25E_EMIF_TIM2,
 	.sdram_tim3 = MT47H128M16RT25E_EMIF_TIM3,
+	.emif_ddr_phy_ctlr_1 = MT47H128M16RT25E_EMIF_READ_LATENCY,
+};
+
+static const struct emif_regs ddr2_evm_emif_reg_data = {
+	.sdram_config = MT47H128M16RT25E_EMIF_SDCFG,
+	.ref_ctrl = MT47H128M16RT25E_EMIF_SDREF,
+	.sdram_tim1 = MT47H128M16RT25E_EMIF_TIM1,
+	.sdram_tim2 = MT47H128M16RT25E_EMIF_TIM2,
+	.sdram_tim3 = MT47H128M16RT25E_EMIF_TIM3,
+	.ocp_config = EMIF_OCP_CONFIG_AM335X_EVM,
 	.emif_ddr_phy_ctlr_1 = MT47H128M16RT25E_EMIF_READ_LATENCY,
 };
 
@@ -183,6 +208,7 @@ static struct emif_regs ddr3_beagleblack_emif_reg_data = {
 	.sdram_tim1 = MT41K256M16HA125E_EMIF_TIM1,
 	.sdram_tim2 = MT41K256M16HA125E_EMIF_TIM2,
 	.sdram_tim3 = MT41K256M16HA125E_EMIF_TIM3,
+	.ocp_config = EMIF_OCP_CONFIG_BEAGLEBONE_BLACK,
 	.zq_config = MT41K256M16HA125E_ZQ_CFG,
 	.emif_ddr_phy_ctlr_1 = MT41K256M16HA125E_EMIF_READ_LATENCY,
 };
@@ -193,6 +219,7 @@ static struct emif_regs ddr3_evm_emif_reg_data = {
 	.sdram_tim1 = MT41J512M8RH125_EMIF_TIM1,
 	.sdram_tim2 = MT41J512M8RH125_EMIF_TIM2,
 	.sdram_tim3 = MT41J512M8RH125_EMIF_TIM3,
+	.ocp_config = EMIF_OCP_CONFIG_AM335X_EVM,
 	.zq_config = MT41J512M8RH125_ZQ_CFG,
 	.emif_ddr_phy_ctlr_1 = MT41J512M8RH125_EMIF_READ_LATENCY |
 				PHY_EN_DYN_PWRDN,
@@ -238,9 +265,6 @@ const struct dpll_params dpll_ddr_bone_black = {
 void am33xx_spl_board_init(void)
 {
 	int mpu_vdd;
-
-	if (read_eeprom() < 0)
-		puts("Could not get board ID.\n");
 
 	/* Get the frequency */
 	dpll_mpu_opp100.m = am335x_get_efuse_mpu_max_freq(cdev);
@@ -379,11 +403,6 @@ void am33xx_spl_board_init(void)
 
 const struct dpll_params *get_dpll_ddr_params(void)
 {
-	enable_i2c0_pin_mux();
-	i2c_init(CONFIG_SYS_OMAP24_I2C_SPEED, CONFIG_SYS_OMAP24_I2C_SLAVE);
-	if (read_eeprom() < 0)
-		puts("Could not get board ID.\n");
-
 	if (board_is_evm_sk())
 		return &dpll_ddr_evm_sk;
 	else if (board_is_bone_lt() || board_is_icev2())
@@ -413,9 +432,6 @@ void set_uart_mux_conf(void)
 
 void set_mux_conf_regs(void)
 {
-	if (read_eeprom() < 0)
-		puts("Could not get board ID.\n");
-
 	enable_board_pin_mux();
 }
 
@@ -453,9 +469,6 @@ const struct ctrl_ioregs ioregs = {
 
 void sdram_init(void)
 {
-	if (read_eeprom() < 0)
-		puts("Could not get board ID.\n");
-
 	if (board_is_evm_sk()) {
 		/*
 		 * EVM SK 1.2A and later use gpio0_7 to enable DDR3.
@@ -485,15 +498,18 @@ void sdram_init(void)
 		config_ddr(400, &ioregs_evmsk, &ddr3_icev2_data,
 			   &ddr3_icev2_cmd_ctrl_data, &ddr3_icev2_emif_reg_data,
 			   0);
+	else if (board_is_gp_evm())
+		config_ddr(266, &ioregs, &ddr2_data,
+			   &ddr2_cmd_ctrl_data, &ddr2_evm_emif_reg_data, 0);
 	else
 		config_ddr(266, &ioregs, &ddr2_data,
 			   &ddr2_cmd_ctrl_data, &ddr2_emif_reg_data, 0);
 }
 #endif
 
-#if (defined(CONFIG_DRIVER_TI_CPSW) && !defined(CONFIG_SPL_BUILD)) || \
+#if !defined(CONFIG_SPL_BUILD) || \
 	(defined(CONFIG_SPL_ETH_SUPPORT) && defined(CONFIG_SPL_BUILD))
-static void request_and_set_gpio(int gpio, char *name)
+static void request_and_set_gpio(int gpio, char *name, int val)
 {
 	int ret;
 
@@ -509,7 +525,7 @@ static void request_and_set_gpio(int gpio, char *name)
 		goto err_free_gpio;
 	}
 
-	gpio_set_value(gpio, 1);
+	gpio_set_value(gpio, val);
 
 	return;
 
@@ -517,7 +533,8 @@ err_free_gpio:
 	gpio_free(gpio);
 }
 
-#define REQUEST_AND_SET_GPIO(N)	request_and_set_gpio(N, #N);
+#define REQUEST_AND_SET_GPIO(N)	request_and_set_gpio(N, #N, 1);
+#define REQUEST_AND_CLR_GPIO(N)	request_and_set_gpio(N, #N, 0);
 
 /**
  * RMII mode on ICEv2 board needs 50MHz clock. Given the clock
@@ -547,20 +564,76 @@ int board_init(void)
 #if defined(CONFIG_NOR) || defined(CONFIG_NAND)
 	gpmc_init();
 #endif
-#if (defined(CONFIG_DRIVER_TI_CPSW) && !defined(CONFIG_SPL_BUILD))
-	int rv;
 
+#if !defined(CONFIG_SPL_BUILD) || \
+	(defined(CONFIG_SPL_ETH_SUPPORT) && defined(CONFIG_SPL_BUILD))
 	if (board_is_icev2()) {
+		int rv;
+		u32 reg;
+
 		REQUEST_AND_SET_GPIO(GPIO_PR1_MII_CTRL);
-		REQUEST_AND_SET_GPIO(GPIO_MUX_MII_CTRL);
+		/* Make J19 status available on GPIO1_26 */
+		REQUEST_AND_CLR_GPIO(GPIO_MUX_MII_CTRL);
+
 		REQUEST_AND_SET_GPIO(GPIO_FET_SWITCH_CTRL);
+		/*
+		 * Both ports can be set as RMII-CPSW or MII-PRU-ETH using
+		 * jumpers near the port. Read the jumper value and set
+		 * the pinmux, external mux and PHY clock accordingly.
+		 * As jumper line is overridden by PHY RX_DV pin immediately
+		 * after bootstrap (power-up/reset), we need to sample
+		 * it during PHY reset using GPIO rising edge detection.
+		 */
 		REQUEST_AND_SET_GPIO(GPIO_PHY_RESET);
+		/* Enable rising edge IRQ on GPIO0_11 and GPIO 1_26 */
+		reg = readl(GPIO0_RISINGDETECT) | BIT(11);
+		writel(reg, GPIO0_RISINGDETECT);
+		reg = readl(GPIO1_RISINGDETECT) | BIT(26);
+		writel(reg, GPIO1_RISINGDETECT);
+		/* Reset PHYs to capture the Jumper setting */
+		gpio_set_value(GPIO_PHY_RESET, 0);
+		udelay(2);	/* PHY datasheet states 1uS min. */
+		gpio_set_value(GPIO_PHY_RESET, 1);
+
+		reg = readl(GPIO0_IRQSTATUSRAW) & BIT(11);
+		if (reg) {
+			writel(reg, GPIO0_IRQSTATUS1); /* clear irq */
+			/* RMII mode */
+			printf("ETH0, CPSW\n");
+		} else {
+			/* MII mode */
+			printf("ETH0, PRU\n");
+			cdce913_data.pdiv3 = 4;	/* 25MHz PHY clk */
+		}
+
+		reg = readl(GPIO1_IRQSTATUSRAW) & BIT(26);
+		if (reg) {
+			writel(reg, GPIO1_IRQSTATUS1); /* clear irq */
+			/* RMII mode */
+			printf("ETH1, CPSW\n");
+			gpio_set_value(GPIO_MUX_MII_CTRL, 1);
+		} else {
+			/* MII mode */
+			printf("ETH1, PRU\n");
+			cdce913_data.pdiv2 = 4;	/* 25MHz PHY clk */
+		}
+
+		/* disable rising edge IRQs */
+		reg = readl(GPIO0_RISINGDETECT) & ~BIT(11);
+		writel(reg, GPIO0_RISINGDETECT);
+		reg = readl(GPIO1_RISINGDETECT) & ~BIT(26);
+		writel(reg, GPIO1_RISINGDETECT);
 
 		rv = setup_clock_synthesizer(&cdce913_data);
 		if (rv) {
 			printf("Clock synthesizer setup failed %d\n", rv);
 			return rv;
 		}
+
+		/* reset PHYs */
+		gpio_set_value(GPIO_PHY_RESET, 0);
+		udelay(2);	/* PHY datasheet states 1uS min. */
+		gpio_set_value(GPIO_PHY_RESET, 1);
 	}
 #endif
 
@@ -570,17 +643,57 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-#ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
-	int rc;
-	char *name = NULL;
+#if !defined(CONFIG_SPL_BUILD)
+	uint8_t mac_addr[6];
+	uint32_t mac_hi, mac_lo;
+#endif
 
-	rc = read_eeprom();
-	if (rc)
-		puts("Could not get board ID.\n");
+#ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+	char *name = NULL;
 
 	if (board_is_bbg1())
 		name = "BBG1";
 	set_board_info_env(name);
+
+	/*
+	 * Default FIT boot on HS devices. Non FIT images are not allowed
+	 * on HS devices.
+	 */
+	if (get_device_type() == HS_DEVICE)
+		setenv("boot_fit", "1");
+#endif
+
+#if !defined(CONFIG_SPL_BUILD)
+	/* try reading mac address from efuse */
+	mac_lo = readl(&cdev->macid0l);
+	mac_hi = readl(&cdev->macid0h);
+	mac_addr[0] = mac_hi & 0xFF;
+	mac_addr[1] = (mac_hi & 0xFF00) >> 8;
+	mac_addr[2] = (mac_hi & 0xFF0000) >> 16;
+	mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
+	mac_addr[4] = mac_lo & 0xFF;
+	mac_addr[5] = (mac_lo & 0xFF00) >> 8;
+
+	if (!getenv("ethaddr")) {
+		printf("<ethaddr> not set. Validating first E-fuse MAC\n");
+
+		if (is_valid_ethaddr(mac_addr))
+			eth_setenv_enetaddr("ethaddr", mac_addr);
+	}
+
+	mac_lo = readl(&cdev->macid1l);
+	mac_hi = readl(&cdev->macid1h);
+	mac_addr[0] = mac_hi & 0xFF;
+	mac_addr[1] = (mac_hi & 0xFF00) >> 8;
+	mac_addr[2] = (mac_hi & 0xFF0000) >> 16;
+	mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
+	mac_addr[4] = mac_lo & 0xFF;
+	mac_addr[5] = (mac_lo & 0xFF00) >> 8;
+
+	if (!getenv("eth1addr")) {
+		if (is_valid_ethaddr(mac_addr))
+			eth_setenv_enetaddr("eth1addr", mac_addr);
+	}
 #endif
 
 	return 0;
@@ -651,11 +764,15 @@ static struct cpsw_platform_data cpsw_data = {
 int board_eth_init(bd_t *bis)
 {
 	int rv, n = 0;
+#if defined(CONFIG_USB_ETHER) && \
+	(!defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_USBETH_SUPPORT))
 	uint8_t mac_addr[6];
 	uint32_t mac_hi, mac_lo;
-	__maybe_unused struct ti_am_eeprom *header;
 
-	/* try reading mac address from efuse */
+	/*
+	 * use efuse mac address for USB ethernet as we know that
+	 * both CPSW and USB ethernet will never be active at the same time
+	 */
 	mac_lo = readl(&cdev->macid0l);
 	mac_hi = readl(&cdev->macid0h);
 	mac_addr[0] = mac_hi & 0xFF;
@@ -664,35 +781,13 @@ int board_eth_init(bd_t *bis)
 	mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
 	mac_addr[4] = mac_lo & 0xFF;
 	mac_addr[5] = (mac_lo & 0xFF00) >> 8;
+#endif
+
 
 #if (defined(CONFIG_DRIVER_TI_CPSW) && !defined(CONFIG_SPL_BUILD)) || \
 	(defined(CONFIG_SPL_ETH_SUPPORT) && defined(CONFIG_SPL_BUILD))
-	if (!getenv("ethaddr")) {
-		printf("<ethaddr> not set. Validating first E-fuse MAC\n");
-
-		if (is_valid_ethaddr(mac_addr))
-			eth_setenv_enetaddr("ethaddr", mac_addr);
-	}
 
 #ifdef CONFIG_DRIVER_TI_CPSW
-
-	mac_lo = readl(&cdev->macid1l);
-	mac_hi = readl(&cdev->macid1h);
-	mac_addr[0] = mac_hi & 0xFF;
-	mac_addr[1] = (mac_hi & 0xFF00) >> 8;
-	mac_addr[2] = (mac_hi & 0xFF0000) >> 16;
-	mac_addr[3] = (mac_hi & 0xFF000000) >> 24;
-	mac_addr[4] = mac_lo & 0xFF;
-	mac_addr[5] = (mac_lo & 0xFF00) >> 8;
-
-	if (!getenv("eth1addr")) {
-		if (is_valid_ethaddr(mac_addr))
-			eth_setenv_enetaddr("eth1addr", mac_addr);
-	}
-
-	if (read_eeprom() < 0)
-		puts("Could not get board ID.\n");
-
 	if (board_is_bone() || board_is_bone_lt() ||
 	    board_is_idk()) {
 		writel(MII_MODE_ENABLE, &cdev->miisel);
@@ -773,5 +868,12 @@ int board_fit_config_name_match(const char *name)
 		return 0;
 	else
 		return -1;
+}
+#endif
+
+#ifdef CONFIG_TI_SECURE_DEVICE
+void board_fit_image_post_process(void **p_image, size_t *p_size)
+{
+	secure_boot_verify_image(p_image, p_size);
 }
 #endif

@@ -10,8 +10,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_DISPLAY_BOARDINFO
-
 /*
  * High Level Configuration Options
  */
@@ -22,8 +20,6 @@
 
 #ifdef CONFIG_NAND
 #define CONFIG_SPL_INIT_MINIMAL
-#define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SPL_FLUSH_IMAGE
 #define CONFIG_SPL_TARGET		"u-boot-with-spl.bin"
 #define CONFIG_SPL_MPC83XX_WAIT_FOR_NAND
@@ -58,7 +54,6 @@
 #define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE	/* start of monitor */
 #endif
 
-#define CONFIG_PCI
 #define CONFIG_PCI_INDIRECT_BRIDGE
 #define CONFIG_FSL_ELBC 1
 
@@ -241,7 +236,7 @@
 #define CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
 /* CONFIG_SYS_MONITOR_LEN must be a multiple of CONFIG_ENV_SECT_SIZE */
-#define CONFIG_SYS_MONITOR_LEN	(384 * 1024)	/* Reserve 384 kB for Mon */
+#define CONFIG_SYS_MONITOR_LEN	(512 * 1024)	/* Reserve 512 kB for Mon */
 #define CONFIG_SYS_MALLOC_LEN	(512 * 1024)	/* Reserved for malloc */
 
 /*
@@ -268,7 +263,7 @@
 #define CONFIG_CMD_MTDPARTS
 #define MTDIDS_DEFAULT			"nand0=e2800000.flash"
 #define MTDPARTS_DEFAULT		\
-	"mtdparts=e2800000.flash:512k(uboot),128k(env),3m@1m(kernel),-(fs)"
+	"mtdparts=e2800000.flash:512k(uboot),128k(env),6m@1m(kernel),-(fs)"
 
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_CMD_NAND 1
@@ -398,7 +393,6 @@
 #define CONFIG_SYS_PCI1_IO_PHYS	0xE2000000
 #define CONFIG_SYS_PCI1_IO_SIZE	0x00100000	/* 1M */
 
-#define CONFIG_PCI_PNP		/* do pci plug-and-play */
 #define CONFIG_SYS_PCI_SUBSYS_VENDORID 0x1057	/* Motorola */
 
 /*
@@ -502,6 +496,7 @@
  */
 				/* Initial Memory map for Linux*/
 #define CONFIG_SYS_BOOTMAPSZ	(256 << 20)
+#define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* Increase max gunzip size */
 
 #define CONFIG_SYS_RCWH_PCIHOST 0x80000000	/* PCIHOST  */
 

@@ -17,7 +17,6 @@
 /* CPU and board */
 #define CONFIG_MPC5200		1	/* This is a MPC5200 CPU */
 #define CONFIG_MOTIONPRO	1	/* ... on Promess Motion-PRO board */
-#define CONFIG_DISPLAY_BOARDINFO
 
 #define CONFIG_HIGH_BATS	1	/* High BATs supported */
 
@@ -66,8 +65,6 @@
 #undef CONFIG_BOOTARGS
 
 #define CONFIG_CMDLINE_EDITING		1	/* add command line history	*/
-
-#define CONFIG_VERSION_VARIABLE	1	/* include version env variable */
 
 /*
  * Default environment settings

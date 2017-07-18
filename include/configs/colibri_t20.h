@@ -14,7 +14,7 @@
 #define CONFIG_ARCH_MISC_INIT
 
 /* High-level configuration options */
-#define CONFIG_TEGRA_BOARD_STRING	"Toradex Colibri T20"
+#define CONFIG_DISPLAY_BOARDINFO_LATE	/* Calls show_board_info() */
 
 /* Board-specific serial config */
 #define CONFIG_TEGRA_ENABLE_UARTA
@@ -27,7 +27,6 @@
 #define CONFIG_SYS_I2C_TEGRA
 
 /* SD/MMC support */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_TEGRA_MMC
 
@@ -35,7 +34,6 @@
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_TEGRA
 #define CONFIG_USB_MAX_CONTROLLER_COUNT	3
-#define CONFIG_USB_STORAGE
 
 /* USB networking support */
 #define CONFIG_USB_HOST_ETHER
@@ -48,7 +46,6 @@
 
 /* LCD support */
 #define CONFIG_SYS_WHITE_ON_BLACK
-#define CONFIG_CONSOLE_SCROLL_LINES	10
 #define CONFIG_CMD_BMP
 #define CONFIG_LCD_LOGO
 
@@ -75,10 +72,8 @@
 #define CONFIG_ENV_SIZE			(SZ_64K)
 
 /* UBI */
-#define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS	/* increases size by almost 60 KB */
 #define CONFIG_LZO
-#define CONFIG_MTD_UBI_FASTMAP
 #define CONFIG_RBTREE
 
 /* Debug commands */

@@ -20,9 +20,6 @@
 #define CONFIG_SYS_TIMER_COUNTER	\
 	(&((struct gpt_regs *)IMX_GPT1_BASE)->counter)
 
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
-
 #define CONFIG_CMDLINE_TAG		/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG
@@ -90,7 +87,6 @@
 #define CONFIG_ENV_OVERWRITE
 
 /* ESDHC driver */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR	IMX_MMC_SDHC1_BASE
@@ -120,8 +116,6 @@
 
 #define CONFIG_LOADADDR		0x81000000	/* loadaddr env var */
 #define CONFIG_SYS_LOAD_ADDR	CONFIG_LOADADDR
-
-#define CONFIG_DEFAULT_FDT_FILE		"imx25-pdk.dtb"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"script=boot.scr\0" \

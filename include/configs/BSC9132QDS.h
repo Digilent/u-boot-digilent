@@ -11,12 +11,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_DISPLAY_BOARDINFO
-
-#ifdef CONFIG_BSC9132QDS
-#define CONFIG_BSC9132
-#endif
-
 #define CONFIG_MISC_INIT_R
 
 #ifdef CONFIG_SDCARD
@@ -26,7 +20,6 @@
 #define CONFIG_SYS_TEXT_BASE		0x11000000
 #define CONFIG_RESET_VECTOR_ADDRESS	0x110bfffc
 #endif
-#define CONFIG_SYS_FSL_ERRATUM_IFC_A002769	1
 #ifdef CONFIG_SPIFLASH
 #define CONFIG_RAMBOOT_SPIFLASH
 #define CONFIG_SYS_RAMBOOT
@@ -44,8 +37,6 @@
 
 #ifdef CONFIG_NAND
 #define CONFIG_SPL_INIT_MINIMAL
-#define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SPL_NAND_BOOT
 #define CONFIG_SPL_FLUSH_IMAGE
 #define CONFIG_SPL_TARGET		"u-boot-with-spl.bin"
@@ -77,13 +68,10 @@
 #endif
 
 /* High Level Configuration Options */
-#define CONFIG_BOOKE			/* BOOKE */
-#define CONFIG_E500			/* BOOKE e500 family */
 #define CONFIG_FSL_IFC			/* Enable IFC Support */
 #define CONFIG_FSL_CAAM			/* Enable SEC/CAAM */
 #define CONFIG_SYS_HAS_SERDES		/* common SERDES init code */
 
-#define CONFIG_PCI			/* Enable PCI/PCIE */
 #if defined(CONFIG_PCI)
 #define CONFIG_PCIE1			/* PCIE controller 1 (slot 1) */
 #define CONFIG_FSL_PCI_INIT		/* Use common FSL init code */
@@ -108,13 +96,10 @@
 #define CONFIG_SYS_PCIE1_IO_SIZE	0x00010000	/* 64k */
 #define CONFIG_SYS_PCIE1_IO_PHYS	0xC0010000
 
-#define CONFIG_PCI_PNP			/* do pci plug-and-play */
-
 #define CONFIG_PCI_SCAN_SHOW		/* show pci devices on startup */
 #define CONFIG_DOS_PARTITION
 #endif
 
-#define CONFIG_FSL_LAW			/* Use common FSL init code */
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_TSEC_ENET /* ethernet */
 
@@ -139,7 +124,6 @@
 #define CONFIG_SYS_MEMTEST_END		0x01ffffff
 
 /* DDR Setup */
-#define CONFIG_SYS_FSL_DDR3
 #define CONFIG_SYS_SPD_BUS_NUM		0
 #define SPD_EEPROM_ADDRESS1		0x54 /* I2C access */
 #define SPD_EEPROM_ADDRESS2		0x56 /* I2C access */
@@ -413,8 +397,6 @@ combinations. this should be removed later
 #define CONFIG_NS16550_MIN_FUNCTIONS
 #endif
 
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV	/* determine from environment */
-
 #define CONFIG_SYS_BAUDRATE_TABLE	\
 	{300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200}
 
@@ -496,7 +478,6 @@ combinations. this should be removed later
 
 #endif	/* CONFIG_TSEC_ENET */
 
-#define CONFIG_MMC
 #ifdef CONFIG_MMC
 #define CONFIG_DOS_PARTITION
 #define CONFIG_FSL_ESDHC
@@ -508,7 +489,6 @@ combinations. this should be removed later
 #ifdef CONFIG_USB_EHCI
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_EHCI_FSL
-#define CONFIG_USB_STORAGE
 #define CONFIG_HAS_FSL_DR_USB
 #endif
 
@@ -610,14 +590,6 @@ combinations. this should be removed later
 			"8m(kernel),512k(dtb),-(fs)"
 #endif
 /*
- * Override partitions in device tree using info
- * in "mtdparts" environment variable
- */
-#ifdef CONFIG_CMD_MTDPARTS
-#define CONFIG_FDT_FIXUP_PARTITIONS
-#endif
-
-/*
  * Environment Configuration
  */
 
@@ -647,7 +619,7 @@ combinations. this should be removed later
 	"consoledev=ttyS0\0"				\
 	"ramdiskaddr=2000000\0"			\
 	"ramdiskfile=rootfs.ext2.gz.uboot\0"		\
-	"fdtaddr=c00000\0"				\
+	"fdtaddr=1e00000\0"				\
 	"fdtfile=bsc9132qds.dtb\0"		\
 	"bdev=sda1\0"	\
 	CONFIG_DEF_HWCONFIG\

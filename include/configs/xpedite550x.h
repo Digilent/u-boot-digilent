@@ -14,29 +14,22 @@
 /*
  * High Level Configuration Options
  */
-#define CONFIG_BOOKE		1	/* BOOKE */
-#define CONFIG_E500		1	/* BOOKE e500 family */
-#define CONFIG_P2020		1
 #define CONFIG_XPEDITE550X	1
 #define CONFIG_SYS_BOARD_NAME	"XPedite5500"
 #define CONFIG_SYS_FORM_PMC_XMC	1
 #define CONFIG_PRPMC_PCI_ALIAS	"pci0"	/* Processor PMC interface on pci0 */
 #define CONFIG_BOARD_EARLY_INIT_R	/* Call board_pre_init */
-#define CONFIG_DISPLAY_BOARDINFO
 
 #ifndef CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_TEXT_BASE	0xfff80000
 #endif
 
-#define CONFIG_PCI		1	/* Enable PCI/PCIE */
-#define CONFIG_PCI_PNP		1	/* do pci plug-and-play */
 #define CONFIG_PCI_SCAN_SHOW	1	/* show pci devices on startup */
 #define CONFIG_PCIE1		1	/* PCIE controller 1 (PEX8112 or XMC) */
 #define CONFIG_FSL_PCI_INIT	1	/* Use common FSL init code */
 #define CONFIG_PCI_INDIRECT_BRIDGE 1	/* indirect PCI bridge support */
 #define CONFIG_SYS_PCI_64BIT	1	/* enable 64-bit PCI resources */
 #define CONFIG_FSL_PCIE_RESET	1	/* need PCIe reset errata */
-#define CONFIG_FSL_LAW		1	/* Use common FSL init code */
 #define CONFIG_FSL_ELBC		1
 
 /*
@@ -49,13 +42,11 @@
 /*
  * DDR config
  */
-#define CONFIG_SYS_FSL_DDR3
 #define CONFIG_SPD_EEPROM		/* Use SPD EEPROM for DDR setup */
 #define CONFIG_DDR_SPD
 #define CONFIG_MEM_INIT_VALUE		0xdeadbeef
 #define SPD_EEPROM_ADDRESS			0x54
 #define SPD_EEPROM_OFFSET		0x200	/* OFFSET of SPD in EEPROM */
-#define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
 #define CONFIG_CHIP_SELECTS_PER_CTRL 2
 #define CONFIG_DDR_ECC
@@ -343,7 +334,6 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
 /*
  * USB
  */
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_FSL
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
@@ -538,7 +528,7 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
 	"osfile=/home/user/board.uImage\0"				\
 	"fdtfile=/home/user/board.dtb\0"				\
 	"ubootfile=/home/user/u-boot.bin\0"				\
-	"fdtaddr=c00000\0"						\
+	"fdtaddr=0x1e00000\0"						\
 	"osaddr=0x1000000\0"						\
 	"loadaddr=0x1000000\0"						\
 	"prog_uboot1="CONFIG_PROG_UBOOT1"\0"				\

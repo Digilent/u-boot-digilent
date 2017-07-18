@@ -115,13 +115,16 @@ static int get_aligned_image_overhead(struct spl_load_info *info, int offset)
 static int get_aligned_image_size(struct spl_load_info *info, int data_size,
 				  int offset)
 {
+	data_size = data_size + get_aligned_image_overhead(info, offset);
+
 	if (info->filename)
-		return data_size + get_aligned_image_overhead(info, offset);
+		return data_size;
 
 	return (data_size + info->bl_len - 1) / info->bl_len;
 }
 
-int spl_load_simple_fit(struct spl_load_info *info, ulong sector, void *fit)
+int spl_load_simple_fit(struct spl_image_info *spl_image,
+			struct spl_load_info *info, ulong sector, void *fit)
 {
 	int sectors;
 	ulong size, load;
@@ -132,7 +135,7 @@ int spl_load_simple_fit(struct spl_load_info *info, ulong sector, void *fit)
 	int data_offset, data_size;
 	int base_offset, align_len = ARCH_DMA_MINALIGN - 1;
 	int src_sector;
-	void *dst;
+	void *dst, *src;
 
 	/*
 	 * Figure out where the external images start. This is the base for the
@@ -182,9 +185,9 @@ int spl_load_simple_fit(struct spl_load_info *info, ulong sector, void *fit)
 	data_size = fdt_getprop_u32(fit, node, "data-size");
 	load = fdt_getprop_u32(fit, node, "load");
 	debug("data_offset=%x, data_size=%x\n", data_offset, data_size);
-	spl_image.load_addr = load;
-	spl_image.entry_point = load;
-	spl_image.os = IH_OS_U_BOOT;
+	spl_image->load_addr = load;
+	spl_image->entry_point = load;
+	spl_image->os = IH_OS_U_BOOT;
 
 	/*
 	 * Work out where to place the image. We read it so that the first
@@ -206,8 +209,13 @@ int spl_load_simple_fit(struct spl_load_info *info, ulong sector, void *fit)
 		return -EIO;
 	debug("image: dst=%p, data_offset=%x, size=%x\n", dst, data_offset,
 	      data_size);
-	memcpy(dst, dst + get_aligned_image_overhead(info, data_offset),
-	       data_size);
+	src = dst + get_aligned_image_overhead(info, data_offset);
+
+#ifdef CONFIG_SPL_FIT_IMAGE_POST_PROCESS
+	board_fit_image_post_process((void **)&src, (size_t *)&data_size);
+#endif
+
+	memcpy(dst, src, data_size);
 
 	/* Figure out which device tree the board wants to use */
 	fdt_len = spl_fit_select_fdt(fit, images, &fdt_offset);
@@ -236,8 +244,14 @@ int spl_load_simple_fit(struct spl_load_info *info, ulong sector, void *fit)
 	 */
 	debug("fdt: dst=%p, data_offset=%x, size=%x\n", dst, fdt_offset,
 	      fdt_len);
-	memcpy(load_ptr + data_size,
-	       dst + get_aligned_image_overhead(info, fdt_offset), fdt_len);
+	src = dst + get_aligned_image_overhead(info, fdt_offset);
+	dst = load_ptr + data_size;
+
+#ifdef CONFIG_SPL_FIT_IMAGE_POST_PROCESS
+	board_fit_image_post_process((void **)&src, (size_t *)&fdt_len);
+#endif
+
+	memcpy(dst, src, fdt_len);
 
 	return 0;
 }

@@ -113,8 +113,6 @@ IPB Bus clocking configuration.
  * 0x40000000 - 0x4fffffff - PCI Memory
  * 0x50000000 - 0x50ffffff - PCI IO Space
  * -----------------------------------------------------------------------*/
-#define CONFIG_PCI			1
-#define CONFIG_PCI_PNP			1
 #define CONFIG_PCI_SCAN_SHOW		1
 #define CONFIG_PCI_MEM_BUS		0x40000000
 #define CONFIG_PCI_MEM_PHYS		CONFIG_PCI_MEM_BUS
@@ -350,8 +348,6 @@ RTC configuration
 
 #define CONFIG_SYS_LOAD_ADDR 0x400000 /* default load address */
 
-#define CONFIG_DISPLAY_BOARDINFO 1
-
 /*-----------------------------------------------------------------------------
  Various low-level settings
 -----------------------------------------------------------------------------*/
@@ -405,7 +401,6 @@ RTC configuration
 
 /* USB */
 #define CONFIG_USB_OHCI
-#define CONFIG_USB_STORAGE
 
 /* pass open firmware flat tree */
 #define OF_CPU				"PowerPC,5200@0"

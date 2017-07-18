@@ -24,7 +24,8 @@
 #include <asm/system.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/sys_proto.h>
-#include <asm-generic/errno.h>
+#include <linux/errno.h>
+#include <clk.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -53,16 +54,16 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ZYNQ_GEM_NWCTRL_MDEN_MASK	0x00000010 /* Enable MDIO port */
 #define ZYNQ_GEM_NWCTRL_STARTTX_MASK	0x00000200 /* Start tx (tx_go) */
 
-#define ZYNQ_GEM_NWCFG_SPEED100		0x000000001 /* 100 Mbps operation */
-#define ZYNQ_GEM_NWCFG_SPEED1000	0x000000400 /* 1Gbps operation */
-#define ZYNQ_GEM_NWCFG_FDEN		0x000000002 /* Full Duplex mode */
-#define ZYNQ_GEM_NWCFG_FSREM		0x000020000 /* FCS removal */
-#define ZYNQ_GEM_NWCFG_SGMII_ENBL	0x080000000 /* SGMII Enable */
-#define ZYNQ_GEM_NWCFG_PCS_SEL		0x000000800 /* PCS select */
+#define ZYNQ_GEM_NWCFG_SPEED100		0x00000001 /* 100 Mbps operation */
+#define ZYNQ_GEM_NWCFG_SPEED1000	0x00000400 /* 1Gbps operation */
+#define ZYNQ_GEM_NWCFG_FDEN		0x00000002 /* Full Duplex mode */
+#define ZYNQ_GEM_NWCFG_FSREM		0x00020000 /* FCS removal */
+#define ZYNQ_GEM_NWCFG_SGMII_ENBL	0x08000000 /* SGMII Enable */
+#define ZYNQ_GEM_NWCFG_PCS_SEL		0x00000800 /* PCS select */
 #ifdef CONFIG_ARM64
-#define ZYNQ_GEM_NWCFG_MDCCLKDIV	0x000100000 /* Div pclk by 64, max 160MHz */
+#define ZYNQ_GEM_NWCFG_MDCCLKDIV	0x00100000 /* Div pclk by 64, max 160MHz */
 #else
-#define ZYNQ_GEM_NWCFG_MDCCLKDIV	0x0000c0000 /* Div pclk by 48, max 120MHz */
+#define ZYNQ_GEM_NWCFG_MDCCLKDIV	0x000c0000 /* Div pclk by 48, max 120MHz */
 #endif
 
 #ifdef CONFIG_ARM64
@@ -181,35 +182,23 @@ struct zynq_gem_priv {
 	struct phy_device *phydev;
 	int phy_of_handle;
 	struct mii_dev *bus;
+#ifdef CONFIG_CLK_ZYNQMP
+	struct clk clk;
+#endif
+	bool int_pcs;
 };
-
-static inline int mdio_wait(struct zynq_gem_regs *regs)
-{
-	u32 timeout = 20000;
-
-	/* Wait till MDIO interface is ready to accept a new transaction. */
-	while (--timeout) {
-		if (readl(&regs->nwsr) & ZYNQ_GEM_NWSR_MDIOIDLE_MASK)
-			break;
-		WATCHDOG_RESET();
-	}
-
-	if (!timeout) {
-		printf("%s: Timeout\n", __func__);
-		return 1;
-	}
-
-	return 0;
-}
 
 static u32 phy_setup_op(struct zynq_gem_priv *priv, u32 phy_addr, u32 regnum,
 			u32 op, u16 *data)
 {
 	u32 mgtcr;
 	struct zynq_gem_regs *regs = priv->iobase;
+	int err;
 
-	if (mdio_wait(regs))
-		return 1;
+	err = wait_for_bit(__func__, &regs->nwsr, ZYNQ_GEM_NWSR_MDIOIDLE_MASK,
+			    true, 20000, false);
+	if (err)
+		return err;
 
 	/* Construct mgtcr mask for the operation */
 	mgtcr = ZYNQ_GEM_PHYMNTNC_OP_MASK | op |
@@ -219,8 +208,10 @@ static u32 phy_setup_op(struct zynq_gem_priv *priv, u32 phy_addr, u32 regnum,
 	/* Write mgtcr and wait for completion */
 	writel(mgtcr, &regs->phymntnc);
 
-	if (mdio_wait(regs))
-		return 1;
+	err = wait_for_bit(__func__, &regs->nwsr, ZYNQ_GEM_NWSR_MDIOIDLE_MASK,
+			    true, 20000, false);
+	if (err)
+		return err;
 
 	if (op == ZYNQ_GEM_PHYMNTNC_OP_R_MASK)
 		*data = readl(&regs->phymntnc);
@@ -420,10 +411,6 @@ static int zynq_gem_init(struct udevice *dev)
 		dummy_rx_bd->addr = ZYNQ_GEM_RXBUF_WRAP_MASK |
 				ZYNQ_GEM_RXBUF_NEW_MASK;
 		dummy_rx_bd->status = 0;
-		flush_dcache_range((ulong)&dummy_tx_bd, (ulong)&dummy_tx_bd +
-				   sizeof(dummy_tx_bd));
-		flush_dcache_range((ulong)&dummy_rx_bd, (ulong)&dummy_rx_bd +
-				   sizeof(dummy_rx_bd));
 
 		writel((ulong)dummy_tx_bd, &regs->transmit_q1_ptr);
 		writel((ulong)dummy_rx_bd, &regs->receive_q1_ptr);
@@ -442,7 +429,12 @@ static int zynq_gem_init(struct udevice *dev)
 
 	nwconfig = ZYNQ_GEM_NWCFG_INIT;
 
-	if (priv->interface == PHY_INTERFACE_MODE_SGMII) {
+	/*
+	 * Set SGMII enable PCS selection only if internal PCS/PMA
+	 * core is used and interface is SGMII.
+	 */
+	if (priv->interface == PHY_INTERFACE_MODE_SGMII &&
+	    priv->int_pcs) {
 		nwconfig |= ZYNQ_GEM_NWCFG_SGMII_ENBL |
 			    ZYNQ_GEM_NWCFG_PCS_SEL;
 #ifdef CONFIG_ARM64
@@ -469,8 +461,14 @@ static int zynq_gem_init(struct udevice *dev)
 
 	/* Change the rclk and clk only not using EMIO interface */
 	if (!priv->emio)
+#ifndef CONFIG_CLK_ZYNQMP
 		zynq_slcr_gem_clk_setup((ulong)priv->iobase !=
 					ZYNQ_GEM_BASEADDR0, clk_rate);
+#else
+		ret = clk_set_rate(&priv->clk, clk_rate);
+		if (IS_ERR_VALUE(ret))
+			return -1;
+#endif
 
 	setbits_le32(&regs->nwctrl, ZYNQ_GEM_NWCTRL_RXEN_MASK |
 					ZYNQ_GEM_NWCTRL_TXEN_MASK);
@@ -643,13 +641,20 @@ static int zynq_gem_probe(struct udevice *dev)
 	priv->tx_bd = (struct emac_bd *)bd_space;
 	priv->rx_bd = (struct emac_bd *)((ulong)bd_space + BD_SEPRN_SPACE);
 
+#ifdef CONFIG_CLK_ZYNQMP
+	ret = clk_get_by_name(dev, "tx_clk", &priv->clk);
+	if (ret < 0) {
+		dev_err(dev, "failed to get clock\n");
+		return -EINVAL;
+	}
+#endif
+
 	priv->bus = mdio_alloc();
 	priv->bus->read = zynq_gem_miiphy_read;
 	priv->bus->write = zynq_gem_miiphy_write;
 	priv->bus->priv = priv;
-	strcpy(priv->bus->name, "gem");
 
-	ret = mdio_register(priv->bus);
+	ret = mdio_register_seq(priv->bus, dev->seq);
 	if (ret)
 		return ret;
 
@@ -705,8 +710,10 @@ static int zynq_gem_ofdata_to_platdata(struct udevice *dev)
 	priv->interface = pdata->phy_interface;
 
 	priv->emio = fdtdec_get_bool(gd->fdt_blob, dev->of_offset, "xlnx,emio");
+	priv->int_pcs = fdtdec_get_bool(gd->fdt_blob, dev->of_offset,
+					"is-internal-pcspma");
 
-	printf("ZYNQ GEM: %lx, phyaddr %d, interface %s\n", (ulong)priv->iobase,
+	printf("ZYNQ GEM: %lx, phyaddr %x, interface %s\n", (ulong)priv->iobase,
 	       priv->phyaddr, phy_string_for_interface(priv->interface));
 
 	return 0;

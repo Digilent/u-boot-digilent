@@ -134,6 +134,7 @@ static inline int pci_eth_init(bd_t *bis)
 	return num;
 }
 
+#ifdef CONFIG_FEC_MXC
 struct mii_dev *fec_get_miibus(uint32_t base_addr, int dev_id);
 #ifdef CONFIG_PHYLIB
 struct phy_device;
@@ -144,6 +145,7 @@ int fec_probe(bd_t *bd, int dev_id, uint32_t base_addr,
  * Allow FEC to fine-tune MII configuration on boards which require this.
  */
 int fecmxc_register_mii_postcall(struct eth_device *dev, int (*cb)(int));
+#endif
 #endif
 
 #endif /* _NETDEV_H_ */

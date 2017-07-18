@@ -40,6 +40,41 @@ static int spi_flash_probe_slave(struct spi_flash *flash)
 		debug("SF: Failed to claim SPI bus: %d\n", ret);
 		return ret;
 	}
+#if 0
+	if (spi->option == SF_DUAL_PARALLEL_FLASH)
+		spi->flags |= SPI_XFER_LOWER;
+	/* Read the ID codes */
+	ret = spi_flash_cmd(spi, CMD_READ_ID, idcode, sizeof(idcode));
+	if (ret) {
+		printf("SF: Failed to get idcodes\n");
+		goto err_read_id;
+	}
+
+#ifdef CONFIG_SPI_GENERIC
+	if (spi->option == SF_DUAL_PARALLEL_FLASH) {
+		spi->flags |= SPI_XFER_UPPER;
+		ret = spi_flash_cmd(spi, CMD_READ_ID, idcode_up,
+				    sizeof(idcode_up));
+		if (ret) {
+			printf("SF: Failed to get idcodes\n");
+			goto err_read_id;
+		}
+		for (i = 0; i < sizeof(idcode); i++) {
+			if (idcode[i] != idcode_up[i]) {
+				printf("SF: Failed to get same idcodes\n");
+				goto err_read_id;
+			}
+		}
+	}
+#endif
+#ifdef DEBUG
+	printf("SF: Got idcodes\n");
+	print_buffer(0, idcode, 1, sizeof(idcode), 0);
+#endif
+
+	if (spi_flash_validate_params(spi, idcode, flash)) {
+
+#endif
 
 	ret = spi_flash_scan(flash);
 	if (ret)

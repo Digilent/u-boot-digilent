@@ -13,8 +13,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_DISPLAY_BOARDINFO
-
 /*
  * High Level Configuration Options
  */
@@ -33,7 +31,6 @@
 #endif
 
 #ifdef CONFIG_PCISLAVE
-#define CONFIG_PCI
 #define CONFIG_83XX_PCICLK	66666666	/* in Hz */
 #endif /* CONFIG_PCISLAVE */
 
@@ -63,21 +60,16 @@
 #define CONFIG_SPD_EEPROM		/* use SPD EEPROM for DDR setup*/
 
 /*
- * define CONFIG_SYS_FSL_DDR2 to use unified DDR driver
- * undefine it to use old spd_sdram.c
+ * SYS_FSL_DDR2 is selected in Kconfig to use unified DDR driver
+ * unselect it to use old spd_sdram.c
  */
-#define CONFIG_SYS_FSL_DDR2
-#ifdef CONFIG_SYS_FSL_DDR2
-#define CONFIG_SYS_FSL_DDRC_GEN2
 #define CONFIG_SYS_SPD_BUS_NUM	0
 #define SPD_EEPROM_ADDRESS1	0x52
 #define SPD_EEPROM_ADDRESS2	0x51
-#define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	2
 #define CONFIG_CHIP_SELECTS_PER_CTRL	(2 * CONFIG_DIMM_SLOTS_PER_CTLR)
 #define CONFIG_ECC_INIT_VIA_DDRCONTROLLER
 #define CONFIG_MEM_INIT_VALUE	0xDeadBeef
-#endif
 
 /*
  * 32-bit data path mode.
@@ -225,7 +217,7 @@
 			(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
-#define CONFIG_SYS_MONITOR_LEN	(384 * 1024)	/* Reserve 384 kB for Mon */
+#define CONFIG_SYS_MONITOR_LEN	(512 * 1024)	/* Reserve 512 kB for Mon */
 #define CONFIG_SYS_MALLOC_LEN	(256 * 1024)	/* Reserved for malloc */
 
 /*
@@ -393,7 +385,6 @@
 #undef PCI_ONE_PCI1
 #endif
 
-#define CONFIG_PCI_PNP		/* do pci plug-and-play */
 #define CONFIG_83XX_PCI_STREAMING
 
 #undef CONFIG_EEPRO100
@@ -508,6 +499,7 @@
  */
 				/* Initial Memory map for Linux*/
 #define CONFIG_SYS_BOOTMAPSZ	(256 << 20)
+#define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* Increase max gunzip size */
 
 #define CONFIG_SYS_RCWH_PCIHOST 0x80000000 /* PCIHOST  */
 

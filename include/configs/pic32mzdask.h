@@ -10,7 +10,6 @@
 #define __PIC32MZDASK_CONFIG_H
 
 /* System Configuration */
-#define CONFIG_DISPLAY_BOARDINFO
 
 /*--------------------------------------------
  * CPU configuration
@@ -92,8 +91,6 @@
 /*-----------------------------------------------------------------------
  * SDHC Configuration
  */
-#define CONFIG_SDHCI
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 
 /*--------------------------------------------------

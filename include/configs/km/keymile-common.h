@@ -65,7 +65,6 @@
 #define CONFIG_BOOTP_HOSTNAME
 
 /* UBI Support for all Keymile boards */
-#define CONFIG_CMD_UBI
 #define CONFIG_RBTREE
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_MTD_DEVICE
@@ -236,7 +235,5 @@
 	"mtdparts=" MTDPARTS_DEFAULT "\0"				\
 	""
 #endif /* CONFIG_KM_DEF_ENV */
-
-#define CONFIG_VERSION_VARIABLE	/* include version env variable */
 
 #endif /* __CONFIG_KEYMILE_H */

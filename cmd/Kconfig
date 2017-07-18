@@ -114,6 +114,8 @@ config AUTOBOOT_STOP_STR_SHA256
 
 endmenu
 
+source "cmd/fastboot/Kconfig"
+
 comment "Commands"
 
 menu "Info commands"
@@ -165,12 +167,47 @@ config CMD_BOOTZ
 	help
 	  Boot the Linux zImage
 
+config CMD_BOOTI
+	bool "booti"
+	depends on ARM64
+	default y
+	help
+	  Boot an AArch64 Linux Kernel image from memory.
+
 config CMD_BOOTEFI
 	bool "bootefi"
 	depends on EFI_LOADER
 	default y
 	help
 	  Boot an EFI image from memory.
+
+config CMD_BOOTEFI_HELLO_COMPILE
+	bool "Compile a standard EFI hello world binary for testing"
+	depends on CMD_BOOTEFI && (ARM || X86)
+	default y
+	help
+	  This compiles a standard EFI hello world application with U-Boot so
+	  that it can be used with the test/py testing framework. This is useful
+	  for testing that EFI is working at a basic level, and for bringing
+	  up EFI support on a new architecture.
+
+	  No additional space will be required in the resulting U-Boot binary
+	  when this option is enabled.
+
+config CMD_BOOTEFI_HELLO
+	bool "Allow booting a standard EFI hello world for testing"
+	depends on CMD_BOOTEFI_HELLO_COMPILE
+	help
+	  This adds a standard EFI hello world application to U-Boot so that
+	  it can be used with the 'bootefi hello' command. This is useful
+	  for testing that EFI is working at a basic level, and for bringing
+	  up EFI support on a new architecture.
+
+config CMD_BOOTMENU
+	bool "bootmenu"
+	select MENU
+	help
+	  Add an ANSI terminal boot menu command.
 
 config CMD_ELF
 	bool "bootelf, bootvx"
@@ -272,7 +309,7 @@ config CMD_MEMORY
 	bool "md, mm, nm, mw, cp, cmp, base, loop"
 	default y
 	help
-	  Memeory commands.
+	  Memory commands.
 	    md - memory display
 	    mm - memory modify (auto-incrementing address)
 	    nm - memory modify (constant address)
@@ -280,7 +317,7 @@ config CMD_MEMORY
 	    cp - memory copy
 	    cmp - memory compare
 	    base - print or set address offset
-	    loop - initinite loop on address range
+	    loop - initialize loop on address range
 
 config CMD_CRC32
 	bool "crc32"
@@ -395,6 +432,7 @@ config CMD_USB
 
 config CMD_DFU
 	bool "dfu"
+	select USB_FUNCTION_DFU
 	help
 	  Enables the command "dfu" which is used to have U-Boot create a DFU
 	  class device via USB.
@@ -409,6 +447,24 @@ config CMD_FPGA
 	default y
 	help
 	  FPGA support.
+
+config CMD_FPGA_LOADP
+	bool "fpga loadp"
+	help
+	  Enables the fpga loadp command which is used to load partial
+	  bitstreams on to FPGA.
+
+config CMD_FPGA_LOADBP
+	bool "fpga loadbp"
+	help
+	  Enables the fpga loadbp command which is used to load partial
+	  bitstreams on to FPGA in bit format. Xilinx only.
+
+config CMD_FPGA_LOAD_SECURE
+	bool "fpga loads"
+	help
+	  Enables the fpga loade command which is used to load encrypted
+	  bitstreams on to FPGA.
 
 config CMD_REMOTEPROC
 	bool "remoteproc"
@@ -486,6 +542,12 @@ config CMD_DHCP
 	help
 	  Boot image via network using DHCP/TFTP protocol
 
+config CMD_PXE
+	bool "pxe"
+	select MENU
+	help
+	  Boot image via network using PXE protocol
+
 config CMD_NFS
 	bool "nfs"
 	default y
@@ -526,6 +588,12 @@ endmenu
 
 menu "Misc commands"
 
+config CMD_AES
+	bool "aes"
+	help
+	  Enable comamnd support for encrypting and
+	  decrypting of images.
+
 config CMD_AMBAPP
 	bool "ambapp"
 	depends on LEON3
@@ -539,6 +607,15 @@ config SYS_AMBAPP_PRINT_ON_STARTUP
 	default n
 	help
 	  Show AMBA Plug-n-Play information on startup.
+
+config CMD_BKOPS_ENABLE
+	bool "mmc bkops enable"
+	depends on CMD_MMC
+	default n
+	help
+	  Enable command for setting manual background operations handshake
+	  on a eMMC device. The feature is optionally available on eMMC devices
+	  conforming to standard >= 4.41.
 
 config CMD_BLOCK_CACHE
 	bool "blkcache - control and stats for block cache"
@@ -593,6 +670,24 @@ config CMD_SOUND
 	     sound init   - set up sound system
 	     sound play   - play a sound
 
+config CMD_ZYNQ_AES
+	bool "Zynq AES"
+	depends on CMD_ZYNQ_RSA
+	help
+	  Decrypts the encrypted image present in source address
+	  and places the decrypted image at destination address
+
+config CMD_ZYNQ_RSA
+	bool "Zynq RSA"
+	select RSA
+	help
+	  Verifies the authenticated and encrypted zynq images.
+
+config CMD_RSA
+	bool "RSA command to authenticate"
+	help
+	  Verifies the Authenticated images.
+
 config CMD_QFW
 	bool "qfw"
 	select QFW
@@ -600,6 +695,9 @@ config CMD_QFW
 	  This provides access to the QEMU firmware interface.  The main
 	  feature is to allow easy loading of files passed to qemu-system
 	  via -kernel / -initrd
+
+source "cmd/mvebu/Kconfig"
+
 endmenu
 
 config CMD_BOOTSTAGE
@@ -667,6 +765,19 @@ config CMD_TPM_TEST
 
 endmenu
 
+menu "Firmware commands"
+config CMD_CROS_EC
+	bool "Enable crosec command"
+	depends on CROS_EC
+	default y
+	help
+	  Enable command-line access to the Chrome OS EC (Embedded
+	  Controller). This provides the 'crosec' command which has
+	  a number of sub-commands for performing EC tasks such as
+	  updating its flash, accessing a small saved context area
+	  and talking to the I2C bus behind the EC (if there is one).
+endmenu
+
 menu "Filesystem commands"
 config CMD_EXT2
 	bool "ext2 command support"
@@ -695,5 +806,17 @@ config CMD_FS_GENERIC
 	  Enables filesystem commands (e.g. load, ls) that work for multiple
 	  fs types.
 endmenu
+
+config CMD_UBI
+	tristate "Enable UBI - Unsorted block images commands"
+	select CRC32
+	select MTD_UBI
+	help
+	  UBI is a software layer above MTD layer which admits use of LVM-like
+	  logical volumes on top of MTD devices, hides some complexities of
+	  flash chips like wear and bad blocks and provides some other useful
+	  capabilities. Please, consult the MTD web site for more details
+	  (www.linux-mtd.infradead.org). Activate this option if you want
+	  to use U-Boot UBI commands.
 
 endmenu

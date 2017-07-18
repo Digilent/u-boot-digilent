@@ -11,6 +11,10 @@
 
 #ifdef CONFIG_LS2080A
 enum srds_prtcl {
+	/*
+	 * Nobody will check whether the device 'NONE' has been configured,
+	 * So use it to indicate if the serdes_prtcl_map has been initialized.
+	 */
 	NONE = 0,
 	PCIE1,
 	PCIE2,
@@ -57,6 +61,10 @@ enum srds {
 };
 #elif defined(CONFIG_FSL_LSCH2)
 enum srds_prtcl {
+	/*
+	 * Nobody will check whether the device 'NONE' has been configured,
+	 * So use it to indicate if the serdes_prtcl_map has been initialized.
+	 */
 	NONE = 0,
 	PCIE1,
 	PCIE2,
@@ -140,6 +148,7 @@ enum srds_prtcl {
 
 enum srds {
 	FSL_SRDS_1  = 0,
+	FSL_SRDS_2  = 1,
 };
 
 #endif
@@ -150,7 +159,7 @@ int serdes_get_first_lane(u32 sd, enum srds_prtcl device);
 enum srds_prtcl serdes_get_prtcl(int serdes, int cfg, int lane);
 int is_serdes_prtcl_valid(int serdes, u32 prtcl);
 
-#ifdef	CONFIG_LS1043A
+#ifdef CONFIG_FSL_LSCH2
 const char *serdes_clock_to_string(u32 clock);
 int get_serdes_protocol(void);
 #endif

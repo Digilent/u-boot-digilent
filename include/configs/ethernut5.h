@@ -23,7 +23,6 @@
 #define CONFIG_MACH_TYPE MACH_TYPE_ETHERNUT5
 
 /* CPU information */
-#define CONFIG_DISPLAY_CPUINFO		/* Display at console. */
 #define CONFIG_ARCH_CPU_INIT
 
 /* ARM asynchronous clock */
@@ -96,7 +95,6 @@
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_REISER
 #define CONFIG_CMD_SAVES
-#define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
 #define CONFIG_CMD_UNZIP
 #endif
@@ -129,7 +127,6 @@
 
 /* MMC */
 #ifdef CONFIG_CMD_MMC
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_GENERIC_ATMEL_MCI
 #define CONFIG_SYS_MMC_CD_PIN		AT91_PIO_PORTC, 8
@@ -144,7 +141,6 @@
 #define CONFIG_SYS_USB_OHCI_REGS_BASE	0x00500000
 #define CONFIG_SYS_USB_OHCI_SLOT_NAME	"host"
 #define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
-#define CONFIG_USB_STORAGE
 #endif
 
 /* RTC */

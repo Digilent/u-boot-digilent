@@ -35,10 +35,29 @@ void board_init_f(ulong dummy)
 	board_init_r(NULL, 0);
 }
 
+static void ps_mode_reset(ulong mode)
+{
+	writel(mode << ZYNQMP_CRL_APB_BOOT_PIN_CTRL_OUT_EN_SHIFT,
+	       &crlapb_base->boot_pin_ctrl);
+	udelay(5);
+	writel(mode << ZYNQMP_CRL_APB_BOOT_PIN_CTRL_OUT_VAL_SHIFT |
+	       mode << ZYNQMP_CRL_APB_BOOT_PIN_CTRL_OUT_EN_SHIFT,
+	       &crlapb_base->boot_pin_ctrl);
+}
+
+/*
+ * Set default PS_MODE1 which is used for USB ULPI phy reset
+ * Also other resets can be connected to this certain pin
+ */
+#ifndef MODE_RESET
+# define MODE_RESET	PS_MODE1
+#endif
+
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
 	preloader_console_init();
+	ps_mode_reset(MODE_RESET);
 	board_init();
 }
 #endif
@@ -48,17 +67,40 @@ u32 spl_boot_device(void)
 	u32 reg = 0;
 	u8 bootmode;
 
+#if defined(CONFIG_SPL_ZYNQMP_ALT_BOOTMODE_ENABLED)
+	/* Change default boot mode at run-time */
+	writel(CONFIG_SPL_ZYNQMP_ALT_BOOTMODE << BOOT_MODE_ALT_SHIFT,
+	       &crlapb_base->boot_mode);
+#endif
+
 	reg = readl(&crlapb_base->boot_mode);
+	if (reg >> BOOT_MODE_ALT_SHIFT)
+		reg >>= BOOT_MODE_ALT_SHIFT;
+
 	bootmode = reg & BOOT_MODES_MASK;
 
 	switch (bootmode) {
 	case JTAG_MODE:
 		return BOOT_DEVICE_RAM;
 #ifdef CONFIG_SPL_MMC_SUPPORT
+	case SD1_LSHFT_MODE:
 	case EMMC_MODE:
 	case SD_MODE:
 	case SD_MODE1:
 		return BOOT_DEVICE_MMC1;
+#endif
+#ifdef CONFIG_SPL_DFU_SUPPORT
+	case USB_MODE:
+		return BOOT_DEVICE_DFU;
+#endif
+#ifdef CONFIG_SPL_SATA_SUPPORT
+	case SW_SATA_MODE:
+		return BOOT_DEVICE_SATA;
+#endif
+#ifdef CONFIG_SPL_SPI_SUPPORT
+	case QSPI_MODE_24BIT:
+	case QSPI_MODE_32BIT:
+		return BOOT_DEVICE_SPI;
 #endif
 	default:
 		printf("Invalid Boot Mode:0x%x\n", bootmode);
@@ -92,6 +134,8 @@ __weak void psu_init(void)
 #ifdef CONFIG_SPL_OS_BOOT
 int spl_start_uboot(void)
 {
+	handoff_setup();
+
 	return 0;
 }
 #endif

@@ -11,18 +11,11 @@
 #ifndef __T2080RDB_H
 #define __T2080RDB_H
 
-#define CONFIG_DISPLAY_BOARDINFO
-#define CONFIG_T2080RDB
 #define CONFIG_ICS307_REFCLK_HZ 25000000  /* ICS307 ref clk freq */
-#define CONFIG_MMC
 #define CONFIG_USB_EHCI
 #define CONFIG_FSL_SATA_V2
 
 /* High Level Configuration Options */
-#define CONFIG_PHYS_64BIT
-#define CONFIG_BOOKE
-#define CONFIG_E500		/* BOOKE e500 family */
-#define CONFIG_E500MC		/* BOOKE e500mc family */
 #define CONFIG_SYS_BOOK3E_HV	/* Category E.HV supported */
 #define CONFIG_MP		/* support multiple processors */
 #define CONFIG_ENABLE_36BIT_PHYS
@@ -33,26 +26,16 @@
 #endif
 
 #define CONFIG_SYS_FSL_CPC	/* Corenet Platform Cache */
-#define CONFIG_SYS_NUM_CPC	CONFIG_NUM_DDR_CONTROLLERS
+#define CONFIG_SYS_NUM_CPC	CONFIG_SYS_NUM_DDR_CTLRS
 #define CONFIG_FSL_IFC		/* Enable IFC Support */
 #define CONFIG_FSL_CAAM		/* Enable SEC/CAAM */
-#define CONFIG_FSL_LAW		/* Use common FSL init code */
 #define CONFIG_ENV_OVERWRITE
 
 #ifdef CONFIG_RAMBOOT_PBL
 #define CONFIG_SYS_FSL_PBL_PBI board/freescale/t208xrdb/t2080_pbi.cfg
-#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t208xrdb/t2080_rcw.cfg
 
-#define CONFIG_SPL_MPC8XXX_INIT_DDR_SUPPORT
-#define CONFIG_SPL_ENV_SUPPORT
-#define CONFIG_SPL_SERIAL_SUPPORT
 #define CONFIG_SPL_FLUSH_IMAGE
 #define CONFIG_SPL_TARGET		"u-boot-with-spl.bin"
-#define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_I2C_SUPPORT
-#define CONFIG_SPL_DRIVERS_MISC_SUPPORT
-#define CONFIG_FSL_LAW			/* Use common FSL init code */
 #define CONFIG_SYS_TEXT_BASE		0x00201000
 #define CONFIG_SPL_TEXT_BASE		0xFFFD8000
 #define CONFIG_SPL_PAD_TO		0x40000
@@ -67,19 +50,17 @@
 #endif
 
 #ifdef CONFIG_NAND
-#define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SYS_NAND_U_BOOT_SIZE	(768 << 10)
 #define CONFIG_SYS_NAND_U_BOOT_DST	0x00200000
 #define CONFIG_SYS_NAND_U_BOOT_START	0x00200000
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	(256 << 10)
 #define CONFIG_SYS_LDSCRIPT  "arch/powerpc/cpu/mpc85xx/u-boot-nand.lds"
+#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t208xrdb/t2080_nand_rcw.cfg
 #define CONFIG_SPL_NAND_BOOT
 #endif
 
 #ifdef CONFIG_SPIFLASH
 #define        CONFIG_RESET_VECTOR_ADDRESS             0x200FFC
-#define CONFIG_SPL_SPI_SUPPORT
-#define CONFIG_SPL_SPI_FLASH_SUPPORT
 #define CONFIG_SPL_SPI_FLASH_MINIMAL
 #define CONFIG_SYS_SPI_FLASH_U_BOOT_SIZE       (768 << 10)
 #define CONFIG_SYS_SPI_FLASH_U_BOOT_DST                (0x00200000)
@@ -89,12 +70,12 @@
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_SYS_MPC85XX_NO_RESETVEC
 #endif
+#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t208xrdb/t2080_spi_rcw.cfg
 #define CONFIG_SPL_SPI_BOOT
 #endif
 
 #ifdef CONFIG_SDCARD
 #define        CONFIG_RESET_VECTOR_ADDRESS             0x200FFC
-#define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_MMC_MINIMAL
 #define CONFIG_SYS_MMC_U_BOOT_SIZE     (768 << 10)
 #define CONFIG_SYS_MMC_U_BOOT_DST      (0x00200000)
@@ -104,6 +85,7 @@
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_SYS_MPC85XX_NO_RESETVEC
 #endif
+#define CONFIG_SYS_FSL_PBL_RCW board/freescale/t208xrdb/t2080_sd_rcw.cfg
 #define CONFIG_SPL_MMC_BOOT
 #endif
 
@@ -223,7 +205,6 @@ unsigned long get_board_ddr_clk(void);
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
 #define CONFIG_CHIP_SELECTS_PER_CTRL	(4 * CONFIG_DIMM_SLOTS_PER_CTLR)
 #define CONFIG_DDR_SPD
-#define CONFIG_SYS_FSL_DDR3
 #undef CONFIG_FSL_DDR_INTERACTIVE
 #define CONFIG_SYS_SPD_BUS_NUM	0
 #define CONFIG_SYS_SDRAM_SIZE	2048	/* for fixed parameter use */
@@ -499,7 +480,6 @@ unsigned long get_board_ddr_clk(void);
  * General PCI
  * Memory space is mapped 1-1, but I/O space must start from 0.
  */
-#define CONFIG_PCI		/* Enable PCI/PCIE */
 #define CONFIG_PCIE1		/* PCIE controller 1 */
 #define CONFIG_PCIE2		/* PCIE controller 2 */
 #define CONFIG_PCIE3		/* PCIE controller 3 */
@@ -548,7 +528,6 @@ unsigned long get_board_ddr_clk(void);
 #ifdef CONFIG_PCI
 #define CONFIG_PCI_INDIRECT_BRIDGE
 #define CONFIG_FSL_PCIE_RESET           /* need PCIe reset errata LSZ ADD */
-#define CONFIG_PCI_PNP		/* do pci plug-and-play */
 #define CONFIG_PCI_SCAN_SHOW	/* show pci devices on startup */
 #define CONFIG_DOS_PARTITION
 #endif
@@ -680,7 +659,6 @@ unsigned long get_board_ddr_clk(void);
  * USB
  */
 #ifdef CONFIG_USB_EHCI
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_EHCI_FSL
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_HAS_FSL_DR_USB
@@ -792,7 +770,7 @@ unsigned long get_board_ddr_clk(void);
 	"consoledev=ttyS0\0"					\
 	"ramdiskaddr=2000000\0"					\
 	"ramdiskfile=t2080rdb/ramdisk.uboot\0"			\
-	"fdtaddr=c00000\0"					\
+	"fdtaddr=1e00000\0"					\
 	"fdtfile=t2080rdb/t2080rdb.dtb\0"			\
 	"bdev=sda3\0"
 

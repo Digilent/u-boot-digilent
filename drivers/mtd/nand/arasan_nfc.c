@@ -9,7 +9,7 @@
 #include <common.h>
 #include <malloc.h>
 #include <asm/io.h>
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
@@ -852,6 +852,8 @@ static int arasan_nand_send_rdcmd(struct arasan_nand_command_format *curr_cmd,
 		page_val = arasan_nand_page(mtd);
 		reg_val |= (page_val << ARASAN_NAND_CMD_PG_SIZE_SHIFT);
 	}
+
+	reg_val &= ~ARASAN_NAND_CMD_ECC_ON_MASK;
 
 	reg_val &= ~ARASAN_NAND_CMD_ADDR_CYCL_MASK;
 

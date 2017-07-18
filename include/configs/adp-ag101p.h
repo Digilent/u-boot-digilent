@@ -28,7 +28,6 @@
 #define CONFIG_CMDLINE_TAG			/* send commandline to Kernel */
 #define CONFIG_SETUP_MEMORY_TAGS	/* send memory definition to kernel */
 #define CONFIG_INITRD_TAG			/* send initrd params */
-#define CONFIG_NEEDS_MANUAL_RELOC
 
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_MEM_REMAP
@@ -101,7 +100,6 @@
 /*
  * SD (MMC) controller
  */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_DOS_PARTITION
 #define CONFIG_FTSDC010

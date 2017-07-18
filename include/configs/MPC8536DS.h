@@ -11,12 +11,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_DISPLAY_BOARDINFO
 #include "../board/freescale/common/ics307_clk.h"
-
-#ifdef CONFIG_36BIT
-#define CONFIG_PHYS_64BIT	1
-#endif
 
 #ifdef CONFIG_SDCARD
 #define CONFIG_RAMBOOT_SDCARD		1
@@ -42,14 +37,7 @@
 #define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE	/* start of monitor */
 #endif
 
-/* High Level Configuration Options */
-#define CONFIG_BOOKE		1	/* BOOKE */
-#define CONFIG_E500		1	/* BOOKE e500 family */
-#define CONFIG_MPC8536		1
-#define CONFIG_MPC8536DS	1
-
 #define CONFIG_FSL_ELBC		1	/* Has Enhanced localbus controller */
-#define CONFIG_PCI		1	/* Enable PCI/PCIE */
 #define CONFIG_PCI1		1	/* Enable PCI controller 1 */
 #define CONFIG_PCIE1		1	/* PCIE controller 1 (slot 1) */
 #define CONFIG_PCIE2		1	/* PCIE controller 2 (slot 2) */
@@ -59,7 +47,6 @@
 #define CONFIG_FSL_PCIE_RESET	1	/* need PCIe reset errata */
 #define CONFIG_SYS_PCI_64BIT	1	/* enable 64-bit PCI resources */
 
-#define CONFIG_FSL_LAW		1	/* Use common FSL init code */
 
 #define CONFIG_TSEC_ENET		/* tsec ethernet support */
 #define CONFIG_ENV_OVERWRITE
@@ -108,7 +95,6 @@
 
 /* DDR Setup */
 #define CONFIG_VERY_BIG_RAM
-#define CONFIG_SYS_FSL_DDR2
 #undef CONFIG_FSL_DDR_INTERACTIVE
 #define CONFIG_SPD_EEPROM		/* Use SPD EEPROM for DDR setup */
 #define CONFIG_DDR_SPD
@@ -119,7 +105,6 @@
 #define CONFIG_SYS_DDR_SDRAM_BASE	0x00000000
 #define CONFIG_SYS_SDRAM_BASE		CONFIG_SYS_DDR_SDRAM_BASE
 
-#define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
 #define CONFIG_CHIP_SELECTS_PER_CTRL	2
 
@@ -498,9 +483,6 @@
 #define CONFIG_SYS_PCIE3_IO_SIZE	0x00010000	/* 64k */
 
 #if defined(CONFIG_PCI)
-
-#define CONFIG_PCI_PNP			/* do pci plug-and-play */
-
 /*PCIE video card used*/
 #define VIDEO_IO_OFFSET		CONFIG_SYS_PCIE3_IO_VIRT
 
@@ -508,13 +490,9 @@
 /*#define VIDEO_IO_OFFSET	CONFIG_SYS_PCI1_IO_VIRT*/
 
 /* video */
-#define CONFIG_VIDEO
 
 #if defined(CONFIG_VIDEO)
 #define CONFIG_BIOSEMU
-#define CONFIG_CFB_CONSOLE
-#define CONFIG_VIDEO_SW_CURSOR
-#define CONFIG_VGA_AS_SINGLE_DEVICE
 #define CONFIG_ATI_RADEON_FB
 #define CONFIG_VIDEO_LOGO
 #define CONFIG_SYS_ISA_IO_BASE_ADDRESS CONFIG_SYS_PCIE3_IO_VIRT
@@ -625,8 +603,6 @@
 
 #undef CONFIG_WATCHDOG			/* watchdog disabled */
 
-#define CONFIG_MMC     1
-
 #ifdef CONFIG_MMC
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR	CONFIG_SYS_MPC85xx_ESDHC_ADDR
@@ -643,7 +619,6 @@
 #ifdef CONFIG_USB_EHCI
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_EHCI_FSL
-#define CONFIG_USB_STORAGE
 #endif
 #endif
 
@@ -727,7 +702,7 @@
 "consoledev=ttyS0\0"				\
 "ramdiskaddr=2000000\0"			\
 "ramdiskfile=8536ds/ramdisk.uboot\0"		\
-"fdtaddr=c00000\0"				\
+"fdtaddr=1e00000\0"				\
 "fdtfile=8536ds/mpc8536ds.dtb\0"		\
 "bdev=sda3\0"					\
 "hwconfig=usb1:dr_mode=host,phy_type=ulpi\0"

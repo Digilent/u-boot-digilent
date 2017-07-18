@@ -10,7 +10,7 @@
 #include <bootm.h>
 #include <common.h>
 #include <netdev.h>
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <asm/io.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/clock.h>
@@ -155,10 +155,14 @@ const char *get_imx_type(u32 imxtype)
 		return "6SOLO";	/* Solo version of the mx6 */
 	case MXC_CPU_MX6SL:
 		return "6SL";	/* Solo-Lite version of the mx6 */
+	case MXC_CPU_MX6SLL:
+		return "6SLL";	/* SLL version of the mx6 */
 	case MXC_CPU_MX6SX:
 		return "6SX";   /* SoloX version of the mx6 */
 	case MXC_CPU_MX6UL:
 		return "6UL";   /* Ultra-Lite version of the mx6 */
+	case MXC_CPU_MX6ULL:
+		return "6ULL";	/* ULL version of the mx6 */
 	case MXC_CPU_MX51:
 		return "51";
 	case MXC_CPU_MX53:

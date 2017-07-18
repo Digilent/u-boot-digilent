@@ -10,14 +10,11 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_SYS_CACHELINE_SIZE	64
-
 /*
  * High Level Configuration Options
  */
 #define CONFIG_OMAP	/* in a TI OMAP core */
 #define CONFIG_CM_T3517	/* working with CM-T3517 */
-#define CONFIG_OMAP_COMMON
 /* Common ARM Erratas */
 #define CONFIG_ARM_ERRATA_454179
 #define CONFIG_ARM_ERRATA_430973
@@ -30,7 +27,6 @@
  * Although the default iss 64, we still define it
  * to be on the safe side once the default is changed.
  */
-#define CONFIG_SYS_CACHELINE_SIZE	64
 
 #define CONFIG_EMIF4	/* The chip has EMIF4 controller */
 
@@ -38,12 +34,6 @@
 #include <asm/arch/omap.h>
 
 #define CONFIG_MACH_TYPE                MACH_TYPE_CM_T3517
-
-/*
- * Display CPU and Board information
- */
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
 
 /* Clock Defines */
 #define V_OSCK			26000000	/* Clock output from T2 */
@@ -88,7 +78,6 @@
 #define CONFIG_CONS_INDEX		3
 #define CONFIG_SYS_NS16550_COM3		OMAP34XX_UART3
 #define CONFIG_SERIAL3			3	/* UART3 */
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -99,7 +88,6 @@
 #define CONFIG_OMAP_GPIO
 
 #define CONFIG_GENERIC_MMC
-#define CONFIG_MMC
 #define CONFIG_OMAP_HSMMC
 #define CONFIG_DOS_PARTITION
 
@@ -115,8 +103,6 @@
 #else /* !CONFIG_USB_MUSB_AM35X */
 #define CONFIG_USB_MUSB_PIO_ONLY
 #endif /* CONFIG_USB_MUSB_AM35X */
-
-#define CONFIG_USB_STORAGE
 
 /* commands to include */
 #define CONFIG_CMD_MTDPARTS	/* Enable MTD parts commands */
@@ -293,7 +279,6 @@
 #define CONFIG_VIDEO_OMAP3
 #define LCD_BPP		LCD_COLOR16
 
-#define CONFIG_LCD
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASHIMAGE_GUARD
 #define CONFIG_CMD_BMP

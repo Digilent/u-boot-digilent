@@ -16,9 +16,6 @@
 /* High Level Configuration Options */
 #define CONFIG_MX51
 
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
-
 #define CONFIG_SYS_NO_FLASH		/* No NOR Flash */
 #define CONFIG_SKIP_LOWLEVEL_INIT	/* U-Boot is a 2nd stage bootloader */
 
@@ -61,10 +58,6 @@
  * */
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_ESDHC_ADDR	MMC_SDHC1_BASE_ADDR
-
-#define CONFIG_SYS_FSL_ERRATUM_ESDHC_A001
-
-#define CONFIG_MMC
 
 #define CONFIG_GENERIC_MMC
 #define CONFIG_DOS_PARTITION

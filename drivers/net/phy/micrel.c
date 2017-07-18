@@ -300,10 +300,11 @@ static int ksz9021_of_config(struct phy_device *phydev)
 	};
 	int i, ret = 0;
 
-	for (i = 0; i < ARRAY_SIZE(ofcfg); i++)
+	for (i = 0; i < ARRAY_SIZE(ofcfg); i++) {
 		ret = ksz90x1_of_config_group(phydev, &(ofcfg[i]));
 		if (ret)
 			return ret;
+	}
 
 	return 0;
 }
@@ -408,15 +409,36 @@ static int ksz9031_of_config(struct phy_device *phydev)
 	};
 	int i, ret = 0;
 
-	for (i = 0; i < ARRAY_SIZE(ofcfg); i++)
+	for (i = 0; i < ARRAY_SIZE(ofcfg); i++) {
 		ret = ksz90x1_of_config_group(phydev, &(ofcfg[i]));
 		if (ret)
 			return ret;
+	}
 
 	return 0;
 }
+
+static int ksz9031_center_flp_timing(struct phy_device *phydev)
+{
+	struct phy_driver *drv = phydev->drv;
+	int ret = 0;
+
+	if (!drv || !drv->writeext)
+		return -EOPNOTSUPP;
+
+	ret = drv->writeext(phydev, 0, 0, MII_KSZ9031_FLP_BURST_TX_LO, 0x1A80);
+	if (ret)
+		return ret;
+
+	ret = drv->writeext(phydev, 0, 0, MII_KSZ9031_FLP_BURST_TX_HI, 0x6);
+	return ret;
+}
 #else
 static int ksz9031_of_config(struct phy_device *phydev)
+{
+	return 0;
+}
+static int ksz9031_center_flp_timing(struct phy_device *phydev)
 {
 	return 0;
 }
@@ -470,6 +492,9 @@ static int ksz9031_config(struct phy_device *phydev)
 {
 	int ret;
 	ret = ksz9031_of_config(phydev);
+	if (ret)
+		return ret;
+	ret = ksz9031_center_flp_timing(phydev);
 	if (ret)
 		return ret;
 	return genphy_config(phydev);

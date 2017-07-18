@@ -53,6 +53,11 @@ _bss_end_ofs:
 	.quad	__bss_end - _start
 
 reset:
+	/* Allow the board to save important registers */
+	b	save_boot_params
+.globl	save_boot_params_ret
+save_boot_params_ret:
+
 #ifdef CONFIG_SYS_RESET_SCTRL
 	bl reset_sctrl
 #endif
@@ -81,14 +86,6 @@ reset:
 	msr	cpacr_el1, x0			/* Enable FP/SIMD */
 0:
 
-	/* Enalbe SMPEN bit for coherency.
-	 * This register is not architectural but at the moment
-	 * this bit should be set for A53/A57/A72.
-	 */
-	mrs     x0, S3_1_c15_c2_1               /* cpuactlr_el1 */
-	orr     x0, x0, #0x40
-	msr     S3_1_c15_c2_1, x0
-
 	/* Apply ARM core specific erratas */
 	bl	apply_core_errata
 
@@ -102,7 +99,11 @@ reset:
 	/* Processor specific initialization */
 	bl	lowlevel_init
 
-#ifdef CONFIG_ARMV8_MULTIENTRY
+#if CONFIG_IS_ENABLED(ARMV8_SPIN_TABLE)
+	branch_if_master x0, x1, master_cpu
+	b	spin_table_secondary_jump
+	/* never return */
+#elif defined(CONFIG_ARMV8_MULTIENTRY)
 	branch_if_master x0, x1, master_cpu
 
 	/*
@@ -114,10 +115,8 @@ slave_cpu:
 	ldr	x0, [x1]
 	cbz	x0, slave_cpu
 	br	x0			/* branch to the given address */
-master_cpu:
-	/* On the master CPU */
 #endif /* CONFIG_ARMV8_MULTIENTRY */
-
+master_cpu:
 	bl	_main
 
 #ifdef CONFIG_SYS_RESET_SCTRL
@@ -252,9 +251,17 @@ WEAK(lowlevel_init)
 	/*
 	 * All slaves will enter EL2 and optionally EL1.
 	 */
+	adr	x4, lowlevel_in_el2
+	ldr	x5, =ES_TO_AARCH64
 	bl	armv8_switch_to_el2
+
+lowlevel_in_el2:
 #ifdef CONFIG_ARMV8_SWITCH_TO_EL1
+	adr	x4, lowlevel_in_el1
+	ldr	x5, =ES_TO_AARCH64
 	bl	armv8_switch_to_el1
+
+lowlevel_in_el1:
 #endif
 
 #endif /* CONFIG_ARMV8_MULTIENTRY */
@@ -288,3 +295,7 @@ ENTRY(c_runtime_cpu_setup)
 
 	ret
 ENDPROC(c_runtime_cpu_setup)
+
+WEAK(save_boot_params)
+	b	save_boot_params_ret	/* back to my caller */
+ENDPROC(save_boot_params)

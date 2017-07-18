@@ -6,62 +6,74 @@ config SYS_ARCH
 
 config ARM64
 	bool
+	select PHYS_64BIT
+	select SYS_CACHE_SHIFT_6
 
 config DMA_ADDR_T_64BIT
 	bool
 	default y if ARM64
 
 config HAS_VBAR
-        bool
+	bool
 
 config HAS_THUMB2
-        bool
+	bool
 
 config CPU_ARM720T
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config CPU_ARM920T
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config CPU_ARM926EJS
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config CPU_ARM946ES
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config CPU_ARM1136
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config CPU_ARM1176
-        bool
-        select HAS_VBAR
+	bool
+	select HAS_VBAR
+	select SYS_CACHE_SHIFT_5
 
 config CPU_V7
-        bool
-        select HAS_VBAR
-        select HAS_THUMB2
+	bool
+	select HAS_VBAR
+	select HAS_THUMB2
+	select SYS_CACHE_SHIFT_6
 
 config CPU_V7M
 	bool
-        select HAS_THUMB2
+	select HAS_THUMB2
+	select SYS_CACHE_SHIFT_5
 
 config CPU_PXA
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config CPU_SA1100
-        bool
+	bool
+	select SYS_CACHE_SHIFT_5
 
 config SYS_CPU
-        default "arm720t" if CPU_ARM720T
-        default "arm920t" if CPU_ARM920T
-        default "arm926ejs" if CPU_ARM926EJS
-        default "arm946es" if CPU_ARM946ES
-        default "arm1136" if CPU_ARM1136
-        default "arm1176" if CPU_ARM1176
-        default "armv7" if CPU_V7
-        default "armv7m" if CPU_V7M
-        default "pxa" if CPU_PXA
-        default "sa1100" if CPU_SA1100
+	default "arm720t" if CPU_ARM720T
+	default "arm920t" if CPU_ARM920T
+	default "arm926ejs" if CPU_ARM926EJS
+	default "arm946es" if CPU_ARM946ES
+	default "arm1136" if CPU_ARM1136
+	default "arm1176" if CPU_ARM1176
+	default "armv7" if CPU_V7
+	default "armv7m" if CPU_V7M
+	default "pxa" if CPU_PXA
+	default "sa1100" if CPU_SA1100
 	default "armv8" if ARM64
 
 config SYS_ARM_ARCH
@@ -77,6 +89,21 @@ config SYS_ARM_ARCH
 	default 5 if CPU_PXA
 	default 4 if CPU_SA1100
 	default 8 if ARM64
+
+config SYS_CACHE_SHIFT_5
+	bool
+
+config SYS_CACHE_SHIFT_6
+	bool
+
+config SYS_CACHE_SHIFT_7
+	bool
+
+config SYS_CACHELINE_SIZE
+	int
+	default 128 if SYS_CACHE_SHIFT_7
+	default 64 if SYS_CACHE_SHIFT_6
+	default 32 if SYS_CACHE_SHIFT_5
 
 config SEMIHOSTING
 	bool "support boot from semihosting"
@@ -99,6 +126,35 @@ config ENABLE_ARM_SOC_BOOT0_HOOK
 	  ARM_SOC_BOOT0_HOOK which contains the required assembler
 	  preprocessor code.
 
+config USE_ARCH_MEMCPY
+	bool "Use an assembly optimized implementation of memcpy"
+	default y if CPU_V7
+	depends on !ARM64
+	help
+	  Enable the generation of an optimized version of memcpy.
+	  Such implementation may be faster under some conditions
+	  but may increase the binary size.
+
+config USE_ARCH_MEMSET
+	bool "Use an assembly optimized implementation of memset"
+	default y if CPU_V7
+	depends on !ARM64
+	help
+	  Enable the generation of an optimized version of memset.
+	  Such implementation may be faster under some conditions
+	  but may increase the binary size.
+
+config ARCH_OMAP2
+	bool
+	select CPU_V7
+	select SUPPORT_SPL
+
+config ARM64_SUPPORT_AARCH32
+	bool "ARM64 system support AArch32 execution state"
+	default y if ARM64 && !TARGET_THUNDERX_88XX
+	help
+	  This ARM64 system supports AArch32 execution state.
+
 choice
 	prompt "Target select"
 	default TARGET_HIKEY
@@ -108,14 +164,6 @@ config ARCH_AT91
 
 config TARGET_EDB93XX
 	bool "Support edb93xx"
-	select CPU_ARM920T
-
-config TARGET_VCMA9
-	bool "Support VCMA9"
-	select CPU_ARM920T
-
-config TARGET_SMDK2410
-	bool "Support smdk2410"
 	select CPU_ARM920T
 
 config TARGET_ASPENITE
@@ -137,9 +185,7 @@ config KIRKWOOD
 	select CPU_ARM926EJS
 
 config ARCH_MVEBU
-	bool "Marvell MVEBU family (Armada XP/375/38x)"
-	select CPU_V7
-	select SUPPORT_SPL
+	bool "Marvell MVEBU family (Armada XP/375/38x/3700/7K/8K)"
 	select OF_CONTROL
 	select OF_SEPARATE
 	select DM
@@ -147,10 +193,6 @@ config ARCH_MVEBU
 	select DM_SERIAL
 	select DM_SPI
 	select DM_SPI_FLASH
-	select SPL_DM
-	select SPL_DM_SEQ_ALIAS
-	select SPL_OF_CONTROL
-	select SPL_SIMPLE_BUS
 
 config TARGET_DEVKIT3250
 	bool "Support devkit3250"
@@ -289,6 +331,7 @@ config ARCH_BCM283X
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
+	select OF_CONTROL
 
 config TARGET_VEXPRESS_CA15_TC2
 	bool "Support vexpress_ca15_tc2"
@@ -306,158 +349,61 @@ config TARGET_VEXPRESS_CA9X4
 
 config TARGET_BRXRE1
 	bool "Support BRXRE1"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 
 config TARGET_BRPPT1
 	bool "Support BRPPT1"
-	select CPU_V7
-	select SUPPORT_SPL
-
-config TARGET_CM_T335
-	bool "Support cm_t335"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-
-config TARGET_PEPPER
-	bool "Support pepper"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-
-config TARGET_AM335X_IGEP0033
-	bool "Support am335x_igep0033"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-
-config TARGET_PCM051
-	bool "Support pcm051"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
+	select ARCH_OMAP2
 
 config TARGET_DRACO
 	bool "Support draco"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
 
 config TARGET_THUBAN
 	bool "Support thuban"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
 
 config TARGET_RASTABAN
 	bool "Support rastaban"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
 
 config TARGET_ETAMIN
-        bool "Support etamin"
-        select CPU_V7
-        select SUPPORT_SPL
+	bool "Support etamin"
+	select ARCH_OMAP2
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
 
 config TARGET_PXM2
 	bool "Support pxm2"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
 
 config TARGET_RUT
 	bool "Support rut"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
-
-config TARGET_PENGWYN
-	bool "Support pengwyn"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-
-config TARGET_AM335X_BALTOS
-	bool "Support am335x_baltos"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-
-config TARGET_AM335X_EVM
-	bool "Support am335x_evm"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-	select TI_I2C_BOARD_DETECT
-
-config TARGET_AM335X_SHC
-	bool "Support am335x based shc board from bosch"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	select DM_GPIO
-
-config TARGET_AM335X_SL50
-	bool "Support am335x_sl50"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-
-config TARGET_BAV335X
-	bool "Support bav335x"
-	select CPU_V7
-	select SUPPORT_SPL
-	select DM
-	select DM_SERIAL
-	help
-	  The BAV335x OEM Network Processor integrates all the functions of an
-	  embedded network computer in a small, easy to use SODIMM module which
-	  incorporates the popular Texas Instruments Sitara 32bit ARM Coretex-A8
-	  processor, with fast DDR3 512MB SDRAM, 4GB of embedded MMC and a Gigabit
-	  ethernet with simple connection to external connectors.
-
-	  For more information, visit: http://birdland.com/oem
 
 config TARGET_TI814X_EVM
 	bool "Support ti814x_evm"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 
 config TARGET_TI816X_EVM
 	bool "Support ti816x_evm"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 
 config TARGET_BCM23550_W1D
 	bool "Support bcm23550_w1d"
@@ -478,6 +424,7 @@ config TARGET_BCMNSP
 config ARCH_EXYNOS
 	bool "Samsung EXYNOS"
 	select DM
+	select DM_I2C
 	select DM_SPI_FLASH
 	select DM_SERIAL
 	select DM_SPI
@@ -490,6 +437,7 @@ config ARCH_S5PC1XX
 	select DM
 	select DM_SERIAL
 	select DM_GPIO
+	select DM_I2C
 
 config ARCH_HIGHBANK
 	bool "Calxeda Highbank"
@@ -516,10 +464,16 @@ config ARCH_MESON
 config ARCH_MX7
 	bool "Freescale MX7"
 	select CPU_V7
+	select SYS_FSL_HAS_SEC if SECURE_BOOT
+	select SYS_FSL_SEC_COMPAT_4
+	select SYS_FSL_SEC_LE
 
 config ARCH_MX6
 	bool "Freescale MX6"
 	select CPU_V7
+	select SYS_FSL_HAS_SEC if SECURE_BOOT
+	select SYS_FSL_SEC_COMPAT_4
+	select SYS_FSL_SEC_LE
 
 config ARCH_MX5
 	bool "Freescale MX5"
@@ -552,22 +506,21 @@ config TARGET_MX53SMD
 
 config OMAP34XX
 	bool "OMAP34XX SoC"
-	select CPU_V7
+	select ARCH_OMAP2
+	select USE_TINY_PRINTF
 
 config OMAP44XX
 	bool "OMAP44XX SoC"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
+	select USE_TINY_PRINTF
 
 config OMAP54XX
 	bool "OMAP54XX SoC"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 
 config AM43XX
 	bool "AM43XX SoC"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 	help
 	  Support for AM43xx SOC from Texas Instruments.
 	  The AM43xx high performance SOC features a Cortex-A9
@@ -575,13 +528,25 @@ config AM43XX
 	  protocols, dual camera support, optional 3D graphics
 	  and an optional customer programmable secure boot.
 
-config RMOBILE
+config AM33XX
+	bool "AM33XX SoC"
+	select ARCH_OMAP2
+	help
+	  Support for AM335x SOC from Texas Instruments.
+	  The AM335x high performance SOC features a Cortex-A8
+	  ARM core, a dual core PRU-ICSS for industrial Ethernet
+	  protocols, optional 3D graphics and an optional customer
+	  programmable secure boot.
+
+config ARCH_RMOBILE
 	bool "Renesas ARM SoCs"
-	select CPU_V7
+	select DM
+	select DM_SERIAL
 
 config TARGET_S32V234EVB
 	bool "Support s32v234evb"
 	select ARM64
+	select SYS_FSL_ERRATUM_ESDHC111
 
 config ARCH_SNAPDRAGON
 	bool "Qualcomm Snapdragon SoCs"
@@ -602,49 +567,67 @@ config ARCH_SOCFPGA
 	select DM
 	select DM_SPI_FLASH
 	select DM_SPI
+	select ENABLE_ARM_SOC_BOOT0_HOOK
 
 config TARGET_CM_T43
 	bool "Support cm_t43"
-	select CPU_V7
-	select SUPPORT_SPL
+	select ARCH_OMAP2
 
 config ARCH_SUNXI
 	bool "Support sunxi (Allwinner) SoCs"
 	select CMD_GPIO
 	select CMD_MMC if MMC
-	select CMD_USB
+	select CMD_USB if DISTRO_DEFAULTS
 	select DM
 	select DM_ETH
 	select DM_GPIO
 	select DM_KEYBOARD
 	select DM_SERIAL
-	select DM_USB
+	select DM_USB if DISTRO_DEFAULTS
 	select OF_BOARD_SETUP
 	select OF_CONTROL
 	select OF_SEPARATE
 	select SPL_STACK_R if SUPPORT_SPL
 	select SPL_SYS_MALLOC_SIMPLE if SUPPORT_SPL
 	select SYS_NS16550
-	select USB
-	select USB_STORAGE
-	select USB_KEYBOARD
+	select USB if DISTRO_DEFAULTS
+	select USB_STORAGE if DISTRO_DEFAULTS
+	select USB_KEYBOARD if DISTRO_DEFAULTS
 	select USE_TINY_PRINTF
+
+config TARGET_TS4600
+	bool "Support TS4600"
+	select CPU_ARM926EJS
+	select SUPPORT_SPL
 
 config TARGET_TS4800
 	bool "Support TS4800"
 	select CPU_V7
+	select SYS_FSL_ERRATUM_ESDHC_A001
 
 config TARGET_VF610TWR
 	bool "Support vf610twr"
 	select CPU_V7
+	select SYS_FSL_ERRATUM_ESDHC111
 
 config TARGET_COLIBRI_VF
 	bool "Support Colibri VF50/61"
 	select CPU_V7
+	select SYS_FSL_ERRATUM_ESDHC111
 
 config TARGET_PCM052
 	bool "Support pcm-052"
 	select CPU_V7
+	select SYS_FSL_ERRATUM_ESDHC111
+	select SYS_FSL_ERRATUM_ESDHC135
+	select SYS_FSL_ERRATUM_ESDHC_A001
+
+config TARGET_BK4R1
+	bool "Support BK4r1"
+	select CPU_V7
+	select SYS_FSL_ERRATUM_ESDHC111
+	select SYS_FSL_ERRATUM_ESDHC135
+	select SYS_FSL_ERRATUM_ESDHC_A001
 
 config ARCH_ZYNQ
 	bool "Xilinx Zynq Platform"
@@ -657,10 +640,13 @@ config ARCH_ZYNQ
 	select DM_GPIO
 	select SPL_DM if SPL
 	select DM_MMC
+	select DM_MMC_OPS
 	select DM_SPI
 	select DM_SERIAL
 	select DM_SPI_FLASH
 	select SPL_SEPARATE_BSS if SPL
+	select DM_USB if USB
+	select BLK
 
 config ARCH_ZYNQMP
 	bool "Support Xilinx ZynqMP Platform"
@@ -669,6 +655,9 @@ config ARCH_ZYNQMP
 	select OF_CONTROL
 	select DM_SERIAL
 	select SUPPORT_SPL
+	select CLK
+	select SPL_CLK
+	select DM_USB if USB
 
 config TEGRA
 	bool "NVIDIA Tegra"
@@ -697,6 +686,7 @@ config TARGET_VEXPRESS64_JUNO
 
 config TARGET_LS2080A_EMU
 	bool "Support ls2080a_emu"
+	select ARCH_LS2080A
 	select ARM64
 	select ARMV8_MULTIENTRY
 	help
@@ -707,6 +697,7 @@ config TARGET_LS2080A_EMU
 
 config TARGET_LS2080A_SIMU
 	bool "Support ls2080a_simu"
+	select ARCH_LS2080A
 	select ARM64
 	select ARMV8_MULTIENTRY
 	help
@@ -717,6 +708,7 @@ config TARGET_LS2080A_SIMU
 
 config TARGET_LS2080AQDS
 	bool "Support ls2080aqds"
+	select ARCH_LS2080A
 	select ARM64
 	select ARMV8_MULTIENTRY
 	select SUPPORT_SPL
@@ -728,6 +720,7 @@ config TARGET_LS2080AQDS
 
 config TARGET_LS2080ARDB
 	bool "Support ls2080ardb"
+	select ARCH_LS2080A
 	select ARM64
 	select ARMV8_MULTIENTRY
 	select SUPPORT_SPL
@@ -750,6 +743,7 @@ config TARGET_HIKEY
 
 config TARGET_LS1012AQDS
 	bool "Support ls1012aqds"
+	select ARCH_LS1012A
 	select ARM64
 	help
 	  Support for Freescale LS1012AQDS platform.
@@ -759,6 +753,7 @@ config TARGET_LS1012AQDS
 
 config TARGET_LS1012ARDB
 	bool "Support ls1012ardb"
+	select ARCH_LS1012A
 	select ARM64
 	help
 	  Support for Freescale LS1012ARDB platform.
@@ -768,6 +763,7 @@ config TARGET_LS1012ARDB
 
 config TARGET_LS1012AFRDM
 	bool "Support ls1012afrdm"
+	select ARCH_LS1012A
 	select ARM64
 	help
 	  Support for Freescale LS1012AFRDM platform.
@@ -778,14 +774,41 @@ config TARGET_LS1012AFRDM
 config TARGET_LS1021AQDS
 	bool "Support ls1021aqds"
 	select CPU_V7
+	select CPU_V7_HAS_NONSEC
+	select CPU_V7_HAS_VIRT
 	select SUPPORT_SPL
+	select ARCH_LS1021A
+	select ARCH_SUPPORT_PSCI
+	select LS1_DEEP_SLEEP
+	select SYS_FSL_DDR
+
 config TARGET_LS1021ATWR
 	bool "Support ls1021atwr"
 	select CPU_V7
+	select CPU_V7_HAS_NONSEC
+	select CPU_V7_HAS_VIRT
 	select SUPPORT_SPL
+	select ARCH_LS1021A
+	select ARCH_SUPPORT_PSCI
+	select LS1_DEEP_SLEEP
+
+config TARGET_LS1021AIOT
+	bool "Support ls1021aiot"
+	select CPU_V7
+	select CPU_V7_HAS_NONSEC
+	select CPU_V7_HAS_VIRT
+	select SUPPORT_SPL
+	select ARCH_LS1021A
+	select ARCH_SUPPORT_PSCI
+	help
+	  Support for Freescale LS1021AIOT platform.
+	  The LS1021A Freescale board (IOT) is a high-performance
+	  development platform that supports the QorIQ LS1021A
+	  Layerscape Architecture processor.
 
 config TARGET_LS1043AQDS
 	bool "Support ls1043aqds"
+	select ARCH_LS1043A
 	select ARM64
 	select ARMV8_MULTIENTRY
 	select SUPPORT_SPL
@@ -794,11 +817,38 @@ config TARGET_LS1043AQDS
 
 config TARGET_LS1043ARDB
 	bool "Support ls1043ardb"
+	select ARCH_LS1043A
 	select ARM64
 	select ARMV8_MULTIENTRY
 	select SUPPORT_SPL
 	help
 	  Support for Freescale LS1043ARDB platform.
+
+config TARGET_LS1046AQDS
+	bool "Support ls1046aqds"
+	select ARCH_LS1046A
+	select ARM64
+	select ARMV8_MULTIENTRY
+	select SUPPORT_SPL
+	select DM_SPI_FLASH if DM_SPI
+	help
+	  Support for Freescale LS1046AQDS platform.
+	  The LS1046A Development System (QDS) is a high-performance
+	  development platform that supports the QorIQ LS1046A
+	  Layerscape Architecture processor.
+
+config TARGET_LS1046ARDB
+	bool "Support ls1046ardb"
+	select ARCH_LS1046A
+	select ARM64
+	select ARMV8_MULTIENTRY
+	select SUPPORT_SPL
+	select DM_SPI_FLASH if DM_SPI
+	help
+	  Support for Freescale LS1046ARDB platform.
+	  The LS1046A Reference Design Board (RDB) is a high-performance
+	  development platform that supports the QorIQ LS1046A
+	  Layerscape Architecture processor.
 
 config TARGET_H2200
 	bool "Support h2200"
@@ -815,17 +865,23 @@ config TARGET_COLIBRI_PXA270
 config ARCH_UNIPHIER
 	bool "Socionext UniPhier SoCs"
 	select CLK_UNIPHIER
-	select SUPPORT_SPL
-	select SPL
-	select OF_CONTROL
-	select SPL_OF_CONTROL
-	select OF_LIBFDT
 	select DM
-	select SPL_DM
 	select DM_GPIO
-	select DM_SERIAL
 	select DM_I2C
 	select DM_MMC
+	select DM_RESET
+	select DM_SERIAL
+	select DM_USB
+	select OF_CONTROL
+	select OF_LIBFDT
+	select PINCTRL
+	select SPL
+	select SPL_DM
+	select SPL_LIBCOMMON_SUPPORT
+	select SPL_LIBGENERIC_SUPPORT
+	select SPL_OF_CONTROL
+	select SPL_PINCTRL
+	select SUPPORT_SPL
 	help
 	  Support for UniPhier SoC family developed by Socionext Inc.
 	  (formerly, System LSI Business Division of Panasonic Corporation)
@@ -838,16 +894,28 @@ config STM32
 
 config ARCH_ROCKCHIP
 	bool "Support Rockchip SoCs"
-	select SUPPORT_SPL
-	select SPL
 	select OF_CONTROL
-	select CPU_V7
+	select BLK
 	select DM
+	select SPL_DM if SPL
+	select SYS_MALLOC_F
+	select SPL_SYS_MALLOC_SIMPLE if SPL
+	select DM_GPIO
+	select DM_I2C
+	select DM_MMC
+	select DM_MMC_OPS
+	select DM_SERIAL
+	select DM_SPI
+	select DM_SPI_FLASH
+	select DM_USB if USB
+	select DM_PWM
+	select DM_REGULATOR
 
 config TARGET_THUNDERX_88XX
 	bool "Support ThunderX 88xx"
 	select ARM64
 	select OF_CONTROL
+	select SYS_CACHE_SHIFT_7
 
 endchoice
 
@@ -867,7 +935,11 @@ source "arch/arm/mach-keystone/Kconfig"
 
 source "arch/arm/mach-kirkwood/Kconfig"
 
+source "arch/arm/mach-litesom/Kconfig"
+
 source "arch/arm/mach-mvebu/Kconfig"
+
+source "arch/arm/cpu/armv7/ls102xa/Kconfig"
 
 source "arch/arm/cpu/armv7/mx7/Kconfig"
 
@@ -875,11 +947,13 @@ source "arch/arm/cpu/armv7/mx6/Kconfig"
 
 source "arch/arm/cpu/armv7/mx5/Kconfig"
 
-source "arch/arm/cpu/armv7/omap-common/Kconfig"
+source "arch/arm/mach-omap2/Kconfig"
+
+source "arch/arm/cpu/armv8/fsl-layerscape/Kconfig"
 
 source "arch/arm/mach-orion5x/Kconfig"
 
-source "arch/arm/cpu/armv7/rmobile/Kconfig"
+source "arch/arm/mach-rmobile/Kconfig"
 
 source "arch/arm/mach-meson/Kconfig"
 
@@ -934,7 +1008,10 @@ source "board/freescale/ls2080ardb/Kconfig"
 source "board/freescale/ls1021aqds/Kconfig"
 source "board/freescale/ls1043aqds/Kconfig"
 source "board/freescale/ls1021atwr/Kconfig"
+source "board/freescale/ls1021aiot/Kconfig"
+source "board/freescale/ls1046aqds/Kconfig"
 source "board/freescale/ls1043ardb/Kconfig"
+source "board/freescale/ls1046ardb/Kconfig"
 source "board/freescale/ls1012aqds/Kconfig"
 source "board/freescale/ls1012ardb/Kconfig"
 source "board/freescale/ls1012afrdm/Kconfig"
@@ -956,12 +1033,10 @@ source "board/h2200/Kconfig"
 source "board/hisilicon/hikey/Kconfig"
 source "board/imx31_phycore/Kconfig"
 source "board/isee/igep0033/Kconfig"
-source "board/mpl/vcma9/Kconfig"
 source "board/olimex/mx23_olinuxino/Kconfig"
 source "board/phytec/pcm051/Kconfig"
 source "board/phytec/pcm052/Kconfig"
 source "board/ppcag/bg0900/Kconfig"
-source "board/samsung/smdk2410/Kconfig"
 source "board/sandisk/sansa_fuze_plus/Kconfig"
 source "board/schulercontrol/sc_sps_1/Kconfig"
 source "board/siemens/draco/Kconfig"
@@ -985,6 +1060,7 @@ source "board/ti/ti816x/Kconfig"
 source "board/timll/devkit3250/Kconfig"
 source "board/toradex/colibri_pxa270/Kconfig"
 source "board/toradex/colibri_vf/Kconfig"
+source "board/technologic/ts4600/Kconfig"
 source "board/technologic/ts4800/Kconfig"
 source "board/vscom/baltos/Kconfig"
 source "board/woodburn/Kconfig"

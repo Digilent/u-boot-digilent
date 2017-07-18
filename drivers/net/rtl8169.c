@@ -339,9 +339,6 @@ struct rtl8169_private {
 
 static struct rtl8169_private *tpc;
 
-static const u16 rtl8169_intr_mask =
-    SYSErr | PCSTimeout | RxUnderrun | RxOverflow | RxFIFOOver | TxErr |
-    TxOK | RxErr | RxOK;
 static const unsigned int rtl8169_rx_config =
     (RX_FIFO_THRESH << RxCfgFIFOShift) | (RX_DMA_BURST << RxCfgDMAShift);
 
@@ -629,10 +626,11 @@ static int rtl_send_common(pci_dev_t dev, unsigned long dev_iobase,
 	/* point to the current txb incase multiple tx_rings are used */
 	ptxb = tpc->Tx_skbuff[entry * MAX_ETH_FRAME_SIZE];
 	memcpy(ptxb, (char *)packet, (int)length);
-	rtl_flush_buffer(ptxb, length);
 
 	while (len < ETH_ZLEN)
 		ptxb[len++] = '\0';
+
+	rtl_flush_buffer(ptxb, ALIGN(len, RTL8169_ALIGN));
 
 	tpc->TxDescArray[entry].buf_Haddr = 0;
 #ifdef CONFIG_DM_ETH

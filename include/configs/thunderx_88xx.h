@@ -15,9 +15,6 @@
 
 #define CONFIG_SYS_NO_FLASH
 
-#define CONFIG_IDENT_STRING	\
-	" for Cavium Thunder CN88XX ARM v8 Multi-Core"
-
 #define MEM_BASE			0x00500000
 
 #define CONFIG_SYS_LOWMEM_BASE		MEM_BASE
@@ -51,9 +48,6 @@
 #define CONFIG_SYS_SERIAL1		0x87e025000000
 
 #define CONFIG_BAUDRATE			115200
-
-/* Command line configuration */
-#define CONFIG_MENU
 
 /* BOOTP options */
 #define CONFIG_BOOTP_BOOTFILESIZE

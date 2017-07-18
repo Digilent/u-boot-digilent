@@ -9,6 +9,7 @@
  */
 
 #include "mkimage.h"
+#include "imximage.h"
 #include <image.h>
 #include <version.h>
 
@@ -25,45 +26,48 @@ static struct image_tool_params params = {
 	.imagename2 = "",
 };
 
-static int h_compare_image_name(const void *vtype1, const void *vtype2)
+static enum ih_category cur_category;
+
+static int h_compare_category_name(const void *vtype1, const void *vtype2)
 {
 	const int *type1 = vtype1;
 	const int *type2 = vtype2;
-	const char *name1 = genimg_get_type_short_name(*type1);
-	const char *name2 = genimg_get_type_short_name(*type2);
+	const char *name1 = genimg_get_cat_short_name(cur_category, *type1);
+	const char *name2 = genimg_get_cat_short_name(cur_category, *type2);
 
 	return strcmp(name1, name2);
 }
 
-/* Show all image types supported by mkimage */
-static void show_image_types(void)
+static int show_valid_options(enum ih_category category)
 {
-	struct image_type_params *tparams;
-	int order[IH_TYPE_COUNT];
+	int *order;
 	int count;
-	int type;
+	int item;
 	int i;
 
-	/* Sort the names in order of short name for easier reading */
-	memset(order, '\0', sizeof(order));
-	for (count = 0, type = 0; type < IH_TYPE_COUNT; type++) {
-		tparams = imagetool_get_type(type);
-		if (tparams)
-			order[count++] = type;
-	}
-	qsort(order, count, sizeof(int), h_compare_image_name);
+	count = genimg_get_cat_count(category);
+	order = calloc(count, sizeof(*order));
+	if (!order)
+		return -ENOMEM;
 
-	fprintf(stderr, "\nInvalid image type. Supported image types:\n");
+	/* Sort the names in order of short name for easier reading */
+	for (item = 0; item < count; item++)
+		order[item] = item;
+	cur_category = category;
+	qsort(order, count, sizeof(int), h_compare_category_name);
+
+	fprintf(stderr, "\nInvalid %s, supported are:\n",
+		genimg_get_cat_desc(category));
 	for (i = 0; i < count; i++) {
-		type = order[i];
-		tparams = imagetool_get_type(type);
-		if (tparams) {
-			fprintf(stderr, "\t%-15s  %s\n",
-				genimg_get_type_short_name(type),
-				genimg_get_type_name(type));
-		}
+		item = order[i];
+		fprintf(stderr, "\t%-15s  %s\n",
+			genimg_get_cat_short_name(category, item),
+			genimg_get_cat_name(category, item));
 	}
 	fprintf(stderr, "\n");
+	free(order);
+
+	return 0;
 }
 
 static void usage(const char *msg)
@@ -85,12 +89,13 @@ static void usage(const char *msg)
 		"          -x ==> set XIP (execute in place)\n",
 		params.cmdname);
 	fprintf(stderr,
-		"       %s [-D dtc_options] [-f fit-image.its|-f auto|-F] [-b <dtb> [-b <dtb>]] fit-image\n"
-		"           <dtb> file is used with -f auto, it may occour multiple times.\n",
+		"       %s [-D dtc_options] [-f fit-image.its|-f auto|-F] [-b <dtb> [-b <dtb>]] [-i <ramdisk.cpio.gz>] fit-image\n"
+		"           <dtb> file is used with -f auto, it may occur multiple times.\n",
 		params.cmdname);
 	fprintf(stderr,
 		"          -D => set all options for device tree compiler\n"
-		"          -f => input filename for FIT source\n");
+		"          -f => input filename for FIT source\n"
+		"          -i => input filename for ramdisk file\n");
 #ifdef CONFIG_FIT_SIGNATURE
 	fprintf(stderr,
 		"Signing / verified boot options: [-E] [-k keydir] [-K dtb] [ -c <comment>] [-p addr] [-r]\n"
@@ -138,7 +143,7 @@ static void process_args(int argc, char **argv)
 	int opt;
 
 	while ((opt = getopt(argc, argv,
-			     "a:A:b:cC:d:D:e:Ef:Fk:K:ln:p:O:rR:qsT:vVx")) != -1) {
+			     "a:A:b:c:C:d:D:e:Ef:Fk:i:K:ln:p:O:rR:qsT:vVx")) != -1) {
 		switch (opt) {
 		case 'a':
 			params.addr = strtoull(optarg, &ptr, 16);
@@ -150,8 +155,10 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'A':
 			params.arch = genimg_get_arch_id(optarg);
-			if (params.arch < 0)
+			if (params.arch < 0) {
+				show_valid_options(IH_ARCH);
 				usage("Invalid architecture");
+			}
 			break;
 		case 'b':
 			if (add_content(IH_TYPE_FLATDT, optarg)) {
@@ -166,8 +173,10 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'C':
 			params.comp = genimg_get_comp_id(optarg);
-			if (params.comp < 0)
+			if (params.comp < 0) {
+				show_valid_options(IH_COMP);
 				usage("Invalid compression type");
+			}
 			break;
 		case 'd':
 			params.datafile = optarg;
@@ -197,9 +206,11 @@ static void process_args(int argc, char **argv)
 			 * The flattened image tree (FIT) format
 			 * requires a flattened device tree image type
 			 */
-			params.fit_image_type = params.type;
 			params.type = IH_TYPE_FLATDT;
 			params.fflag = 1;
+			break;
+		case 'i':
+			params.fit_ramdisk = optarg;
 			break;
 		case 'k':
 			params.keydir = optarg;
@@ -215,8 +226,10 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'O':
 			params.os = genimg_get_os_id(optarg);
-			if (params.os < 0)
+			if (params.os < 0) {
+				show_valid_options(IH_OS);
 				usage("Invalid operating system");
+			}
 			break;
 		case 'p':
 			params.external_offset = strtoull(optarg, &ptr, 16);
@@ -225,6 +238,7 @@ static void process_args(int argc, char **argv)
 					params.cmdname, optarg);
 				exit(EXIT_FAILURE);
 			}
+			break;
 		case 'q':
 			params.quiet = 1;
 			break;
@@ -244,7 +258,7 @@ static void process_args(int argc, char **argv)
 		case 'T':
 			type = genimg_get_type_id(optarg);
 			if (type < 0) {
-				show_image_types();
+				show_valid_options(IH_TYPE);
 				usage("Invalid image type");
 			}
 			break;
@@ -272,9 +286,12 @@ static void process_args(int argc, char **argv)
 	 * will always be IH_TYPE_FLATDT in this case).
 	 */
 	if (params.type == IH_TYPE_FLATDT) {
-		params.fit_image_type = type;
+		params.fit_image_type = type ? type : IH_TYPE_KERNEL;
+		/* For auto_its, datafile is always 'auto' */
 		if (!params.auto_its)
 			params.datafile = datafile;
+		else if (!params.datafile)
+			usage("Missing data file for auto-FIT (use -d)");
 	} else if (type != IH_TYPE_INVALID) {
 		params.type = type;
 	}
@@ -282,7 +299,6 @@ static void process_args(int argc, char **argv)
 	if (!params.imagefile)
 		usage("Missing output filename");
 }
-
 
 int main(int argc, char **argv)
 {
@@ -492,6 +508,37 @@ int main(int argc, char **argv)
 			pbl_load_uboot(ifd, &params);
 		} else {
 			copy_file(ifd, params.datafile, pad_len);
+		}
+		if (params.type == IH_TYPE_FIRMWARE_IVT) {
+			/* Add alignment and IVT */
+			uint32_t aligned_filesize = (params.file_size + 0x1000
+					- 1) & ~(0x1000 - 1);
+			flash_header_v2_t ivt_header = { { 0xd1, 0x2000, 0x40 },
+					params.addr, 0, 0, 0, params.addr
+							+ aligned_filesize
+							- tparams->header_size,
+					params.addr + aligned_filesize
+							- tparams->header_size
+							+ 0x20, 0 };
+			int i = params.file_size;
+			for (; i < aligned_filesize; i++) {
+				if (write(ifd, &i, 1) != 1) {
+					fprintf(stderr,
+							"%s: Write error on %s: %s\n",
+							params.cmdname,
+							params.imagefile,
+							strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+			}
+			if (write(ifd, &ivt_header, sizeof(flash_header_v2_t))
+					!= sizeof(flash_header_v2_t)) {
+				fprintf(stderr, "%s: Write error on %s: %s\n",
+						params.cmdname,
+						params.imagefile,
+						strerror(errno));
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 

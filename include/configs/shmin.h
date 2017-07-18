@@ -25,8 +25,8 @@
  * This board has original boot loader. If you write u-boot to 0x0,
  * you should set undef.
  */
-#define CONFIG_VERSION_VARIABLE
 #undef  CONFIG_SHOW_BOOT_PROGRESS
+#define CONFIG_DISPLAY_BOARDINFO
 
 /* system */
 #define SHMIN_SDRAM_BASE		(0x8C000000)

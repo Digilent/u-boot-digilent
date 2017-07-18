@@ -10,9 +10,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_VERSION_VARIABLE
 #define CONFIG_ENV_VERSION	10
-#define CONFIG_IDENT_STRING	" apf27 patch 3.10"
 #define CONFIG_BOARD_NAME apf27
 
 /*
@@ -27,22 +25,14 @@
 #define CONFIG_SYS_NO_FLASH
 
 /*
- * Board display option
- */
-#define CONFIG_DISPLAY_BOARDINFO
-#define CONFIG_DISPLAY_CPUINFO
-
-/*
  * SPL
  */
 #define CONFIG_SPL_TARGET	"u-boot-with-spl.bin"
 #define CONFIG_SPL_LDSCRIPT	"arch/$(ARCH)/cpu/u-boot-spl.lds"
 #define CONFIG_SPL_MAX_SIZE	2048
 #define CONFIG_SPL_TEXT_BASE    0xA0000000
-#define CONFIG_SPL_SERIAL_SUPPORT
 
 /* NAND boot config */
-#define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SYS_NAND_U_BOOT_START    CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x800
 #define CONFIG_SYS_NAND_U_BOOT_DST	CONFIG_SYS_TEXT_BASE
@@ -73,7 +63,6 @@
 #define CONFIG_CMD_NAND		/* NAND support			*/
 #define CONFIG_CMD_NAND_LOCK_UNLOCK
 #define CONFIG_CMD_NAND_TRIMFFS
-#define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
 
 /*
@@ -319,7 +308,6 @@
  * SD/MMC
  */
 #ifdef CONFIG_CMD_MMC
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_MXC_MMC
 #define CONFIG_MXC_MCI_REGS_BASE	0x10014000

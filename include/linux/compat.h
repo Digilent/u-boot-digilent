@@ -15,7 +15,7 @@ struct p_current{
 
 extern struct p_current *current;
 
-#define ndelay(x)	udelay(1)
+#define ndelay(x)	udelay((x) < 1000 ? 1 : (x)/1000)
 
 #define dev_dbg(dev, fmt, args...)		\
 	debug(fmt, ##args)
@@ -150,8 +150,6 @@ typedef u64 blkcnt_t;
 typedef unsigned long sector_t;
 typedef unsigned long blkcnt_t;
 #endif
-
-#define ENOTSUPP	524	/* Operation is not supported */
 
 /* module */
 #define THIS_MODULE		0

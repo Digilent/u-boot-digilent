@@ -130,14 +130,10 @@
 #if !defined(__ADSPBF522__) && !defined(__ADSPBF523__)
 #define CONFIG_USB_MUSB_HCD
 #define CONFIG_USB_BLACKFIN
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_MUSB_TIMEOUT 100000
 #endif
 
 /* Don't waste time transferring a logo over the UART */
-#if (CONFIG_BFIN_BOOT_MODE != BFIN_BOOT_UART)
-/*# define CONFIG_VIDEO*/
-#endif
 
 /*
  * Video Settings

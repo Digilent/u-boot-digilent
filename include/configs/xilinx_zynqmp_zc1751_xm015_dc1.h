@@ -12,10 +12,6 @@
 
 #define CONFIG_ZYNQ_SDHCI0
 #define CONFIG_ZYNQ_SDHCI1
-#define CONFIG_AHCI
-#define CONFIG_ZYNQMP_XHCI_LIST {ZYNQMP_USB0_XHCI_BASEADDR}
-
-#define CONFIG_IDENT_STRING	" Xilinx ZynqMP ZC1751 xm015 dc1"
 
 #include <configs/xilinx_zynqmp.h>
 

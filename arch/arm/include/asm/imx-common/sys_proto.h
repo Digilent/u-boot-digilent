@@ -30,9 +30,13 @@
 #define is_mx6dqp() (is_cpu_type(MXC_CPU_MX6QP) || is_cpu_type(MXC_CPU_MX6DP))
 #define is_mx6dq() (is_cpu_type(MXC_CPU_MX6Q) || is_cpu_type(MXC_CPU_MX6D))
 #define is_mx6sdl() (is_cpu_type(MXC_CPU_MX6SOLO) || is_cpu_type(MXC_CPU_MX6DL))
+#define is_mx6dl() (is_cpu_type(MXC_CPU_MX6DL))
 #define is_mx6sx() (is_cpu_type(MXC_CPU_MX6SX))
 #define is_mx6sl() (is_cpu_type(MXC_CPU_MX6SL))
+#define is_mx6solo() (is_cpu_type(MXC_CPU_MX6SOLO))
 #define is_mx6ul() (is_cpu_type(MXC_CPU_MX6UL))
+#define is_mx6ull() (is_cpu_type(MXC_CPU_MX6ULL))
+#define is_mx6sll() (is_cpu_type(MXC_CPU_MX6SLL))
 
 u32 get_nr_cpus(void);
 u32 get_cpu_rev(void);

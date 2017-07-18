@@ -17,7 +17,6 @@
 
 #define CONFIG_MACH_TYPE	4501
 #define CONFIG_MMCROOT		"/dev/mmcblk0p1"
-#define PHYS_SDRAM_SIZE		(1u * 1024 * 1024 * 1024)
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(64 * SZ_1M)
@@ -58,7 +57,7 @@
 	"rescue_sys_length=f10000\0" \
 	"panel=lb07wv8\0" \
 	"splashpos=m,m\0" \
-	"console=" CONFIG_CONSOLE_DEV "\0" \
+	"console=" CONSOLE_DEV "\0" \
 	"fdt_high=0xffffffff\0"	  \
 	"initrd_high=0xffffffff\0" \
 	"addmtd=setenv bootargs ${bootargs} ${mtdparts}\0" \
@@ -213,7 +212,6 @@
 /* USB Configs */
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX6
-#define CONFIG_USB_STORAGE
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET	/* For OTG port */
 #define CONFIG_MXC_USB_PORTSC	(PORT_PTS_UTMI | PORT_PTS_PTW)
@@ -225,23 +223,14 @@
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_MTD_DEVICE
 #define CONFIG_RBTREE
-#define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
-
-#define CONFIG_MTD_UBI_FASTMAP
-#define CONFIG_MTD_UBI_FASTMAP_AUTOCONVERT	1
 
 #define CONFIG_HW_WATCHDOG
 #define CONFIG_IMX_WATCHDOG
 
 /* Framebuffer */
-#define CONFIG_VIDEO
 #define CONFIG_VIDEO_IPUV3
 /* check this console not needed, after test remove it */
-#define CONFIG_CFB_CONSOLE
-#define CONFIG_VGA_AS_SINGLE_DEVICE
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
-#define CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASH_SCREEN_ALIGN

@@ -21,6 +21,7 @@ typedef enum {			/* typedef xilinx_iface */
 	master_selectmap,	/* master SelectMap (virtex2)           */
 	slave_selectmap,	/* slave SelectMap (virtex2)            */
 	devcfg,			/* devcfg interface (zynq) */
+	csu_dma,		/* csu_dma interface (zynqmp) */
 	max_xilinx_iface_type	/* insert all new types before this */
 } xilinx_iface;			/* end, typedef xilinx_iface */
 
@@ -31,6 +32,7 @@ typedef enum {			/* typedef xilinx_family */
 	xilinx_virtex2,		/* Virtex2 Family */
 	xilinx_spartan3,	/* Spartan-III Family */
 	xilinx_zynq,		/* Zynq Family */
+	xilinx_zynqmp,		/* ZynqMP Family */
 	max_xilinx_type		/* insert all new types before this */
 } xilinx_family;		/* end, typedef xilinx_family */
 
@@ -47,6 +49,7 @@ typedef struct {		/* typedef xilinx_desc */
 struct xilinx_fpga_op {
 	int (*load)(xilinx_desc *, const void *, size_t, bitstream_type);
 	int (*loadfs)(xilinx_desc *, const void *, size_t, fpga_fs_info *);
+	int (*loads)(xilinx_desc *, const void *, size_t, fpga_secure_info *);
 	int (*dump)(xilinx_desc *, const void *, size_t);
 	int (*info)(xilinx_desc *);
 };
@@ -59,6 +62,9 @@ int xilinx_dump(xilinx_desc *desc, const void *buf, size_t bsize);
 int xilinx_info(xilinx_desc *desc);
 int xilinx_loadfs(xilinx_desc *desc, const void *buf, size_t bsize,
 		  fpga_fs_info *fpga_fsinfo);
+int xilinx_loads(xilinx_desc *desc, const void *buf, size_t bsize,
+		 fpga_secure_info *fpga_sec_info);
+
 
 /* Board specific implementation specific function types
  *********************************************************************/

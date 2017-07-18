@@ -10,8 +10,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_DISPLAY_BOARDINFO
-
 #ifndef CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_TEXT_BASE	0xeff40000
 #endif
@@ -25,13 +23,9 @@
 #endif
 
 /* High Level Configuration Options */
-#define CONFIG_BOOKE		/* BOOKE */
-#define CONFIG_E500		/* BOOKE e500 family */
-#define CONFIG_P1023
 #define CONFIG_MP		/* support multiple processors */
 
 #define CONFIG_FSL_ELBC		/* Has Enhanced localbus controller */
-#define CONFIG_PCI		/* Enable PCI/PCIE */
 #define CONFIG_PCI_INDIRECT_BRIDGE     /* indirect PCI bridge support */
 #define CONFIG_PCIE1		/* PCIE controller 1 (slot 1) */
 #define CONFIG_PCIE2		/* PCIE controller 2 (slot 2) */
@@ -39,7 +33,6 @@
 #define CONFIG_FSL_PCI_INIT	/* Use common FSL init code */
 #define CONFIG_FSL_PCIE_RESET	/* need PCIe reset errata */
 #define CONFIG_SYS_PCI_64BIT	/* enable 64-bit PCI resources */
-#define CONFIG_FSL_LAW		/* Use common FSL init code */
 
 #ifndef __ASSEMBLY__
 extern unsigned long get_clock_freq(void);
@@ -75,7 +68,6 @@ extern unsigned long get_clock_freq(void);
 #define CONFIG_CHIP_SELECTS_PER_CTRL	1
 
 #define CONFIG_DDR_SPD
-#define CONFIG_SYS_FSL_DDR3
 #define CONFIG_FSL_DDR_INTERACTIVE
 #define CONFIG_SYS_SDRAM_SIZE		512u	/* DDR is 512M */
 #define CONFIG_SYS_SPD_BUS_NUM          0
@@ -232,7 +224,6 @@ extern unsigned long get_clock_freq(void);
 #define CONFIG_SYS_PCIE1_IO_SIZE	0x00010000	/* 64k */
 
 #if defined(CONFIG_PCI)
-#define CONFIG_PCI_PNP		/* do pci plug-and-play */
 #define CONFIG_PCI_SCAN_SHOW	/* show pci devices on startup */
 #endif	/* CONFIG_PCI */
 
@@ -269,7 +260,6 @@ extern unsigned long get_clock_freq(void);
 #ifdef CONFIG_USB_EHCI
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_EHCI_FSL
-#define CONFIG_USB_STORAGE
 #define CONFIG_DOS_PARTITION
 #endif
 #endif
@@ -375,7 +365,7 @@ extern unsigned long get_clock_freq(void);
 	"consoledev=ttyS0\0"					\
 	"ramdiskaddr=2000000\0"					\
 	"ramdiskfile=rootfs.ext2.gz.uboot\0"			\
-	"fdtaddr=c00000\0"					\
+	"fdtaddr=1e00000\0"					\
 	"fdtfile=p1023rdb.dtb\0"				\
 	"othbootargs=ramdisk_size=600000\0"			\
 	"bdev=sda1\0"						\

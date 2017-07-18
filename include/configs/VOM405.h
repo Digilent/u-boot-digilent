@@ -19,7 +19,6 @@
 #define CONFIG_VOM405		1	/* ...on a VOM405 board		*/
 
 #define	CONFIG_SYS_TEXT_BASE	0xFFFC8000
-#define CONFIG_DISPLAY_BOARDINFO
 
 #define CONFIG_BOARD_EARLY_INIT_F 1	/* call board_early_init_f()	*/
 #define CONFIG_MISC_INIT_R	1	/* call misc_init_r()		*/
@@ -83,8 +82,6 @@
 
 #define CONFIG_SYS_DEVICE_NULLDEV	1	/* include nulldev device	*/
 
-#define CONFIG_SYS_CONSOLE_INFO_QUIET	1	/* don't print console @ startup*/
-
 #define CONFIG_SYS_MEMTEST_START	0x0400000	/* memtest works on	*/
 #define CONFIG_SYS_MEMTEST_END		0x0C00000	/* 4 ... 12 MB in DRAM	*/
 
@@ -105,8 +102,6 @@
 #define CONFIG_SYS_EXTBDINFO	1		/* To use extended board_into (bd_t) */
 
 #define CONFIG_CMDLINE_EDITING	1	/* add command line history	*/
-
-#define CONFIG_VERSION_VARIABLE 1	/* include version env variable */
 
 #define CONFIG_SYS_RX_ETH_BUFFER	16	/* use 16 rx buffer on 405 emac */
 

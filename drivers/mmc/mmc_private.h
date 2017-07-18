@@ -20,22 +20,29 @@ extern int mmc_set_blocklen(struct mmc *mmc, int len);
 void mmc_adapter_card_type_ident(void);
 #endif
 
-#ifndef CONFIG_SPL_BUILD
+#ifdef CONFIG_BLK
+ulong mmc_bread(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
+		void *dst);
+#else
+ulong mmc_bread(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
+		void *dst);
+#endif
 
-unsigned long mmc_berase(struct blk_desc *block_dev, lbaint_t start,
-			 lbaint_t blkcnt);
+#if !(defined(CONFIG_SPL_BUILD) && !defined(CONFIG_SPL_SAVEENV))
 
 #ifdef CONFIG_BLK
 ulong mmc_bwrite(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 		 const void *src);
+ulong mmc_berase(struct udevice *dev, lbaint_t start, lbaint_t blkcnt);
 #else
 ulong mmc_bwrite(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
 		 const void *src);
+ulong mmc_berase(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt);
 #endif
 
-#else /* CONFIG_SPL_BUILD */
+#else /* CONFIG_SPL_BUILD and CONFIG_SPL_SAVEENV is not defined */
 
-/* SPL will never write or erase, declare dummies to reduce code size. */
+/* declare dummies to reduce code size. */
 
 #ifdef CONFIG_BLK
 static inline unsigned long mmc_berase(struct udevice *dev,
@@ -65,6 +72,25 @@ static inline ulong mmc_bwrite(struct blk_desc *block_dev, lbaint_t start,
 
 #endif /* CONFIG_SPL_BUILD */
 
+#ifdef CONFIG_MMC_TRACE
+void mmmc_trace_before_send(struct mmc *mmc, struct mmc_cmd *cmd);
+void mmmc_trace_after_send(struct mmc *mmc, struct mmc_cmd *cmd, int ret);
+void mmc_trace_state(struct mmc *mmc, struct mmc_cmd *cmd);
+#else
+static inline void mmmc_trace_before_send(struct mmc *mmc, struct mmc_cmd *cmd)
+{
+}
+
+static inline void mmmc_trace_after_send(struct mmc *mmc, struct mmc_cmd *cmd,
+					 int ret)
+{
+}
+
+static inline void mmc_trace_state(struct mmc *mmc, struct mmc_cmd *cmd)
+{
+}
+#endif
+
 /**
  * mmc_get_next_devnum() - Get the next available MMC device number
  *
@@ -88,5 +114,25 @@ void mmc_list_init(void);
  * @mmc:	Device to add
  */
 void mmc_list_add(struct mmc *mmc);
+
+/**
+ * mmc_switch_part() - Switch to a new MMC hardware partition
+ *
+ * @mmc:	MMC device
+ * @part_num:	Hardware partition number
+ * @return 0 if OK, -ve on error
+ */
+int mmc_switch_part(struct mmc *mmc, unsigned int part_num);
+
+/**
+ * mmc_switch() - Issue and MMC switch mode command
+ *
+ * @mmc:	MMC device
+ * @set:	Unused
+ * @index:	Cmdarg index
+ * @value:	Cmdarg value
+ * @return 0 if OK, -ve on error
+ */
+int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value);
 
 #endif /* _MMC_PRIVATE_H_ */

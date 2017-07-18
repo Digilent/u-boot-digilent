@@ -12,13 +12,11 @@
 
 /* Platform type */
 #define CONFIG_SOC_K2E
-#define CONFIG_K2E_EVM
 
 /* U-Boot general configuration */
 #define CONFIG_EXTRA_ENV_KS2_BOARD_SETTINGS				\
 	DEFAULT_FW_INITRAMFS_BOOT_ENV					\
 	"boot=ubi\0"							\
-	"addr_mon=0x0c140000\0"						\
 	"args_ubi=setenv bootargs ${bootargs} rootfstype=ubifs "	\
 	"root=ubi0:rootfs rootflags=sync rw ubi.mtd=ubifs,2048\0"	\
 	"name_fdt=keystone-k2e-evm.dtb\0"				\

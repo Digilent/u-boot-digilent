@@ -18,7 +18,6 @@
 #include <linux/sizes.h>
 
 #define CONFIG_ARCH_CPU_INIT
-#define CONFIG_DISPLAY_BOARDINFO
 #define CONFIG_BOARD_EARLY_INIT_F
 
 /* Size of malloc() pool before and after relocation */
@@ -48,15 +47,13 @@
 #define CONFIG_IRAM_BASE		0x02100000
 #define CONFIG_IRAM_SIZE		0x58000
 #define CONFIG_IRAM_END			(CONFIG_IRAM_BASE + CONFIG_IRAM_SIZE)
+#define CPU_RELEASE_ADDR		secondary_boot_addr
 
 /* Number of CPUs available */
 #define CONFIG_CORE_COUNT		0x8
 
 /* select serial console configuration */
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SILENT_CONSOLE
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
-#define CONFIG_CONSOLE_MUX
 
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x3E00000)
 

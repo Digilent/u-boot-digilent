@@ -9,6 +9,7 @@
 #ifndef _CLK_H_
 #define _CLK_H_
 
+#include <linux/errno.h>
 #include <linux/types.h>
 
 /**
@@ -59,7 +60,11 @@ struct clk {
 	unsigned long id;
 };
 
-#if CONFIG_IS_ENABLED(OF_CONTROL)
+#if CONFIG_IS_ENABLED(OF_CONTROL) && CONFIG_IS_ENABLED(CLK)
+struct phandle_2_cell;
+int clk_get_by_index_platdata(struct udevice *dev, int index,
+			      struct phandle_2_cell *cells, struct clk *clk);
+
 /**
  * clock_get_by_index - Get/request a clock by integer index.
  *
@@ -100,7 +105,7 @@ static inline int clk_get_by_index(struct udevice *dev, int index,
 	return -ENOSYS;
 }
 
-static int clk_get_by_name(struct udevice *dev, const char *name,
+static inline int clk_get_by_name(struct udevice *dev, const char *name,
 			   struct clk *clk)
 {
 	return -ENOSYS;

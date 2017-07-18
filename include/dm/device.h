@@ -42,7 +42,9 @@ struct driver_info;
 #define DM_FLAG_BOUND			(1 << 6)
 
 /* Device name is allocated and should be freed on unbind() */
-#define DM_NAME_ALLOCED			(1 << 7)
+#define DM_FLAG_NAME_ALLOCED		(1 << 7)
+
+#define DM_FLAG_OF_PLATDATA		(1 << 8)
 
 /**
  * struct udevice - An instance of a driver
@@ -204,6 +206,10 @@ struct driver {
 /* Declare a new U-Boot driver */
 #define U_BOOT_DRIVER(__name)						\
 	ll_entry_declare(struct driver, __name, driver)
+
+/* Get a pointer to a given driver */
+#define DM_GET_DRIVER(__name)						\
+	ll_entry_get(struct driver, __name, driver)
 
 /**
  * dev_get_platdata() - Get the platform data for a device
@@ -467,6 +473,19 @@ fdt_addr_t dev_get_addr(struct udevice *dev);
 void *dev_get_addr_ptr(struct udevice *dev);
 
 /**
+ * dev_map_physmem() - Read device address from reg property of the
+ *                     device node and map the address into CPU address
+ *                     space.
+ *
+ * @dev: Pointer to device
+ * @size: size of the memory to map
+ *
+ * @return  mapped address, or NULL if the device does not have reg
+ *          property.
+ */
+void *dev_map_physmem(struct udevice *dev, unsigned long size);
+
+/**
  * dev_get_addr_index() - Get the indexed reg property of a device
  *
  * @dev: Pointer to a device
@@ -476,6 +495,22 @@ void *dev_get_addr_ptr(struct udevice *dev);
  * @return addr
  */
 fdt_addr_t dev_get_addr_index(struct udevice *dev, int index);
+
+/**
+ * dev_get_addr_size_index() - Get the indexed reg property of a device
+ *
+ * Returns the address and size specified in the 'reg' property of a device.
+ *
+ * @dev: Pointer to a device
+ * @index: the 'reg' property can hold a list of <addr, size> pairs
+ *	   and @index is used to select which one is required
+ * @size: Pointer to size varible - this function returns the size
+ *        specified in the 'reg' property here
+ *
+ * @return addr
+ */
+fdt_addr_t dev_get_addr_size_index(struct udevice *dev, int index,
+				   fdt_size_t *size);
 
 /**
  * dev_get_addr_name() - Get the reg property of a device, indexed by name
@@ -540,7 +575,7 @@ int device_set_name(struct udevice *dev, const char *name);
 /**
  * device_set_name_alloced() - note that a device name is allocated
  *
- * This sets the DM_NAME_ALLOCED flag for the device, so that when it is
+ * This sets the DM_FLAG_NAME_ALLOCED flag for the device, so that when it is
  * unbound the name will be freed. This avoids memory leaks.
  *
  * @dev:	Device to update
@@ -592,6 +627,22 @@ static inline bool device_is_on_pci_bus(struct udevice *dev)
  */
 #define device_foreach_child_safe(pos, next, parent)	\
 	list_for_each_entry_safe(pos, next, &parent->child_head, sibling_node)
+
+/**
+ * dm_scan_fdt_dev() - Bind child device in a the device tree
+ *
+ * This handles device which have sub-nodes in the device tree. It scans all
+ * sub-nodes and binds drivers for each node where a driver can be found.
+ *
+ * If this is called prior to relocation, only pre-relocation devices will be
+ * bound (those marked with u-boot,dm-pre-reloc in the device tree, or where
+ * the driver has the DM_FLAG_PRE_RELOC flag set). Otherwise, all devices will
+ * be bound.
+ *
+ * @dev:	Device to scan
+ * @return 0 if OK, -ve on error
+ */
+int dm_scan_fdt_dev(struct udevice *dev);
 
 /* device resource management */
 typedef void (*dr_release_t)(struct udevice *dev, void *res);
