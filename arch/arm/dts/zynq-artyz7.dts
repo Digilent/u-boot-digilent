@@ -19,7 +19,7 @@
 		mmc0 = &sdhci0;
 	};
 
-	memory {
+	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x20000000>;
 	};
@@ -30,8 +30,8 @@
 	};
 
 	usb_phy0: phy0 {
-		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+		compatible = "usb-nop-xceiv";
 		reset-gpios = <&gpio0 46 1>;
 	};
 };
@@ -47,6 +47,7 @@
 
 	ethernet_phy: ethernet-phy@0 { /* rtl8211e-vl */
 		reg = <1>;
+		device_type = "ethernet-phy";
 	};
 };
 
