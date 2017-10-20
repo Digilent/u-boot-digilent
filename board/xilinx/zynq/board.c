@@ -135,7 +135,7 @@ int zynq_board_read_rom_ethaddr(unsigned char *ethaddr)
 #endif
 
 #if defined(CONFIG_ZYNQ_QSPI) && \
-    defined(CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET)
+    defined(ZYNQ_GEM_SPI_MAC_OFFSET)
 #define CMD_OTPREAD_ARRAY_FAST		0x4b
 	struct spi_flash *flash;
 	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
@@ -150,7 +150,7 @@ int zynq_board_read_rom_ethaddr(unsigned char *ethaddr)
 	}
 	/* set the cmd to otp read */
 	flash->read_cmd = CMD_OTPREAD_ARRAY_FAST;
-	if (spi_flash_read(flash, CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET, 6, ethaddr))
+	if (spi_flash_read(flash, ZYNQ_GEM_SPI_MAC_OFFSET, 6, ethaddr))
 		printf("SPI MAC address read failed\n");
 
 	if (flash)
