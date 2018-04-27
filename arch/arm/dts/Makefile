@@ -96,6 +96,7 @@ dtb-$(CONFIG_ARCH_UNIPHIER) += \
 	uniphier-sld8-ref.dtb
 dtb-$(CONFIG_ARCH_ZYNQ) += zynq-zc702.dtb \
 	zynq-artyz7.dtb \
+	zynq-coraz7.dtb \
 	zynq-zc706.dtb \
 	zynq-zed.dtb \
 	zynq-zybo.dtb \
