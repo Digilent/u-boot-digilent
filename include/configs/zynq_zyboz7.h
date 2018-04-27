@@ -1,14 +1,14 @@
 /*
  * (C) Copyright 2016 Digilent Inc.
  *
- * Configuration for Zynq Development Board - ARTY Z7
+ * Configuration for Zynq Development Board - Zybo Z7
  * See zynq-common.h for Zynq common configs
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#ifndef __CONFIG_ZYNQ_ARTYZ7_H
-#define __CONFIG_ZYNQ_ARTYZ7_H
+#ifndef __CONFIG_ZYNQ_ZYBOZ7_H
+#define __CONFIG_ZYNQ_ZYBOZ7_H
 
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_ZYNQ_QSPI
@@ -21,4 +21,4 @@
 
 #include <configs/zynq-common.h>
 
-#endif /* __CONFIG_ZYNQ_ARTYZ7_H */
+#endif /* __CONFIG_ZYNQ_ZYBOZ7_H */
