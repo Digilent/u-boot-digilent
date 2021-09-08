@@ -62,4 +62,28 @@ config BOOT_SCRIPT_OFFSET
 	default 0x3E80000 if ARCH_ZYNQMP
 	default 0x7F80000 if ARCH_VERSAL
 	help
-	   Specifies distro boot script offset in NAND/NOR flash.
+	   Specifies distro boot script offset in NAND/QSPI/NOR flash.
+
+config ZYNQ_MAC_IN_FLASH
+	bool "Reading MAC address from FLASH"
+	depends on !ZYNQ_MAC_IN_EEPROM
+	help
+	  Enable this option if your MAC address is saved in flash and
+	  xlnx,flash DT property in chosen node points to it.
+
+if ZYNQ_MAC_IN_FLASH
+
+config ZYNQ_GEM_SPI_MAC_OTP
+	bool "Reading MAC address from OTP AREA"
+	depends on DM_SPI
+	help
+	  Enable this option if your MAC address is saved in flash OTP area.
+
+config ZYNQ_GEM_SPI_MAC_OFFSET
+	hex "Set the SPI MAC offset"
+	default 0x0
+	depends on DM_SPI
+	help
+	  Set the MAC offset for spi (regular or OTP address space).
+
+endif
