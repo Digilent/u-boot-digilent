@@ -1,0 +1,17 @@
+Realtek PHY driver
+
+Introduces optional property to control LED behavior on the RTL8211F.
+Also see net/phy.txt.
+
+Optional properties:
+- realtek,leds-config    : three integers with mode options for each LED
+
+Example:
+#include <dt-bindings/phy/realtek.h>
+
+ethernet-phy@0 {
+	reg = <0>;
+	realtek,leds-config = <(REALTEK_LED_LINK10 | REALTEK_LED_ACT) \
+			       (REALTEK_LED_LINK100)
+			       (REALTEK_LED_DEFAULT)>;
+};
