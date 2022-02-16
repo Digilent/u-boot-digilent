@@ -10,6 +10,7 @@
 #include <linux/bitops.h>
 #include <phy.h>
 #include <linux/delay.h>
+#include <dt-bindings/phy/realtek.h>
 
 #define PHY_RTL8211x_FORCE_MASTER BIT(1)
 #define PHY_RTL8211E_PINE64_GIGABIT_FIX BIT(2)
@@ -70,6 +71,12 @@
 #define RMSR_TX_TIMING_MASK		GENMASK(11, 8)
 #define RMSR_TX_TIMING_VAL		0x5
 
+#define MIIM_RTL8211F_LCR_LEDx_MASK	0x1bu
+
+struct realtek_private {
+	u32 led_config[3];
+};
+
 static int rtl8211f_phy_extread(struct phy_device *phydev, int addr,
 				int devaddr, int regnum)
 {
@@ -96,6 +103,54 @@ static int rtl8211f_phy_extwrite(struct phy_device *phydev, int addr,
 
 	return 0;
 }
+
+
+#if defined(CONFIG_DM_ETH)
+/**
+ * dp83867_data_init - Convenience function for setting PHY specific data
+ *
+ * @phydev: the phy_device struct
+ */
+static int realtek_of_init(struct phy_device *phydev)
+{
+        struct realtek_private *prv = phydev->priv;
+	ofnode node;
+	int ret;
+	unsigned int i;
+
+	node = phy_get_ofnode(phydev);
+	if (!ofnode_valid(node))
+		return -EINVAL;
+	
+	if ((ret = ofnode_read_u32_array(node, "realtek,leds-config",
+	                          prv->led_config, 3)))
+	{
+		for(i=0; i<sizeof(prv->led_config)/sizeof(prv->led_config[0]); ++i)
+                	prv->led_config[i] = REALTEK_LED_DEFAULT;
+	} else
+	{
+		printf("Realtek PHY loading custom LED configuration\n");
+	}
+
+
+	for(i=0; i<sizeof(prv->led_config)/sizeof(prv->led_config[0]); ++i)
+                prv->led_config[i] &= (REALTEK_LED_LINK10|REALTEK_LED_LINK100| 
+		                      REALTEK_LED_LINK1000|REALTEK_LED_ACT|
+				      REALTEK_LED_DEFAULT);
+
+        return 0;
+}
+#else
+static int realtek_of_init(struct phy_device *phydev)
+{
+	struct realtek_private *prv = phydev->priv;
+	unsigned int i;
+
+	for(i=0; i<sizeof(prv->led_config)/sizeof(prv->led_config[0]); ++i)
+		prv->led_config[i] = REALTEK_LED_DEFAULT;
+	return 0;
+}
+#endif
 
 static int rtl8211b_probe(struct phy_device *phydev)
 {
@@ -204,6 +259,12 @@ static int rtl8201f_config(struct phy_device *phydev)
 static int rtl8211f_config(struct phy_device *phydev)
 {
 	u16 reg;
+	struct realtek_private *prv = phydev->priv;
+	int ret;
+
+	ret = realtek_of_init(phydev);
+	if (ret)
+		return ret;
 
 	if (phydev->flags & PHY_RTL8211F_FORCE_EEE_RXC_ON) {
 		unsigned int reg;
@@ -241,10 +302,26 @@ static int rtl8211f_config(struct phy_device *phydev)
 	phy_write(phydev, MDIO_DEVAD_NONE,
 		  MIIM_RTL8211F_PAGE_SELECT, 0x0);
 
-	/* Set green LED for Link, yellow LED for Active */
+	/* Set defaults: LED2=L1000+A, LED1=L10/100/1000, LED0=L10/100/10000+A */
+	reg = 0x617f;
+	if (!(prv->led_config[0] & REALTEK_LED_DEFAULT))
+	{
+		reg &= ~(MIIM_RTL8211F_LCR_LEDx_MASK);
+		reg |= (prv->led_config[0] & (MIIM_RTL8211F_LCR_LEDx_MASK));
+	}
+	if (!(prv->led_config[1] & REALTEK_LED_DEFAULT))
+        {
+                reg &= ~(MIIM_RTL8211F_LCR_LEDx_MASK<<5);
+                reg |= (prv->led_config[1] & (MIIM_RTL8211F_LCR_LEDx_MASK))<<5;
+        }
+	if (!(prv->led_config[2] & REALTEK_LED_DEFAULT))
+        {
+                reg &= ~(MIIM_RTL8211F_LCR_LEDx_MASK<<10);
+                reg |= (prv->led_config[2] & (MIIM_RTL8211F_LCR_LEDx_MASK))<<10;
+        }
 	phy_write(phydev, MDIO_DEVAD_NONE,
-		  MIIM_RTL8211F_PAGE_SELECT, 0xd04);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x10, 0x617f);
+                  MIIM_RTL8211F_PAGE_SELECT, 0xd04);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x10, reg);
 	phy_write(phydev, MDIO_DEVAD_NONE,
 		  MIIM_RTL8211F_PAGE_SELECT, 0x0);
 
