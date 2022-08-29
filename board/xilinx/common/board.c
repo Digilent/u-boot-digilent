@@ -54,7 +54,7 @@ int zynq_board_read_rom_ethaddr(unsigned char *ethaddr)
 }
 #endif
 
-#if defined(CONFIG_ZYNQ_QSPI) && defined(CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET)
+#if (defined(CONFIG_ZYNQ_QSPI) || defined(CONFIG_ZYNQMP_GQSPI)) && defined(CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET)
 #if defined(CONFIG_ZYNQ_GEM_SPI_MAC_OTP)
 #define CMD_OTP_SPANSION_MICRON_READ_ARRAY_FAST 0x4b
 #define CMD_OTP_WINBOND_READ_ARRAY_FAST 0x48
