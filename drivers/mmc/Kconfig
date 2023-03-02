@@ -750,7 +750,3 @@ config SYS_FSL_ERRATUM_ESDHC135
 
 config SYS_FSL_ERRATUM_ESDHC_A001
 	bool
-
-config SD_RETUNING
-	bool "Enables ZynqMP SD card interface retuning if first tuning fails"
-	depends on ARCH_ZYNQMP

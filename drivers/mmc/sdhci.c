@@ -403,56 +403,9 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 	debug("%s\n", __func__);
 
 	if (host->ops && host->ops->platform_execute_tuning) {
-		#if defined(CONFIG_SD_RETUNING)
-		u16 ctrl, div_value, clk_unstable;
-		unsigned int timeout;
-		// Gate the SD clock
-		ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-		printf("Original SD clock reg value: 0x%x\n", ctrl);
-		ctrl &= ~SDHCI_CLOCK_CARD_EN;
-		sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
-		printf("Gated SD clock, wrote 0x%x\n", ctrl);
-		
-		// Change the UHS mode to SDR25
-		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-		// Clear the UHS mode from the register value
-		ctrl &= ~SDHCI_CTRL_UHS_MASK;
-		// Put the new mode in the register value
-		ctrl |= SDHCI_CTRL_UHS_SDR25;
-		sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
-		printf("Changed UHS mode to SDR25, wrote 0x%x\n", ctrl);
-		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-		printf("Changed UHS mode to SDR25, read back 0x%x\n", ctrl);
-		
-		// Wait for SD clock to stabilize
-		clk_unstable = 1;
-		/* Wait max 100 ms */
-		timeout = 100;
-		while (clk_unstable && timeout) {
-			ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-			clk_unstable = (~ctrl) & SDHCI_CLOCK_INT_STABLE;
-			timeout--;
-			udelay(1000);
-		}
-		if (clk_unstable)
-			return err;
-		printf("SD clock stabilized, reg value: 0x%x\n", ctrl);
-		
-		// Un-gate the SD clock
-		ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-		printf("SD clock reg value before un-gating SD clock: 0x%x\n", ctrl);
-		ctrl |= SDHCI_CLOCK_CARD_EN;
-		sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
-		printf("Un-gated SD clock, wrote 0x%x\n", ctrl);
-		
-		#endif
-		// Perform SD tuning
 		err = host->ops->platform_execute_tuning(mmc, opcode);
-		if (err) {
-			printf("%s:!!Tuning failed...\n", __func__);
+		if (err)
 			return err;
-		}
-		printf("%s:!!Tuning passed\n", __func__);
 		return 0;
 	}
 	return 0;
