@@ -165,6 +165,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		printf("Tuning failed, Host Ctrl2=0x%x\n", ctrl);
 		return -1;
 	}
+	printf("Tuning passed, Host Ctrl2=0x%x\n", ctrl);
 
 	udelay(1);
 	arasan_zynqmp_dll_reset(host, deviceid);
