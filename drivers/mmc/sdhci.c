@@ -409,6 +409,7 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 		while (err && tap < 30) {
 			// Gate the output of the Tap Delay lines in the SD_ITAPDLY (IOU_SLCR) register
 			ctrl = *((volatile u32*)(0x00FF180314));
+			printf("Tap Delay register value before any change: 0x%x\n", ctrl);
 			ctrl |= 0x02000000;
 			*((volatile u32*)(0x00FF180314)) = ctrl;
 			printf("Gated tap delay lines outputs, wrote 0x%x\n", ctrl);
