@@ -396,14 +396,40 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 #if defined(CONFIG_DM_MMC) && defined(MMC_SUPPORTS_TUNING)
 static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 {
-	int err;
+	int err = 1;
+	int tap = 0;
+	u32 ctrl;
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct sdhci_host *host = mmc->priv;
 
 	debug("%s\n", __func__);
 
 	if (host->ops && host->ops->platform_execute_tuning) {
-		err = host->ops->platform_execute_tuning(mmc, opcode);
+		// We will retry auto-tuning with all 30 possible tap delays in SDR104 mode
+		while (err && tap < 30) {
+			// Gate the output of the Tap Delay lines in the SD_ITAPDLY (IOU_SLCR) register
+			ctrl = *((volatile u32*)(0x00FF180314));
+			ctrl |= 0x02000000;
+			*((volatile u32*)(0x00FF180314)) = ctrl;
+			printf("Gated tap delay lines outputs, wrote 0x%x\n", ctrl);
+			
+			// Set the current input tap value in the register
+			ctrl &= 0xFF00FFFF;
+			ctrl |= tap << 16;
+			*((volatile u32*)(0x00FF180314)) = ctrl;
+			printf("Set the current input tap value, wrote 0x%x\n", ctrl);
+			
+			// Un-gate the output of the Tap Delay lines
+			ctrl &= ~(0x02000000);
+			// Also enable input delay
+			ctrl |= 0x01000000;
+			*((volatile u32*)(0x00FF180314)) = ctrl;
+			printf("Un-gated tap delay lines outputs, wrote 0x%x\n", ctrl);
+			
+			// Execute tuning
+			err = host->ops->platform_execute_tuning(mmc, opcode);
+			tap++;
+		}
 		if (err)
 			return err;
 		return 0;

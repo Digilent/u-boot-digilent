@@ -111,14 +111,6 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 
 	host = priv->host;
 	deviceid = priv->deviceid;
-	
-	// read current GPIO0 status (from address 0x00FF0A0040)
-	ctrl=*((volatile u32*)(0x00FF0A0040));
-	printf("Read current GPIO0 value 0x%x\n", ctrl);
-	ctrl |= 0x200000;
-	// Write ctrl to enable LED0
-	*((volatile u32*)(0x00FF0A0040))=ctrl;
-	printf("Enabled LED0, wrote 0x%x\n", ctrl);
 
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
