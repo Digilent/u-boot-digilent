@@ -397,7 +397,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 {
 	int err = 1;
-	int tap = 0;
+	int tap = 20;
 	u32 ctrl;
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct sdhci_host *host = mmc->priv;
