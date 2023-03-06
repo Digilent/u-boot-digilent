@@ -406,11 +406,12 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 
 	if (host->ops && host->ops->platform_execute_tuning) {
 		// We will retry auto-tuning with all 30 possible tap delays in SDR104 mode
+		unsigned int timeout;
 		while (err && tap < 30) {
-			// Reset the DLL
-			ctrl = *((volatile u32*)(0x00FF180358));
-			ctrl &= 0xFFF7FFFF;
-			*((volatile u32*)(0x00FF180358)) = ctrl;
+			// Disable the SD clock
+			ctrl = *((volatile u32*)(0x00FF17002C));
+			ctrl &= 0xFFFFFFFB;
+			*((volatile u32*)(0x00FF17002C)) = ctrl;
 			
 			// Gate the output of the Tap Delay lines in the SD_ITAPDLY (IOU_SLCR) register
 			ctrl = *((volatile u32*)(0x00FF180314));
@@ -418,6 +419,11 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			ctrl |= 0x02000000;
 			*((volatile u32*)(0x00FF180314)) = ctrl;
 			printf("Gated tap delay lines outputs, wrote 0x%x\n", ctrl);
+			
+			// Enable input delay
+			ctrl |= 0x01000000;
+			*((volatile u32*)(0x00FF180314)) = ctrl;
+			printf("Enabled input tap delay, wrote 0x%x\n", ctrl);
 			
 			// Set the current input tap value in the register
 			ctrl &= 0xFF00FFFF;
@@ -427,15 +433,39 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			
 			// Un-gate the output of the Tap Delay lines
 			ctrl &= ~(0x02000000);
-			// Also enable input delay
-			ctrl |= 0x01000000;
 			*((volatile u32*)(0x00FF180314)) = ctrl;
 			printf("Un-gated tap delay lines outputs, wrote 0x%x\n", ctrl);
+			
+			udelay(10);
+			
+			// Reset the DLL
+			ctrl = *((volatile u32*)(0x00FF180358));
+			ctrl &= 0xFFF7FFFF;
+			*((volatile u32*)(0x00FF180358)) = ctrl;
+			
+			udelay(10);
 			
 			// Release the DLL reset
 			ctrl = *((volatile u32*)(0x00FF180358));
 			ctrl |= 0x00080000;
 			*((volatile u32*)(0x00FF180358)) = ctrl;
+			
+			timeout = 0;
+			do {
+				// Read SD Clock Control register
+				ctrl = *((volatile u32*)(0x00FF17002C));
+				timeout++;
+				udelay(1);
+			} while ( (!(ctrl & 0x00000002)) && (timeout < 100) );
+			
+			if (timeout >= 100)
+				return -1;
+			
+			// Enable the SD clock
+			ctrl = *((volatile u32*)(0x00FF17002C));
+			ctrl |= 0x00000004;
+			*((volatile u32*)(0x00FF17002C)) = ctrl;
+			
 			
 			// Read SDIO Host Control2 register before tuning
 			ctrl = *((volatile u32*)(0x00FF17003E));
