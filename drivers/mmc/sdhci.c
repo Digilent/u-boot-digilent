@@ -427,6 +427,10 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			*((volatile u32*)(0x00FF180314)) = ctrl;
 			printf("Un-gated tap delay lines outputs, wrote 0x%x\n", ctrl);
 			
+			// Read SDIO Host Control2 register before tuning
+			ctrl = *((volatile u32*)(0x00FF17003E));
+			printf("SDIO Host Control2 reg. value before tuning: 0x%x\n", ctrl);
+			
 			// Execute tuning
 			err = host->ops->platform_execute_tuning(mmc, opcode);
 			tap++;
