@@ -397,7 +397,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 {
 	int err = 1;
-	int tap = 20;
+	int tap = 0;
 	u32 ctrl;
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct sdhci_host *host = mmc->priv;
@@ -422,10 +422,11 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			*((volatile u32*)(0x00FF180314)) = ctrl;
 			printf("Gated tap delay lines outputs, wrote 0x%x\n", ctrl);
 			
-			// Enable input delay
-			ctrl |= 0x01000000;
+			// Disable input delay
+			//ctrl |= 0x01000000;
+			ctrl &= 0xFEFFFFFF;
 			*((volatile u32*)(0x00FF180314)) = ctrl;
-			printf("Enabled input tap delay, wrote 0x%x\n", ctrl);
+			printf("Disabled input tap delay, wrote 0x%x\n", ctrl);
 			
 			// Set the current input tap value in the register
 			ctrl &= 0xFF00FFFF;
