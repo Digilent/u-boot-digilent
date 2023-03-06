@@ -442,7 +442,7 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			
 			// Reset the DLL
 			ctrl = *((volatile u32*)(0x00FF180358));
-			ctrl &= 0xFFF7FFFF;
+			ctrl |= 0x00040000;
 			*((volatile u32*)(0x00FF180358)) = ctrl;
 			printf("Reset the DLL, wrote 0x%x\n", ctrl);
 			
@@ -450,9 +450,9 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			
 			// Release the DLL reset
 			ctrl = *((volatile u32*)(0x00FF180358));
-			ctrl |= 0x00080000;
+			ctrl &= 0xFFFBFFFF;
 			*((volatile u32*)(0x00FF180358)) = ctrl;
-			printf("Relesed the DLL reset, wrote 0x%x\n", ctrl);
+			printf("Released the DLL reset, wrote 0x%x\n", ctrl);
 			
 			timeout = 0;
 			do {
