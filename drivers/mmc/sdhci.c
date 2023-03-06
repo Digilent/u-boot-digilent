@@ -430,6 +430,10 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			// Execute tuning
 			err = host->ops->platform_execute_tuning(mmc, opcode);
 			tap++;
+			
+			// Read tap value after tuning
+			ctrl = *((volatile u32*)(0x00FF180314));
+			printf("Tap Delay register value after tuning: 0x%x\n", ctrl);
 		}
 		if (err)
 			return err;
