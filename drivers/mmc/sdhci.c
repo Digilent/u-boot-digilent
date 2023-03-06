@@ -407,6 +407,11 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 	if (host->ops && host->ops->platform_execute_tuning) {
 		// We will retry auto-tuning with all 30 possible tap delays in SDR104 mode
 		while (err && tap < 30) {
+			// Reset the DLL
+			ctrl = *((volatile u32*)(0x00FF180358));
+			ctrl &= 0xFFF7FFFF;
+			*((volatile u32*)(0x00FF180358)) = ctrl;
+			
 			// Gate the output of the Tap Delay lines in the SD_ITAPDLY (IOU_SLCR) register
 			ctrl = *((volatile u32*)(0x00FF180314));
 			printf("Tap Delay register value before any change: 0x%x\n", ctrl);
@@ -426,6 +431,11 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			ctrl |= 0x01000000;
 			*((volatile u32*)(0x00FF180314)) = ctrl;
 			printf("Un-gated tap delay lines outputs, wrote 0x%x\n", ctrl);
+			
+			// Release the DLL reset
+			ctrl = *((volatile u32*)(0x00FF180358));
+			ctrl |= 0x00080000;
+			*((volatile u32*)(0x00FF180358)) = ctrl;
 			
 			// Read SDIO Host Control2 register before tuning
 			ctrl = *((volatile u32*)(0x00FF17003E));
