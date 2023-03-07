@@ -492,7 +492,7 @@ extern const struct dm_mmc_ops sdhci_ops;
 #else
 #endif
 
-#if defined(SD_TUNING_WORKAROUND)
+#ifdef SD_TUNING_WORKAROUND
 #define SD_ITAPDLY_ABS_ADDRESS 0x00FF180314
 #define SD1_ITAPDLYENA BIT(24)
 #define SD1_ITAPCHGWIN BIT(25)

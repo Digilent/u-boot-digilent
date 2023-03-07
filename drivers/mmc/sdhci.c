@@ -405,7 +405,7 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 	debug("%s\n", __func__);
 
 	if (host->ops && host->ops->platform_execute_tuning) {
-		#if defined(SD_TUNING_WORKAROUND)
+		#ifdef SD_TUNING_WORKAROUND
 		// We will retry auto-tuning with all possible tap delays for SDR104 mode
 		unsigned int timeout;
 		while (err && tap < SDR104_MAX_INPUT_TAPS) {
@@ -482,7 +482,7 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			// Execute tuning
 			err = host->ops->platform_execute_tuning(mmc, opcode);
 			
-			#if defined(SD_TUNING_WORKAROUND)
+			#ifdef SD_TUNING_WORKAROUND
 			tap++;
 			
 			// Read tap value after tuning
