@@ -492,4 +492,20 @@ extern const struct dm_mmc_ops sdhci_ops;
 #else
 #endif
 
+#if defined(SD_TUNING_WORKAROUND)
+#define SD_ITAPDLY_ABS_ADDRESS 0x00FF180314
+#define SD1_ITAPDLYENA BIT(24)
+#define SD1_ITAPCHGWIN BIT(25)
+#define SD1_ITAPDLYSEL_MASK 0x00FF0000
+#define SD1_ITAPDLYSEL_SHIFT 16
+
+#define SD_DLL_CTRL_ABS_ADDRESS 0x00FF180358
+#define SD1_DLL_RST BIT(18)
+
+#define SD_CLK_STABLE_LOOP_COUNT 100
+
+// For 200MHz clock, 30 Taps are available
+#define SDR104_MAX_INPUT_TAPS 30
+#endif
+
 #endif /* __SDHCI_HW_H */

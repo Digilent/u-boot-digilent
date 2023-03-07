@@ -114,7 +114,6 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
-	printf("Enabled SDHCI tuning, wrote 0x%x\n", ctrl);
 	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
 
 	mdelay(1);
@@ -156,16 +155,13 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 
 	if (tuning_loop_counter < 0) {
 		ctrl &= ~SDHCI_CTRL_TUNED_CLK;
-		printf("Tuning timeout, wrote to Host Ctrl2 0x%x\n", ctrl);
 		sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
 	}
 
 	if (!(ctrl & SDHCI_CTRL_TUNED_CLK)) {
 		printf("%s:Tuning failed\n", __func__);
-		printf("Tuning failed, Host Ctrl2=0x%x\n", ctrl);
 		return -1;
 	}
-	printf("Tuning passed, Host Ctrl2=0x%x\n", ctrl);
 
 	udelay(1);
 	arasan_zynqmp_dll_reset(host, deviceid);
