@@ -172,14 +172,19 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
 		
 		if (tuning_loop_counter < 0) {
+			printf("Tuning timeout\n");
 			ctrl &= ~SDHCI_CTRL_TUNED_CLK;
 			sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
 		}
 		
 	#ifdef CONFIG_SD_TUNING_WORKAROUND
-		tap++;
-		if (ctrl & SDHCI_CTRL_TUNED_CLK)
+		if (ctrl & SDHCI_CTRL_TUNED_CLK) {
 			err = 0;
+			printf("Tuning passed for tap= %d\n", tap);
+		} else {
+			printf("Tuning failed, SD Host Control reg = 0x%x\n", ctrl);
+		}
+		tap++;
 	}
 	#endif
 
