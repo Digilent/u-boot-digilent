@@ -154,14 +154,17 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
 
 	if (tuning_loop_counter < 0) {
+		printf("Tuning timeout, SD Host Ctrl2 reg= 0x%x\n", ctrl);
 		ctrl &= ~SDHCI_CTRL_TUNED_CLK;
 		sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
 	}
 
 	if (!(ctrl & SDHCI_CTRL_TUNED_CLK)) {
+		printf("Tuning failed, SD Host Ctrl2 reg= 0x%x\n", ctrl);
 		printf("%s:Tuning failed\n", __func__);
 		return -1;
 	}
+	printf("Tuning passed, SD Host Ctrl2 reg= 0x%x\n", ctrl);
 
 	udelay(1);
 	arasan_zynqmp_dll_reset(host, deviceid);

@@ -397,8 +397,6 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 {
 	int err = 1;
-	int tap = 0;
-	u32 ctrl;
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct sdhci_host *host = mmc->priv;
 
@@ -406,6 +404,8 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 
 	if (host->ops && host->ops->platform_execute_tuning) {
 		#ifdef CONFIG_SD_TUNING_WORKAROUND
+		int tap = 0;
+		u32 ctrl;
 		// We will retry auto-tuning with all possible tap delays for SDR104 mode
 		unsigned int timeout;
 		while (err && tap < SDR104_MAX_INPUT_TAPS) {
