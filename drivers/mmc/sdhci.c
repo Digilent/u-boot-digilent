@@ -459,6 +459,7 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 			do {
 				// Read SD Clock Control register
 				ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
+				printf("== Read SD clock control register = 0x%x\n", ctrl);
 				timeout++;
 				udelay(1);
 			} while ( ((~ctrl) & SDHCI_CLOCK_INT_STABLE) && (timeout < SD_CLK_STABLE_LOOP_COUNT) );
