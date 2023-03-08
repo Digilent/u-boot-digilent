@@ -125,7 +125,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
 		printf("Disabled SD clock, wrote 0x%x\n", ctrl);
 		
-		arasan_zynqmp_set_tapdelay(deviceid, tap, 0, 1);
+		arasan_zynqmp_set_tapdelay_w_disable(deviceid, tap, 0, 1);
 		
 		arasan_zynqmp_dll_reset(host, deviceid);
 		#endif
