@@ -464,9 +464,10 @@ static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 				udelay(1);
 			} while ( ((~ctrl) & SDHCI_CLOCK_INT_STABLE) && (timeout < SD_CLK_STABLE_LOOP_COUNT) );
 			
-			if (timeout >= SD_CLK_STABLE_LOOP_COUNT)
+			if (timeout >= SD_CLK_STABLE_LOOP_COUNT) {
 				printf("Timeout while waiting for SD clock to become stable...");
 				return -1;
+			}
 			
 			// Enable the SD clock
 			ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
