@@ -396,102 +396,14 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 #if defined(CONFIG_DM_MMC) && defined(MMC_SUPPORTS_TUNING)
 static int sdhci_execute_tuning(struct udevice *dev, uint opcode)
 {
-	int err = 1;
+	int err;
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct sdhci_host *host = mmc->priv;
 
 	debug("%s\n", __func__);
 
 	if (host->ops && host->ops->platform_execute_tuning) {
-		#ifdef CONFIG_SD_TUNING_WORKAROUND
-		int tap = 0;
-		u32 ctrl;
-		// We will retry auto-tuning with all possible tap delays for SDR104 mode
-		unsigned int timeout;
-		while (err && tap < SDR104_MAX_INPUT_TAPS) {
-			// Disable the SD clock
-			ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-			printf("SD clock control register before any write: 0x%x\n", ctrl);
-			ctrl &= ~SDHCI_CLOCK_CARD_EN;
-			sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
-			printf("Disabled SD clock, wrote 0x%x\n", ctrl);
-			
-			// Gate the output of the Tap Delay lines in the SD_ITAPDLY (IOU_SLCR) register
-			ctrl = *((volatile u32*)(SD_ITAPDLY_ABS_ADDRESS));
-			printf("Tap Delay register value before any change: 0x%x\n", ctrl);
-			ctrl |= SD1_ITAPCHGWIN;
-			*((volatile u32*)(SD_ITAPDLY_ABS_ADDRESS)) = ctrl;
-			printf("Gated tap delay lines outputs, wrote 0x%x\n", ctrl);
-			
-			// Disable input delay
-			ctrl &= ~SD1_ITAPDLYENA;
-			*((volatile u32*)(SD_ITAPDLY_ABS_ADDRESS)) = ctrl;
-			printf("Disabled input tap delay, wrote 0x%x\n", ctrl);
-			
-			// Set the current input tap value in the register
-			ctrl &= ~SD1_ITAPDLYSEL_MASK;
-			ctrl |= tap << SD1_ITAPDLYSEL_SHIFT;
-			*((volatile u32*)(SD_ITAPDLY_ABS_ADDRESS)) = ctrl;
-			printf("Set the current input tap value, wrote 0x%x\n", ctrl);
-			
-			// Un-gate the output of the Tap Delay lines
-			ctrl &= ~SD1_ITAPCHGWIN;
-			*((volatile u32*)(SD_ITAPDLY_ABS_ADDRESS)) = ctrl;
-			printf("Un-gated tap delay lines outputs, wrote 0x%x\n", ctrl);
-			
-			udelay(10);
-			
-			// Reset the DLL
-			ctrl = *((volatile u32*)(SD_DLL_CTRL_ABS_ADDRESS));
-			ctrl |= SD1_DLL_RST;
-			*((volatile u32*)(SD_DLL_CTRL_ABS_ADDRESS)) = ctrl;
-			printf("Reset the DLL, wrote 0x%x\n", ctrl);
-			
-			udelay(10);
-			
-			// Release the DLL reset
-			ctrl = *((volatile u32*)(SD_DLL_CTRL_ABS_ADDRESS));
-			ctrl &= ~SD1_DLL_RST;
-			*((volatile u32*)(SD_DLL_CTRL_ABS_ADDRESS)) = ctrl;
-			printf("Released the DLL reset, wrote 0x%x\n", ctrl);
-			
-			timeout = 0;
-			do {
-				// Read SD Clock Control register
-				ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-				printf("== Read SD clock control register = 0x%x\n", ctrl);
-				timeout++;
-				udelay(1);
-			} while ( ((~ctrl) & SDHCI_CLOCK_INT_STABLE) && (timeout < SD_CLK_STABLE_LOOP_COUNT) );
-			
-			if (timeout >= SD_CLK_STABLE_LOOP_COUNT) {
-				printf("Timeout while waiting for SD clock to become stable...");
-				return -1;
-			}
-			
-			// Enable the SD clock
-			ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-			ctrl |= SDHCI_CLOCK_CARD_EN;
-			sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
-			printf("Enabled SD clock, wrote 0x%x\n", ctrl);
-			
-			
-			// Read SDIO Host Control2 register before tuning
-			ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-			printf("SDIO Host Control2 reg. value before tuning: 0x%x\n", ctrl);
-			#endif
-			
-			// Execute tuning
-			err = host->ops->platform_execute_tuning(mmc, opcode);
-			
-			#ifdef CONFIG_SD_TUNING_WORKAROUND
-			tap++;
-			
-			// Read tap value after tuning
-			ctrl = *((volatile u32*)(SD_ITAPDLY_ABS_ADDRESS));
-			printf("Tap Delay register value after tuning: 0x%x\n", ctrl);
-		}
-		#endif
+		err = host->ops->platform_execute_tuning(mmc, opcode);
 		if (err)
 			return err;
 		return 0;

@@ -14,7 +14,14 @@ void arasan_zynqmp_set_tapdelay(u8 device_id, u32 itap_delay, u32 otap_delay);
 #else
 inline void zynqmp_dll_reset(u8 deviceid) {}
 inline void arasan_zynqmp_set_tapdelay(u8 device_id, u32 itap_delay,
+				       u32 otap_delay, u8 disable_dly) {}
+inline void arasan_zynqmp_set_tapdelay(u8 device_id, u32 itap_delay,
 				       u32 otap_delay) {}
+#endif
+
+#ifdef CONFIG_SD_TUNING_WORKAROUND
+// For 200MHz clock, 30 Taps are available
+#define SDR104_MAX_INPUT_TAPS 30
 #endif
 
 #endif

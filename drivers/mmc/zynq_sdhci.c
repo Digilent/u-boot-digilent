@@ -112,59 +112,79 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	host = priv->host;
 	deviceid = priv->deviceid;
 
-	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-	ctrl |= SDHCI_CTRL_EXEC_TUNING;
-	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
+	#ifdef CONFIG_SD_TUNING_WORKAROUND
+	int tap = 0;
+	int err = 1;
+	// We will retry auto-tuning with all possible tap delays for SDR104 mode
+	while (err && tap < SDR104_MAX_INPUT_TAPS) {
+		tuning_loop_counter = SDHCI_TUNING_LOOP_COUNT;
+		// Disable the SD clock
+		ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
+		printf("SD clock control register before any write: 0x%x\n", ctrl);
+		ctrl &= ~SDHCI_CLOCK_CARD_EN;
+		sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
+		printf("Disabled SD clock, wrote 0x%x\n", ctrl);
+		
+		arasan_zynqmp_set_tapdelay(deviceid, tap, 0, 1);
+		
+		arasan_zynqmp_dll_reset(host, deviceid);
+		#endif
 
-	mdelay(1);
-
-	arasan_zynqmp_dll_reset(host, deviceid);
-
-	sdhci_writel(host, SDHCI_INT_DATA_AVAIL, SDHCI_INT_ENABLE);
-	sdhci_writel(host, SDHCI_INT_DATA_AVAIL, SDHCI_SIGNAL_ENABLE);
-
-	do {
-		cmd.cmdidx = opcode;
-		cmd.resp_type = MMC_RSP_R1;
-		cmd.cmdarg = 0;
-
-		data.blocksize = 64;
-		data.blocks = 1;
-		data.flags = MMC_DATA_READ;
-
-		if (tuning_loop_counter-- == 0)
-			break;
-
-		if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK_HS200 &&
-		    mmc->bus_width == 8)
-			data.blocksize = 128;
-
-		sdhci_writew(host, SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG,
-						    data.blocksize),
-			     SDHCI_BLOCK_SIZE);
-		sdhci_writew(host, data.blocks, SDHCI_BLOCK_COUNT);
-		sdhci_writew(host, SDHCI_TRNS_READ, SDHCI_TRANSFER_MODE);
-
-		mmc_send_cmd(mmc, &cmd, NULL);
 		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
+		ctrl |= SDHCI_CTRL_EXEC_TUNING;
+		sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
 
-		if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK)
-			udelay(1);
+		mdelay(1);
 
-	} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
+		arasan_zynqmp_dll_reset(host, deviceid);
+
+		sdhci_writel(host, SDHCI_INT_DATA_AVAIL, SDHCI_INT_ENABLE);
+		sdhci_writel(host, SDHCI_INT_DATA_AVAIL, SDHCI_SIGNAL_ENABLE);
+
+		do {
+			cmd.cmdidx = opcode;
+			cmd.resp_type = MMC_RSP_R1;
+			cmd.cmdarg = 0;
+
+			data.blocksize = 64;
+			data.blocks = 1;
+			data.flags = MMC_DATA_READ;
+
+			if (tuning_loop_counter-- == 0)
+				break;
+
+			if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK_HS200 &&
+				mmc->bus_width == 8)
+				data.blocksize = 128;
+
+			sdhci_writew(host, SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG,
+								data.blocksize),
+					 SDHCI_BLOCK_SIZE);
+			sdhci_writew(host, data.blocks, SDHCI_BLOCK_COUNT);
+			sdhci_writew(host, SDHCI_TRNS_READ, SDHCI_TRANSFER_MODE);
+
+			mmc_send_cmd(mmc, &cmd, NULL);
+			ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
+
+			if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK)
+				udelay(1);
+
+		} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
+		
+	#ifdef CONFIG_SD_TUNING_WORKAROUND
+		tap++;
+	}
+	#endif
 
 	if (tuning_loop_counter < 0) {
-		printf("Tuning timeout, SD Host Ctrl2 reg= 0x%x\n", ctrl);
 		ctrl &= ~SDHCI_CTRL_TUNED_CLK;
 		sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
 	}
 
 	if (!(ctrl & SDHCI_CTRL_TUNED_CLK)) {
-		printf("Tuning failed, SD Host Ctrl2 reg= 0x%x\n", ctrl);
 		printf("%s:Tuning failed\n", __func__);
 		return -1;
 	}
-	printf("Tuning passed, SD Host Ctrl2 reg= 0x%x\n", ctrl);
 
 	udelay(1);
 	arasan_zynqmp_dll_reset(host, deviceid);
