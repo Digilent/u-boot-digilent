@@ -171,15 +171,17 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 
 		} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
 		
+		if (tuning_loop_counter < 0) {
+			ctrl &= ~SDHCI_CTRL_TUNED_CLK;
+			sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
+		}
+		
 	#ifdef CONFIG_SD_TUNING_WORKAROUND
 		tap++;
+		if (ctrl & SDHCI_CTRL_TUNED_CLK)
+			err = 0;
 	}
 	#endif
-
-	if (tuning_loop_counter < 0) {
-		ctrl &= ~SDHCI_CTRL_TUNED_CLK;
-		sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
-	}
 
 	if (!(ctrl & SDHCI_CTRL_TUNED_CLK)) {
 		printf("%s:Tuning failed\n", __func__);
