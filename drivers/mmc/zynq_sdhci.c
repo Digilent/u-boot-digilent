@@ -121,9 +121,6 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	// Set manual input tuning value to the minimum (1) and disable manual input
 	// tuning altogether.
 	arasan_zynqmp_set_tapdelay_w_disable(deviceid, 1, 0, 1, 1);
-	
-	//udelay(10);
-	//arasan_zynqmp_dll_reset(host, deviceid);
 	#endif
 
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
@@ -177,7 +174,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		printf("%s:Tuning failed\n", __func__);
 		return -1;
 	}
-	printf("Tuning passed");
+	printf("Tuning passed\n");
 
 	udelay(1);
 	arasan_zynqmp_dll_reset(host, deviceid);
