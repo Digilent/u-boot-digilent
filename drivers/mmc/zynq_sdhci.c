@@ -186,7 +186,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		} else {
 			printf("Tuning failed, SD Host Control reg = 0x%x\n", ctrl);
 		}
-		tap++;
+		//tap++;
 	}
 	#endif
 
