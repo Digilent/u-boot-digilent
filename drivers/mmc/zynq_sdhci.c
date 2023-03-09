@@ -113,10 +113,10 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	deviceid = priv->deviceid;
 
 	#ifdef CONFIG_SD_TUNING_WORKAROUND
-	int tap = 0;
+	int tap = 1;
 	int err = 1;
 	// We will retry auto-tuning with all possible tap delays for SDR104 mode
-	while (err && tap < SDR104_MAX_INPUT_TAPS) {
+	while (err && tap <= SDR104_MAX_INPUT_TAPS) {
 		tuning_loop_counter = SDHCI_TUNING_LOOP_COUNT;
 		// Disable the SD clock
 		ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
@@ -127,7 +127,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		
 		arasan_zynqmp_set_tapdelay_w_disable(deviceid, tap, 0, 1, 1);
 		
-		printf("deviceid = %d", deviceid);
+		printf("deviceid = %d\n", deviceid);
 		zynqmp_mmio_read(0xFF180314, &ctrl);
 		printf("ITAPDLY_CTRL reg. after setting the tap & disabling manual tuning delays = 0x%x\n", ctrl);
 		
