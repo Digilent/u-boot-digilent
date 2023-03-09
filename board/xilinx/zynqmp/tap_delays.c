@@ -52,11 +52,13 @@ void zynqmp_dll_reset(u8 deviceid)
 }
 
 void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_delay,
-		u8 disable_dly)
+		u8 disable_dly, u8 disable_rst)
 {
 	if (deviceid == 0) {
-		zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK,
-				  SD0_DLL_RST);
+		if (!disable_rst) {
+			zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK,
+					  SD0_DLL_RST);
+		}
 		/* Program ITAP */
 		if (itap_delay) {
 			zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
@@ -81,8 +83,10 @@ void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_
 
 		zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK, 0x0);
 	} else {
-		zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK,
-				  SD1_DLL_RST);
+		if (!disable_rst) {
+			zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK,
+					  SD1_DLL_RST);
+		}
 		/* Program ITAP */
 		if (itap_delay) {
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
@@ -111,5 +115,5 @@ void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_
 
 void arasan_zynqmp_set_tapdelay(u8 deviceid, u32 itap_delay, u32 otap_delay)
 {
-	arasan_zynqmp_set_tapdelay_w_disable(deviceid, itap_delay, otap_delay, 0);
+	arasan_zynqmp_set_tapdelay_w_disable(deviceid, itap_delay, otap_delay, 0, 0);
 }
