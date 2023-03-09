@@ -127,6 +127,9 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		
 		arasan_zynqmp_set_tapdelay_w_disable(deviceid, tap, 0, 1, 1);
 		
+		zynqmp_mmio_read(0xFF180314, &ctrl);
+		printf("ITAPDLY_CTRL reg. after setting the tap & disabling manual tuning delays = 0x%x\n", ctrl);
+		
 		udelay(10);
 		
 		arasan_zynqmp_dll_reset(host, deviceid);
@@ -186,7 +189,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		} else {
 			printf("Tuning failed, SD Host Control reg = 0x%x\n", ctrl);
 		}
-		//tap++;
+		tap++;
 	}
 	#endif
 
