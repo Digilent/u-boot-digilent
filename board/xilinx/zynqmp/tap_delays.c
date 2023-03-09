@@ -54,8 +54,6 @@ void zynqmp_dll_reset(u8 deviceid)
 void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_delay,
 		u8 disable_dly, u8 disable_rst)
 {
-	u32 ctrl;
-	
 	if (deviceid == 0) {
 		if (!disable_rst) {
 			zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK,
@@ -88,15 +86,11 @@ void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_
 		if (!disable_rst) {
 			zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK,
 					  SD1_DLL_RST);
-			zynqmp_mmio_read(SD_DLL_CTRL, &ctrl);
-			printf("SD_DLL_CTRL reg. after resetting the module = 0x%x\n", ctrl);
 		}
 		/* Program ITAP */
 		if (itap_delay) {
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
 					  SD1_ITAPCHGWIN);
-			zynqmp_mmio_read(SD_ITAP_DLY, &ctrl);
-			printf("ITAPDLY_CTRL reg. after gating the tap delays = 0x%x\n", ctrl);
 			if (disable_dly) {
 				zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
 						  0x0);
@@ -104,16 +98,10 @@ void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_
 				zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
 						  SD1_ITAPDLYENA);
 			}
-			zynqmp_mmio_read(SD_ITAP_DLY, &ctrl);
-			printf("ITAPDLY_CTRL reg. after disabling manual tuning delays = 0x%x\n", ctrl);
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYSEL_MASK,
 					  (itap_delay << 16));
-			zynqmp_mmio_read(SD_ITAP_DLY, &ctrl);
-			printf("ITAPDLY_CTRL reg. after setting the tap value = 0x%x\n", ctrl);
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
 					  0x0);
-			zynqmp_mmio_read(SD_ITAP_DLY, &ctrl);
-			printf("ITAPDLY_CTRL reg. after un-gating the tap delays = 0x%x\n", ctrl);
 		}
 
 		/* Program OTAP */

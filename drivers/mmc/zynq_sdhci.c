@@ -120,16 +120,10 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		tuning_loop_counter = SDHCI_TUNING_LOOP_COUNT;
 		// Disable the SD clock
 		ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
-		printf("SD clock control register before any write: 0x%x\n", ctrl);
 		ctrl &= ~SDHCI_CLOCK_CARD_EN;
 		sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
-		printf("Disabled SD clock, wrote 0x%x\n", ctrl);
 		
 		arasan_zynqmp_set_tapdelay_w_disable(deviceid, tap, 0, 1, 1);
-		
-		printf("deviceid = %d\n", deviceid);
-		zynqmp_mmio_read(0xFF180314, &ctrl);
-		printf("ITAPDLY_CTRL reg. after setting the tap & disabling manual tuning delays = 0x%x\n", ctrl);
 		
 		udelay(10);
 		
