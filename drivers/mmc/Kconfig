@@ -750,3 +750,13 @@ config SYS_FSL_ERRATUM_ESDHC135
 
 config SYS_FSL_ERRATUM_ESDHC_A001
 	bool
+
+config SD_TUNING_WORKAROUND
+	bool "Workaround for ZynqMP SD card interface auto-tuning failure"
+	depends on ARCH_ZYNQMP && MMC_UHS_SUPPORT
+	help
+	  This sets the manual tuning input tap to 0 and it disables manual tuning altogether,
+	  before auto-tuning is started.
+	  Also, if auto-tuning fails, it retries with different manual input taps until
+	  auto-tuning is successful or until the maximum tap value is reached, whichever
+	  happens first.

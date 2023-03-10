@@ -97,3 +97,30 @@ void arasan_zynqmp_set_tapdelay(u8 deviceid, u32 itap_delay, u32 otap_delay)
 		zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK, 0x0);
 	}
 }
+
+// This function disables the manual input tap delays, by writing logic 0 to
+// SDx_ITAPDLYENA bit in the SD_ITAPDLY register.
+void arasan_zynqmp_disable_itapdly(u8 deviceid)
+{
+	if (deviceid == 0) {
+		// Gate the output of the SD0 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
+					  SD0_ITAPCHGWIN);
+		// Disable the manual input delays for SD0
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYENA_MASK,
+				  0x0);
+		// Un-gate the output of the SD0 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
+				  0x0);
+	} else {
+		// Gate the output of the SD1 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
+					  SD1_ITAPCHGWIN);
+		// Disable the manual input delays for SD1
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
+				  0x0);
+		// Un-gate the output of the SD1 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
+				  0x0);
+	}
+}
