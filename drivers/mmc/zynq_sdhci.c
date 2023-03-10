@@ -118,9 +118,8 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	ctrl &= ~SDHCI_CLOCK_CARD_EN;
 	sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
 	
-	// Set manual input tuning value to the minimum (1) and disable manual input
-	// tuning altogether.
-	arasan_zynqmp_set_tapdelay_w_disable(deviceid, 1, 0, 1, 1);
+	// Disable manual input tuning altogether.
+	arasan_zynqmp_disable_itapdly(deviceid);
 	#endif
 
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);

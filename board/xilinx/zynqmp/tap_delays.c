@@ -51,25 +51,17 @@ void zynqmp_dll_reset(u8 deviceid)
 		zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK, 0x0);
 }
 
-void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_delay,
-		u8 disable_dly, u8 disable_rst)
+void arasan_zynqmp_set_tapdelay(u8 deviceid, u32 itap_delay, u32 otap_delay)
 {
 	if (deviceid == 0) {
-		if (!disable_rst) {
-			zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK,
-					  SD0_DLL_RST);
-		}
+		zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK,
+				  SD0_DLL_RST);
 		/* Program ITAP */
 		if (itap_delay) {
 			zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
 					  SD0_ITAPCHGWIN);
-			if (disable_dly) {
-				zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYENA_MASK,
-						  0x0);
-			} else {
-				zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYENA_MASK,
-						  SD0_ITAPDLYENA);				
-			}
+			zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYENA_MASK,
+					  SD0_ITAPDLYENA);				
 			zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYSEL_MASK,
 					  itap_delay);
 			zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
@@ -83,21 +75,14 @@ void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_
 
 		zynqmp_mmio_write(SD_DLL_CTRL, SD0_DLL_RST_MASK, 0x0);
 	} else {
-		if (!disable_rst) {
-			zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK,
-					  SD1_DLL_RST);
-		}
+		zynqmp_mmio_write(SD_DLL_CTRL, SD1_DLL_RST_MASK,
+				  SD1_DLL_RST);
 		/* Program ITAP */
 		if (itap_delay) {
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
 					  SD1_ITAPCHGWIN);
-			if (disable_dly) {
-				zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
-						  0x0);
-			} else {
-				zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
-						  SD1_ITAPDLYENA);
-			}
+			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
+					  SD1_ITAPDLYENA);
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYSEL_MASK,
 					  (itap_delay << 16));
 			zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
@@ -113,7 +98,29 @@ void arasan_zynqmp_set_tapdelay_w_disable(u8 deviceid, u32 itap_delay, u32 otap_
 	}
 }
 
-void arasan_zynqmp_set_tapdelay(u8 deviceid, u32 itap_delay, u32 otap_delay)
+// This function disables the manual input tap delays, by writing logic 0 to
+// SDx_ITAPDLYENA bit in the SD_ITAPDLY register.
+void arasan_zynqmp_disable_itapdly(u8 deviceid)
 {
-	arasan_zynqmp_set_tapdelay_w_disable(deviceid, itap_delay, otap_delay, 0, 0);
+	if (deviceid == 0) {
+		// Gate the output of the SD0 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
+					  SD0_ITAPCHGWIN);
+		// Disable the manual input delays for SD0
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYENA_MASK,
+				  0x0);
+		// Un-gate the output of the SD0 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN_MASK,
+				  0x0);
+	} else {
+		// Gate the output of the SD1 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
+					  SD1_ITAPCHGWIN);
+		// Disable the manual input delays for SD1
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA_MASK,
+				  0x0);
+		// Un-gate the output of the SD1 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN_MASK,
+				  0x0);
+	}
 }
