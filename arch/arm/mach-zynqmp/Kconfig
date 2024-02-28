@@ -224,6 +224,7 @@ config SD1_LSHFT_MODE
 endchoice
 
 source "board/xilinx/Kconfig"
+source "board/digilent/Kconfig"
 source "board/xilinx/zynqmp/Kconfig"
 
 endif

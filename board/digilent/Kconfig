@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Copyright (c) 2023, Ionel Bădișor <ionel.badisor@digilent.ro>
+
+
+if ARCH_ZYNQ || ARCH_ZYNQMP
+
+config ZYNQ_GEM_MAC_FROM_QSPI
+	bool "Read MAC address form QSPI"
+	help
+		Enable to read MAC address from mac
+
+	if ZYNQ_GEM_MAC_FROM_QSPI
+
+		config ZYNQ_GEM_MAC_IN_OTP
+			bool "Read MAC address form QSPI OTP section"
+			help
+				Specify OTP section of QPSI for reading
+				This requires custom read operation code to be set
+				according to used IC.
+
+		if ZYNQ_GEM_MAC_IN_OTP
+		
+			config QSPI_IS_SM
+				bool "Read MAC address form Spansion Micron QSPI flash "
+				help
+					QSPI IC is Spanssion
+				
+			config QSPI_IS_WB
+				bool "Read MAC address form Winbond QSPI flash"
+				depends on !QPSI_IS_SM
+				help
+					QSPI IC is Winbond
+
+		endif
+
+	config ZYNQ_GEM_ETH_MAC_QSPI_OFFSET
+		hex "Ethernet mac offset in QSPI"
+		#default 0x20 if QSPI_IS_SM
+		#default 0x1000 if QSPI_IS_WB
+		#default 0x1fff000 if genesyszu
+		depends on DM_SPI
+		help
+			Set MAC offset for QSPI (regular or OTP address space)
+
+	endif
+
+endif
