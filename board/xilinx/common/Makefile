@@ -4,6 +4,7 @@
 # Michal Simek <michal.simek@xilinx.com>
 #
 
+
 obj-y	+= board.o
 ifndef CONFIG_ARCH_ZYNQ
 obj-$(CONFIG_DISPLAY_CPUINFO) += cpu-info.o
@@ -11,3 +12,5 @@ endif
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_CMD_FRU) += fru.o fru_ops.o
 endif
+
+obj-$(CONFIG_ZYNQ_GEM_MAC_FROM_QSPI) += ../../digilent/common/eth_mac_from_qspi.o
