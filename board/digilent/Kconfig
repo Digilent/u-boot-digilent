@@ -7,6 +7,7 @@ if ARCH_ZYNQ || ARCH_ZYNQMP
 
 config ZYNQ_GEM_MAC_FROM_QSPI
 	bool "Read MAC address form QSPI"
+	depends on DM_SPI
 	help
 		Enable to read MAC address from mac
 
@@ -15,7 +16,7 @@ config ZYNQ_GEM_MAC_FROM_QSPI
 		config ZYNQ_GEM_MAC_IN_OTP
 			bool "Read MAC address form QSPI OTP section"
 			help
-				Specify OTP section of QPSI for reading
+				Specify OTP section of QSPI for reading
 				This requires custom read operation code to be set
 				according to used IC.
 
@@ -28,18 +29,18 @@ config ZYNQ_GEM_MAC_FROM_QSPI
 				
 			config QSPI_IS_WB
 				bool "Read MAC address form Winbond QSPI flash"
-				depends on !QPSI_IS_SM
+				depends on !QSPI_IS_SM
 				help
 					QSPI IC is Winbond
 
 		endif
 
-	config ZYNQ_GEM_ETH_MAC_QSPI_OFFSET
+	config ZYNQ_GEM_MAC_QSPI_OFFSET
 		hex "Ethernet mac offset in QSPI"
-		#default 0x20 if QSPI_IS_SM
-		#default 0x1000 if QSPI_IS_WB
-		#default 0x1fff000 if genesyszu
-		depends on DM_SPI
+		depends on ZYNQ_GEM_MAC_FROM_QSPI || ZYNQ_GEM_MAC_IN_OTP || QSPI_IS_SM || QSPI_IS_WB
+		default 0x20 if ZYNQ_GEM_MAC_IN_OTP && QSPI_IS_SM && !QSPI_IS_WB
+		default 0x1000 if ZYNQ_GEM_MAC_IN_OTP && !QSPI_IS_SM && QSPI_IS_WB
+		default 0x0 if ZYNQ_GEM_MAC_FROM_QSPI && !ZYNQ_GEM_MAC_IN_OTP
 		help
 			Set MAC offset for QSPI (regular or OTP address space)
 
