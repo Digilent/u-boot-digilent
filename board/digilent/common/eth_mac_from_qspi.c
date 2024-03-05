@@ -27,82 +27,26 @@ int zynq_board_read_rom_ethaddr(unsigned char *ethaddr)
 		return 0;
 	}
 
-#if defined(ZYNQ_GEM_MAC_IN_OTP)
+	printf("%s: Flash Device name: %s\n", __func__, flash->name);
 
-	NOT VERIFIED
-	    // use #include "../../../drivers/mtd/spi/sf_internal.h" to access
-	    // flash->id
+#if defined (CONFIG_ZYNQ_GEM_MAC_IN_OTP)
 
-		// or try to match flash->name instead of flash->info-> id??
-	    printf("%s: Flash Device name: %s\n", __func__, flash->name);
+	#if defined (CONFIG_QSPI_IS_SM) // For Spansion and Micron OPCODE
+		#define CMD_OTP_READ_ARRAY_FAST 0x4b
+	#elif defined (CONFIG_QSPI_IS_WB) // For Winbond OPCODE
+		#define CMD_OTP_READ_ARRAY_FAST 0x48
+	#else
+		#define CMD_OTP_READ_ARRAY_FAST "NOT IMPLEMENTED"
+	#endif
 
-	printf("%s: Flash Device ID: %02Xh %02Xh %02Xh\n", __func__,
-	       flash->info->id[0], flash->info->id[1], flash->info->id[2]);
-
-#define ID_S25FL128S             0x012018
-#define ID_MT25QL128ABA_N25Q128A 0x20BA18
-#define ID_W25Q128JV             0xEF7018
-
-#define CMD_OTP_SPANSION_MICRON_READ_ARRAY_FAST 0x4b
-#define CMD_OTP_WINBOND_READ_ARRAY_FAST         0x48
-
-#define SPI_OTP_OFFSET_SPANSION_MICRON 0x20
-#define SPI_OTP_OFFSET_WINBOND         0x1000
-
-	u32 id = ((u32)flash->info->id[0] << 16) | ((u32)flash->info->id[1] << 8) |
-	         (u32)flash->info->id[2];
-	if (id == ID_S25FL128S) {
-		debug("%s: SPI Flash Spansion identified. Reading SPI MAC address from "
-		      "OTP area\n",
-		      __func__);
-		/*
-		 * Set the SPI MAC offset
-		 */
-		offset =
-		    SPI_OTP_OFFSET_SPANSION_MICRON + CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET;
-		/*
-		 * Set the cmd to otp read
-		 */
-		flash->read_opcode = CMD_OTP_SPANSION_MICRON_READ_ARRAY_FAST;
-	} else if (id == ID_MT25QL128ABA_N25Q128A) {
-		debug("%s: SPI Flash Micron identified. Reading SPI MAC address from "
-		      "OTP area\n",
-		      __func__);
-		/*
-		 * Set the SPI MAC offset
-		 */
-		offset =
-		    SPI_OTP_OFFSET_SPANSION_MICRON + CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET;
-		/*
-		 * Set the cmd to otp read
-		 */
-		flash->read_opcode = CMD_OTP_SPANSION_MICRON_READ_ARRAY_FAST;
-	} else if (id == ID_W25Q128JV) {
-		debug("%s: SPI Flash Winbond identified. Reading SPI MAC address from "
-		      "OTP area\n",
-		      __func__);
-		/*
-		 * Set the SPI MAC offset
-		 */
-		offset = SPI_OTP_OFFSET_WINBOND + CONFIG_ZYNQ_GEM_SPI_MAC_OFFSET;
-		/*
-		 * Set the cmd to otp read
-		 */
-		flash->read_opcode = CMD_OTP_WINBOND_READ_ARRAY_FAST;
-	} else {
-		printf("%s: Reading SPI MAC address from OTP area is not supported on "
-		       "this flash\n",
-		       __func__);
-		return -EINVAL;
-	}
-#else
-	printf("%s: Reading SPI MAC address from offset %08lxh\n", __func__,
-	       CONFIG_ZYNQ_GEM_ETH_MAC_QSPI_OFFSET);
-	/*
-	 * Set the SPI MAC offset
-	 */
-	offset = CONFIG_ZYNQ_GEM_ETH_MAC_QSPI_OFFSET;
+	//change read opcode only when OTP is used
+	flash->read_opcode = CMD_OTP_READ_ARRAY_FAST;
 #endif
+
+	printf("%s: Reading SPI MAC address from offset %08lxh\n", __func__,
+	       CONFIG_ZYNQ_GEM_MAC_QSPI_OFFSET);
+
+	offset = CONFIG_ZYNQ_GEM_MAC_QSPI_OFFSET;
 
 	if ((ret = spi_flash_read(flash, offset, 6, ethaddr)))
 		printf("%s:SPI MAC address read failed\n", __func__);
