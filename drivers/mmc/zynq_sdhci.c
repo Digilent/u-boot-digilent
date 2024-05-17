@@ -402,6 +402,33 @@ static int arasan_zynqmp_dll_reset(struct sdhci_host *host, u32 node_id)
 	return 0;
 }
 
+// This function disables the manual input tap delays, by writing logic 0 to
+// SDx_ITAPDLYENA bit in the SD_ITAPDLY register.
+static void arasan_zynqmp_disable_itapdly(u8 node_id)
+{
+	if (node_id == 0) {
+		// Gate the output of the SD0 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN,
+		                          SD0_ITAPCHGWIN);
+		// Disable the manual input delays for SD0
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPDLYENA,
+		                  0x0);
+		// Un-gate the output of the SD0 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD0_ITAPCHGWIN,
+		                  0x0);
+	} else {
+		// Gate the output of the SD1 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN,
+		                          SD1_ITAPCHGWIN);
+		// Disable the manual input delays for SD1
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPDLYENA,
+		                  0x0);
+		// Un-gate the output of the SD1 tap delay lines
+		zynqmp_mmio_write(SD_ITAP_DLY, SD1_ITAPCHGWIN,
+		                  0x0);
+	}
+}
+
 static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 {
 	struct mmc_cmd cmd;
@@ -412,8 +439,19 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	char tuning_loop_counter = SDHCI_TUNING_LOOP_COUNT;
 
 	dev_dbg(mmc->dev, "%s\n", __func__);
+	printf("Execute tuning\n");
 
 	host = priv->host;
+
+#ifdef CONFIG_SD_TUNING_WORKAROUND
+	// Disable the SD clock
+	ctrl = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
+	ctrl &= ~SDHCI_CLOCK_CARD_EN;
+	sdhci_writew(host, ctrl, SDHCI_CLOCK_CONTROL);
+
+	// Disable manual input tuning altogether.
+	arasan_zynqmp_disable_itapdly(priv->node_id);
+#endif
 
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
@@ -457,6 +495,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
 
 	if (tuning_loop_counter < 0) {
+		printf("Tuning timeout\n");
 		ctrl &= ~SDHCI_CTRL_TUNED_CLK;
 		sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
 	}
@@ -465,6 +504,7 @@ static int arasan_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 		printf("%s:Tuning failed\n", __func__);
 		return -1;
 	}
+	printf("Tuning passed\n");
 
 	udelay(1);
 	arasan_zynqmp_dll_reset(host, priv->node_id);
